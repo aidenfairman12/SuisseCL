@@ -43,9 +43,13 @@ evaluate on steps 1536-2207 (28 unseen days). All scores are CityLearn KPIs
 normalised to CityLearn's conventional counterfactual (same buildings without storage and partial-load control, PV kept; lower is better).
 
 ## Status
-- Held-out result so far: SAC (central) cut uncomfortable hours to 0.17 (best rule: 0.70) at
-  cost 0.775; the schema's default reward is comfort-only, so cost/peak gains are incidental.
-- Single seed, single dataset. SAC per-building and MARLISA runs are in progress on UBELIX.
-- Next: composite reward (comfort + cost + carbon + peaks), multiple seeds, then Swiss data.
-
-Notes: phase_3_1/3_2/3_3 contain identical building/weather/price data (only `schema.json` differs).
+- **Reward calibration issue.** With equal weights the composite reward barely distinguishes "cooling off" from
+  "cooling to setpoint" on its comfort term (per-step comfort term 570 vs 494) while peak/ramp terms react strongly, so agents are
+  paid for trading comfort away. A tuned parametric rule (`my_data/tuned_rule.py`, searched on this reward) converged to
+  "cooling essentially off" (held-out discomfort 0.967), i.e. no better than do-nothing. Comfort weighting/scaling needs rework.
+- Central SAC, composite reward, 2 seeds (held-out 28 days): cost 0.545 +/- 0.006, daily peak 0.603, discomfort 0.706 +/- 0.010
+  (do-nothing: 0.350 / 0.565 / 0.977). The earlier comfort-only SAC reached discomfort 0.17 at cost 0.775.
+- Per-building SAC and MARLISA (seeds 0-2) are still running on UBELIX; results are added when they finish.
+- Datasets 2023 phase_3_1/3_2/3_3 hold identical building/weather/price data; they are one benchmark, not three.
+- Next: Swiss phase 1 (heating-dominated setup; Quebec/Vermont datasets in CityLearn as stand-ins), then reward weighting
+  on that setup. A research prompt for Swiss data sources is in `docs/swiss_data_research_prompt.md`.

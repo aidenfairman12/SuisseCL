@@ -1,0 +1,16 @@
+{
+  "params": {
+    "pv_charge_rate": 0.8530402034723686,
+    "discharge_rate": 0.0050649886488958185,
+    "discharge_thr_kw": 0.5466348181245936,
+    "discharge_hi_price": 0.25356817729006104,
+    "precharge_rate": 0.12134755765131106,
+    "cool_gain": 0.007289981409434376,
+    "cool_offset_base": -0.30939119471574106,
+    "cool_offset_solar": 1.195592976977504,
+    "cool_cap_hi_price": 0.6459264546382806,
+    "dhw_charge_solar": 0.6015514682392996
+  },
+  "train_score": 2471.9853748679234,
+  "evaluations": 576
+}

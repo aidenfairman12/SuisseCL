@@ -10,3 +10,4 @@ __pycache__/
 .DS_Store
 # dataset link used on the cluster
 my_data/datasets
+my_data/results/summary.csv
