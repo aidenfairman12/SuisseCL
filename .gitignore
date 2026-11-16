@@ -8,3 +8,5 @@ __pycache__/
 *.pyc
 *.pth
 .DS_Store
+# dataset link used on the cluster
+my_data/datasets
