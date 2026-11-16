@@ -1,0 +1,5 @@
+# Versions known to work together locally. On the cluster use hpc/setup_env.sh (CPU-only torch).
+citylearn==3.3.0
+torch==2.2.2
+numpy<2
+pandas<3

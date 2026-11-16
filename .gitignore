@@ -1,0 +1,10 @@
+# virtualenv and the official CityLearn clone (not part of this repo)
+cl/
+CityLearn/
+# local run artefacts
+my_data/logs/
+my_data/citylearn_challenge_2022_phase_all_plus_evs/
+__pycache__/
+*.pyc
+*.pth
+.DS_Store
