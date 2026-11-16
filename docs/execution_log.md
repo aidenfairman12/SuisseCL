@@ -246,3 +246,14 @@ No account created, no API key used, nothing downloaded for this step.
 - **Implementation consistency (not validation):** simulated HP electricity (SH + DHW devices) equals measured within 1 % in every building (e.g. Building_1 4,731 vs 4,730 kWh; Building_5 25,712 vs 25,716).
 - **Tests:** 47 pass (3 new integration tests, ~42 s total).
 - **Open before A7 can be called complete:** carbon series (waiting on download, 46/216 files), action-list check, documentation of reproduction commands, reward function (A8).
+
+### EL-0038 — 2026-11-16 — experiment (A8 baselines: EXP-001..006)
+- **Run:** `swiss/experiments/run_baselines.py` (new), 6 controllers x 1 deterministic year; registered in `experiments/experiment_registry.csv`; protocol in `experiment_protocol.md`; algorithm, controller and reward docs written; D-019 proposed. Tests: `swiss/tests/test_baselines.py` (3 pass; BAU identical to zero action, tariff map hours, RBC changes the load and conserves energy).
+- **Results (district, 2023):** zero action: 214,715 kWh import, peak 72.0 kW, cost 35,750 CHF excl. VAT, 40.0 % of import in high tariff. BAU identical to zero action (as predicted). BasicRBC: +1.2 % energy (storage losses), peak 67.6 kW (−6.1 %), cost +0.5 %, high-tariff share 37.1 %. Tariff-aware HourRBC r=0.05/0.10/0.20: high-tariff share 37.7/36.9/36.4 %, cost +0.5/+0.4/+0.3 %, all-time peak 69.3/68.3/72.9 kW, energy +1.0–1.2 %.
+- **Interpretation:** the environment responds to storage actions (load shifts out of high tariff by up to 3.6 points; peak moves), so it functions as a control testbed. But with the synthetic tanks and a tariff ratio of 1.27, simple price-aware rules do **not** save money (storage losses of ~1 % of energy outweigh the price gain) and gains in peak are small. Expected benefit of any controller here is therefore small and sensitive to the tank assumption (D-017a) — to be quantified with x0.5/x2 tank sensitivity in A9. Not a validation of anything.
+- **Limits:** CityLearn KPI ratios are relative to its counterfactual (zero action = 1.0); carbon KPI = 1.0 because no carbon series; comfort KPIs are NaN; HourRBC ignores weekends.
+- Energy-Charts download: ~55/216 files.
+
+### EL-0039 — 2026-11-16 — decision
+- **User accepted D-019:** reward R-001 (cost + peak + ramp, carbon weight 0 until D-013 series exists, no comfort term) and baseline set ALG-001..004. A8 complete for baseline controllers and reward; no learning agent in Phase A.
+- **Remaining Phase A:** carbon series (download 64/216 at last check) and its integration; A9 validation (energy balance, double counting recap, tariff and carbon arithmetic, seasonal patterns, weather alignment, tank-size and SPF sensitivity, flatter-COP sensitivity); architecture/model-assumption docs; reproduction instructions; completion report and revised roadmap for B and C; final registry audit.
