@@ -5,7 +5,7 @@ import sys, os, warnings
 import numpy as np, pandas as pd
 warnings.filterwarnings('ignore')
 from citylearn.citylearn import CityLearnEnv
-from citylearn.agents.baseline import ZeroActionBaselineAgent, RBCSmartPolicy
+from citylearn.agents.baseline import ZeroActionBaselineAgent, RBCSmartPolicy, BusinessAsUsualAgent
 from citylearn.agents.rbc import BasicBatteryRBC
 
 ROOT = os.environ.get('CITYLEARN_DATA', '/Users/Aiden/Projects/citylearn/CityLearn/data/datasets')
@@ -51,6 +51,7 @@ if __name__ == '__main__':
     for ds in datasets:
         runs = {
             'do_nothing': lambda: run_agent(ds, ZeroActionBaselineAgent),
+            'BusinessAsUsual': lambda: run_agent(ds, BusinessAsUsualAgent),
             'hour_rule': lambda: run_hour_rule(ds),
             'BasicBatteryRBC': lambda: run_agent(ds, BasicBatteryRBC),
             'RBCSmartPolicy': lambda: run_agent(ds, RBCSmartPolicy),

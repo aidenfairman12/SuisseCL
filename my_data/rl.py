@@ -16,13 +16,16 @@ from rewards import CompositeReward, TERMS
 from citylearn.citylearn import CityLearnEnv
 from citylearn.agents.sac import SAC
 from citylearn.agents.marlisa import MARLISA
-from citylearn.agents.baseline import ZeroActionBaselineAgent, RBCSmartPolicy
+from citylearn.agents.baseline import ZeroActionBaselineAgent, RBCSmartPolicy, BusinessAsUsualAgent
 from citylearn.agents.rbc import BasicBatteryRBC
 
 DS = 'citylearn_challenge_2023_phase_3_1'
 TRAIN = (0, 1535)      # first 64 days
 TEST = (1536, 2207)    # last 28 days, never seen in training
 OUT = base.OUT
+# SAC settings from the dataset's schema.json agent block (the organisers' example agent); library defaults otherwise.
+# Step timings (standardize/end_exploration) are left at the library's episode-length-aware defaults.
+PRESETS = {'challenge': dict(hidden_dimension=[256, 256], discount=0.9, lr=0.001, batch_size=512, alpha=1.0)}
 
 def env_for(window, central, reward=None, seed=None, weights=None):
     kw = dict(central_agent=central, simulation_start_time_step=window[0], simulation_end_time_step=window[1])
@@ -68,6 +71,7 @@ def main():
     ap.add_argument('--episodes', type=int, default=30)
     ap.add_argument('--reward', default=None, help="'composite' or a CityLearn reward class name")
     ap.add_argument('--seed', type=int, default=0)
+    ap.add_argument('--preset', choices=list(PRESETS), default=None, help='SAC hyperparameters from the schema agent block')
     ap.add_argument('--weights', default=None, help='e.g. comfort=1,cost=1,carbon=1,peak=1,ramp=1')
     a = ap.parse_args()
     weights = {k: float(v) for k, v in (kv.split('=') for kv in a.weights.split(','))} if a.weights else None
@@ -79,6 +83,7 @@ def main():
         base.make_env = lambda name: env_for(TEST, True)
         res = {
             'do_nothing': base.district(base.run_agent(DS, ZeroActionBaselineAgent)),
+            'BusinessAsUsual': base.district(base.run_agent(DS, BusinessAsUsualAgent)),
             'hour_rule': base.district(base.run_hour_rule(DS)),
             'BasicBatteryRBC': base.district(base.run_agent(DS, BasicBatteryRBC)),
             'RBCSmartPolicy': base.district(base.run_agent(DS, RBCSmartPolicy)),
@@ -87,13 +92,13 @@ def main():
 
     cls, central = {'sac_central': (SAC, True), 'sac_decentral': (SAC, False), 'marlisa': (MARLISA, False)}[a.kind]
     train_env = env_for(TRAIN, central, a.reward, a.seed, weights)
-    agent = cls(train_env)
+    agent = cls(train_env, **(PRESETS[a.preset] if a.preset else {}))
     t = time.time()
     for ep in range(a.episodes):   # one call per episode so we can see progress
         agent.learn(episodes=1)
         print(f'[{a.kind} s{a.seed}] episode {ep+1}/{a.episodes}  {time.time()-t:.0f}s', flush=True)
     score = evaluate(agent, env_for(TEST, central, a.reward, a.seed, weights))
-    tag = a.kind + (f'_{a.reward}' if a.reward else '') + f'_s{a.seed}'
+    tag = a.kind + (f'_{a.reward}' if a.reward else '') + (f'_{a.preset}' if a.preset else '') + f'_s{a.seed}'
     score.to_csv(f'{OUT}/rl_{tag}.csv', header=[tag])
     print(f'[{tag}] done in {time.time()-t:.0f}s -> rl_{tag}.csv')
 
