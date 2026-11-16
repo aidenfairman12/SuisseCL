@@ -191,3 +191,8 @@ No account created, no API key used, nothing downloaded for this step.
 
 ### EL-0025 — 2026-11-16 — failure and fix (acquisition)
 - First launch of `download_energy_charts.py` failed on every request with `SSLCertVerificationError` (the python.org interpreter in `cl/` has no CA bundle); 0 files saved. Stopped it, switched the fetch to `curl` (TLS verification kept ON, nothing disabled), restarted; first file saved OK. Download runs as a plain background shell process (not a tracked task): progress is `ls data/raw/energy_charts/*.json | wc -l` (216 expected) and `download.log`.
+
+### EL-0026 — 2026-11-16 — commit
+- User asked to commit. Three commits: `615e8b4` (docs and audit tree), `f325273` (pipeline scripts, tests, requirements-dev), `b068bf9` (derived datasets under `data/interim` and `data/canonical`). `data/raw/` is gitignored (not committed).
+- **Version note:** registry/transformation-log rows that say "git 35c59a9 + uncommitted" refer to outputs produced before these commits; the code that produced them is in `f325273` (later scripts edits, if any, are logged separately).
+- Energy-Charts download still running (check `ls data/raw/energy_charts/*.json | wc -l`, 216 expected).
