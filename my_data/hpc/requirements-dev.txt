@@ -1,0 +1,2 @@
+# dev/test dependency for swiss/tests (installed in cl/ venv 2026-11-16)
+pytest==9.2.0
