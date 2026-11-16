@@ -1,0 +1,33 @@
+{
+  "rows": 8760,
+  "duplicates_dropped": 0,
+  "missing": {
+    "temp_c": 0,
+    "rh_pct": 0,
+    "ghi_wm2": 0,
+    "diffuse_wm2": 1,
+    "sunshine_min": 0,
+    "beam_horizontal_wm2": 1
+  },
+  "min": {
+    "temp_c": -12.9,
+    "rh_pct": 19.9,
+    "ghi_wm2": 1.0,
+    "diffuse_wm2": 0.0,
+    "sunshine_min": 0.0,
+    "beam_horizontal_wm2": -19.0
+  },
+  "max": {
+    "temp_c": 36.0,
+    "rh_pct": 100.0,
+    "ghi_wm2": 1127.0,
+    "diffuse_wm2": 586.0,
+    "sunshine_min": 60.0,
+    "beam_horizontal_wm2": 862.0
+  },
+  "annual_ghi_kwh_m2": 1280.521,
+  "annual_mean_temp_c": 11.557659817351597,
+  "hours_beam_negative": 1,
+  "hours_night_ghi_positive_le_5": 4260,
+  "ghi_gt_diffuse_violations_gt_10": 1
+}

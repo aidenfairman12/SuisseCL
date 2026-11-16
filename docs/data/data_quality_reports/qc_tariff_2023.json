@@ -1,0 +1,19 @@
+{
+ "rows": 8760,
+ "duplicates_dropped": 0,
+ "missing_hours": 0,
+ "hours_with_price_change_inside_hour": 0,
+ "distinct_total_rp": [
+  15.05,
+  19.05
+ ],
+ "distinct_energy_rp": [
+  10.35,
+  11.45
+ ],
+ "distinct_grid_rp": [
+  4.7,
+  7.6
+ ],
+ "mean_total_rp": 16.593378995433792
+}

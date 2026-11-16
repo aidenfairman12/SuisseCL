@@ -11,3 +11,6 @@ __pycache__/
 # dataset link used on the cluster
 my_data/datasets
 my_data/results/summary.csv
+
+# raw source data (licensed, large; provenance in docs/data/data_source_registry.csv)
+data/raw/

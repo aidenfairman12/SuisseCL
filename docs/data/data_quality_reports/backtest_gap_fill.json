@@ -1,0 +1,86 @@
+{
+ "SFH-low|kwh_hp|all_days": {
+  "n_days": 87,
+  "hourly_MAE_kWh_A_neighbour_days": 0.7406,
+  "hourly_MAE_kWh_B_same_weekday": 0.7443,
+  "daily_MAPE_A": 0.6384,
+  "daily_MAPE_B": 3.1592
+ },
+ "SFH-low|kwh_hp|sundays": {
+  "n_days": 10,
+  "hourly_MAE_kWh_A_neighbour_days": 0.7392,
+  "hourly_MAE_kWh_B_same_weekday": 0.8392,
+  "daily_MAPE_A": 1.0821,
+  "daily_MAPE_B": 7.7391
+ },
+ "SFH-low|kwh_other|all_days": {
+  "n_days": 87,
+  "hourly_MAE_kWh_A_neighbour_days": 0.4774,
+  "hourly_MAE_kWh_B_same_weekday": 0.4647,
+  "daily_MAPE_A": 0.3541,
+  "daily_MAPE_B": 0.4604
+ },
+ "SFH-low|kwh_other|sundays": {
+  "n_days": 10,
+  "hourly_MAE_kWh_A_neighbour_days": 0.4255,
+  "hourly_MAE_kWh_B_same_weekday": 0.4268,
+  "daily_MAPE_A": 0.2212,
+  "daily_MAPE_B": 0.3582
+ },
+ "SFH-mid|kwh_hp|all_days": {
+  "n_days": 87,
+  "hourly_MAE_kWh_A_neighbour_days": 0.4619,
+  "hourly_MAE_kWh_B_same_weekday": 0.5275,
+  "daily_MAPE_A": 0.2477,
+  "daily_MAPE_B": 0.4395
+ },
+ "SFH-mid|kwh_hp|sundays": {
+  "n_days": 10,
+  "hourly_MAE_kWh_A_neighbour_days": 0.5477,
+  "hourly_MAE_kWh_B_same_weekday": 0.7038,
+  "daily_MAPE_A": 0.3063,
+  "daily_MAPE_B": 0.7156
+ },
+ "SFH-mid|kwh_other|all_days": {
+  "n_days": 87,
+  "hourly_MAE_kWh_A_neighbour_days": 0.2553,
+  "hourly_MAE_kWh_B_same_weekday": 0.2861,
+  "daily_MAPE_A": 0.2217,
+  "daily_MAPE_B": 0.398
+ },
+ "SFH-mid|kwh_other|sundays": {
+  "n_days": 10,
+  "hourly_MAE_kWh_A_neighbour_days": 0.2921,
+  "hourly_MAE_kWh_B_same_weekday": 0.3313,
+  "daily_MAPE_A": 0.1901,
+  "daily_MAPE_B": 0.5578
+ },
+ "SFH-high|kwh_hp|all_days": {
+  "n_days": 87,
+  "hourly_MAE_kWh_A_neighbour_days": 0.7183,
+  "hourly_MAE_kWh_B_same_weekday": 0.7551,
+  "daily_MAPE_A": 0.3138,
+  "daily_MAPE_B": 0.3454
+ },
+ "SFH-high|kwh_hp|sundays": {
+  "n_days": 10,
+  "hourly_MAE_kWh_A_neighbour_days": 0.7716,
+  "hourly_MAE_kWh_B_same_weekday": 0.8495,
+  "daily_MAPE_A": 0.457,
+  "daily_MAPE_B": 0.4548
+ },
+ "SFH-high|kwh_other|all_days": {
+  "n_days": 87,
+  "hourly_MAE_kWh_A_neighbour_days": 0.253,
+  "hourly_MAE_kWh_B_same_weekday": 0.2031,
+  "daily_MAPE_A": 0.5014,
+  "daily_MAPE_B": 0.4545
+ },
+ "SFH-high|kwh_other|sundays": {
+  "n_days": 10,
+  "hourly_MAE_kWh_A_neighbour_days": 0.4307,
+  "hourly_MAE_kWh_B_same_weekday": 0.3969,
+  "daily_MAPE_A": 0.4679,
+  "daily_MAPE_B": 0.63
+ }
+}

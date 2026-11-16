@@ -1,0 +1,450 @@
+{
+  "window_utc": [
+    "2022-12-31 23:00:00+00:00",
+    "2023-12-31 23:00:00+00:00"
+  ],
+  "hours_expected": 8760,
+  "seed": 20230101,
+  "apartment_pool_size": 1125,
+  "SFH-low": {
+    "source": "HEAPO",
+    "id": 7069411,
+    "duplicate_timestamps_dropped": 0,
+    "columns": [
+      {
+        "column": "kwh_hp",
+        "coverage_hours": 8736,
+        "missing_hours": 24,
+        "negative_hours": 0,
+        "zero_hours": 0,
+        "zero_run_hours_ge24": 0,
+        "sum_kwh": 4720.814,
+        "max_hourly_kwh": 4.855,
+        "p99_hourly_kwh": 3.9237499999999947,
+        "hours_gt_5x_p99": 0
+      },
+      {
+        "column": "kwh_other",
+        "coverage_hours": 8736,
+        "missing_hours": 24,
+        "negative_hours": 0,
+        "zero_hours": 0,
+        "zero_run_hours_ge24": 0,
+        "sum_kwh": 5998.354,
+        "max_hourly_kwh": 5.084,
+        "p99_hourly_kwh": 2.9388999999999976,
+        "hours_gt_5x_p99": 0
+      },
+      {
+        "column": "kwh_total",
+        "coverage_hours": 8736,
+        "missing_hours": 24,
+        "negative_hours": 0,
+        "zero_hours": 0,
+        "zero_run_hours_ge24": 0,
+        "sum_kwh": 10719.168,
+        "max_hourly_kwh": 7.905,
+        "p99_hourly_kwh": 5.240549999999997,
+        "hours_gt_5x_p99": 0
+      }
+    ],
+    "gap_filled_hours": 24,
+    "total_vs_hp_plus_other": {
+      "n_quarters_all_three": 34944,
+      "max_abs_diff_kwh": 2.220446049250313e-16,
+      "share_abs_diff_gt_0.01": 0.0,
+      "sum_total": 10719.168,
+      "sum_hp_plus_other": 10719.168
+    },
+    "pv_indicator_daily_returned_energy": {
+      "daily_rows_2023": 0,
+      "returned_kwh_2023_sum": null,
+      "returned_nonnull_days": 0,
+      "affects_time_point_values_2023": {}
+    }
+  },
+  "SFH-mid": {
+    "source": "HEAPO",
+    "id": 8011310,
+    "duplicate_timestamps_dropped": 0,
+    "columns": [
+      {
+        "column": "kwh_hp",
+        "coverage_hours": 8736,
+        "missing_hours": 24,
+        "negative_hours": 0,
+        "zero_hours": 0,
+        "zero_run_hours_ge24": 0,
+        "sum_kwh": 6037.866999999999,
+        "max_hourly_kwh": 4.377000000000001,
+        "p99_hourly_kwh": 4.09965,
+        "hours_gt_5x_p99": 0
+      },
+      {
+        "column": "kwh_other",
+        "coverage_hours": 8736,
+        "missing_hours": 24,
+        "negative_hours": 0,
+        "zero_hours": 1086,
+        "zero_run_hours_ge24": 0,
+        "sum_kwh": 5255.232,
+        "max_hourly_kwh": 5.055,
+        "p99_hourly_kwh": 4.6850000000000005,
+        "hours_gt_5x_p99": 0
+      },
+      {
+        "column": "kwh_total",
+        "coverage_hours": 8736,
+        "missing_hours": 24,
+        "negative_hours": 0,
+        "zero_hours": 0,
+        "zero_run_hours_ge24": 0,
+        "sum_kwh": 11293.099,
+        "max_hourly_kwh": 8.681999999999999,
+        "p99_hourly_kwh": 5.728649999999999,
+        "hours_gt_5x_p99": 0
+      }
+    ],
+    "gap_filled_hours": 24,
+    "total_vs_hp_plus_other": {
+      "n_quarters_all_three": 34944,
+      "max_abs_diff_kwh": 4.440892098500626e-16,
+      "share_abs_diff_gt_0.01": 0.0,
+      "sum_total": 11293.099,
+      "sum_hp_plus_other": 11293.099
+    },
+    "pv_indicator_daily_returned_energy": {
+      "daily_rows_2023": 0,
+      "returned_kwh_2023_sum": null,
+      "returned_nonnull_days": 0,
+      "affects_time_point_values_2023": {}
+    }
+  },
+  "SFH-high": {
+    "source": "HEAPO",
+    "id": 1181060,
+    "duplicate_timestamps_dropped": 0,
+    "columns": [
+      {
+        "column": "kwh_hp",
+        "coverage_hours": 8736,
+        "missing_hours": 24,
+        "negative_hours": 0,
+        "zero_hours": 0,
+        "zero_run_hours_ge24": 0,
+        "sum_kwh": 11493.165,
+        "max_hourly_kwh": 11.225,
+        "p99_hourly_kwh": 6.924749999999987,
+        "hours_gt_5x_p99": 0
+      },
+      {
+        "column": "kwh_other",
+        "coverage_hours": 8736,
+        "missing_hours": 24,
+        "negative_hours": 0,
+        "zero_hours": 0,
+        "zero_run_hours_ge24": 0,
+        "sum_kwh": 2728.329,
+        "max_hourly_kwh": 3.437,
+        "p99_hourly_kwh": 1.6028999999999978,
+        "hours_gt_5x_p99": 0
+      },
+      {
+        "column": "kwh_total",
+        "coverage_hours": 8736,
+        "missing_hours": 24,
+        "negative_hours": 0,
+        "zero_hours": 0,
+        "zero_run_hours_ge24": 0,
+        "sum_kwh": 14221.494000000002,
+        "max_hourly_kwh": 11.293,
+        "p99_hourly_kwh": 7.361849999999997,
+        "hours_gt_5x_p99": 0
+      }
+    ],
+    "gap_filled_hours": 24,
+    "total_vs_hp_plus_other": {
+      "n_quarters_all_three": 34944,
+      "max_abs_diff_kwh": 4.3021142204224816e-16,
+      "share_abs_diff_gt_0.01": 0.0,
+      "sum_total": 14221.493999999999,
+      "sum_hp_plus_other": 14221.493999999999
+    },
+    "pv_indicator_daily_returned_energy": {
+      "daily_rows_2023": 250,
+      "returned_kwh_2023_sum": NaN,
+      "returned_nonnull_days": 0,
+      "affects_time_point_values_2023": {
+        "unknown": 250
+      }
+    }
+  },
+  "MFH-small": {
+    "source": "EKZ",
+    "id": 154832,
+    "object_id": 229735,
+    "housing_units": 5,
+    "duplicate_timestamps_dropped": 0,
+    "columns": [
+      {
+        "column": "kwh_hp",
+        "coverage_hours": 8760,
+        "missing_hours": 0,
+        "negative_hours": 0,
+        "zero_hours": 2,
+        "zero_run_hours_ge24": 0,
+        "sum_kwh": 12715.223000000002,
+        "max_hourly_kwh": 6.771,
+        "p99_hourly_kwh": 5.4920199999999975,
+        "hours_gt_5x_p99": 0
+      },
+      {
+        "column": "kwh_apartments_synthetic",
+        "coverage_hours": 8540,
+        "missing_hours": 220,
+        "negative_hours": 0,
+        "zero_hours": 0,
+        "zero_run_hours_ge24": 0,
+        "sum_kwh": 10402.067,
+        "max_hourly_kwh": 6.925000000000001,
+        "p99_hourly_kwh": 3.4598300000000015,
+        "hours_gt_5x_p99": 0
+      },
+      {
+        "column": "kwh_common_areas_measured",
+        "coverage_hours": 8760,
+        "missing_hours": 0,
+        "negative_hours": 0,
+        "zero_hours": 2,
+        "zero_run_hours_ge24": 0,
+        "sum_kwh": 1767.812,
+        "max_hourly_kwh": 2.401,
+        "p99_hourly_kwh": 0.3974099999999999,
+        "hours_gt_5x_p99": 13
+      }
+    ],
+    "hp_meter_energy_to_grid_kwh_2023": 0.0,
+    "other_meters_in_object": [
+      {
+        "0_meter_id": 103144,
+        "0_installation_type": "Common areas"
+      }
+    ],
+    "apartment_composite_meter_ids": [
+      142842,
+      171204,
+      195675,
+      160745,
+      190606
+    ],
+    "apartment_composite_note": "SYNTHETIC: drawn at random (seeded) from EKZ apartment meters; not this building"
+  },
+  "MFH-medium": {
+    "source": "EKZ",
+    "id": 145442,
+    "object_id": 293577,
+    "housing_units": 14,
+    "duplicate_timestamps_dropped": 0,
+    "columns": [
+      {
+        "column": "kwh_hp",
+        "coverage_hours": 8760,
+        "missing_hours": 0,
+        "negative_hours": 0,
+        "zero_hours": 0,
+        "zero_run_hours_ge24": 0,
+        "sum_kwh": 25715.97,
+        "max_hourly_kwh": 21.214,
+        "p99_hourly_kwh": 18.54182,
+        "hours_gt_5x_p99": 0
+      },
+      {
+        "column": "kwh_apartments_synthetic",
+        "coverage_hours": 8509,
+        "missing_hours": 251,
+        "negative_hours": 0,
+        "zero_hours": 0,
+        "zero_run_hours_ge24": 0,
+        "sum_kwh": 37025.407999999996,
+        "max_hourly_kwh": 16.557,
+        "p99_hourly_kwh": 10.5392,
+        "hours_gt_5x_p99": 0
+      },
+      {
+        "column": "kwh_common_areas_measured",
+        "coverage_hours": 8760,
+        "missing_hours": 0,
+        "negative_hours": 0,
+        "zero_hours": 0,
+        "zero_run_hours_ge24": 0,
+        "sum_kwh": 18925.122000000003,
+        "max_hourly_kwh": 6.77,
+        "p99_hourly_kwh": 4.796639999999999,
+        "hours_gt_5x_p99": 0
+      }
+    ],
+    "hp_meter_energy_to_grid_kwh_2023": 0.003,
+    "other_meters_in_object": [
+      {
+        "0_meter_id": 164940,
+        "0_installation_type": "Common areas"
+      },
+      {
+        "0_meter_id": 183796,
+        "0_installation_type": "Common areas"
+      }
+    ],
+    "apartment_composite_meter_ids": [
+      129188,
+      131446,
+      137520,
+      126509,
+      125597,
+      153846,
+      194985,
+      114809,
+      127353,
+      127392,
+      163397,
+      104592,
+      148425,
+      130029
+    ],
+    "apartment_composite_note": "SYNTHETIC: drawn at random (seeded) from EKZ apartment meters; not this building"
+  },
+  "MFH-large": {
+    "source": "EKZ",
+    "id": 197873,
+    "object_id": 274987,
+    "housing_units": 24,
+    "duplicate_timestamps_dropped": 0,
+    "columns": [
+      {
+        "column": "kwh_hp",
+        "coverage_hours": 8760,
+        "missing_hours": 0,
+        "negative_hours": 0,
+        "zero_hours": 0,
+        "zero_run_hours_ge24": 0,
+        "sum_kwh": 21103.038,
+        "max_hourly_kwh": 18.128,
+        "p99_hourly_kwh": 15.162759999999995,
+        "hours_gt_5x_p99": 0
+      },
+      {
+        "column": "kwh_apartments_synthetic",
+        "coverage_hours": 8503,
+        "missing_hours": 257,
+        "negative_hours": 0,
+        "zero_hours": 0,
+        "zero_run_hours_ge24": 0,
+        "sum_kwh": 39664.670999999995,
+        "max_hourly_kwh": 14.529000000000002,
+        "p99_hourly_kwh": 11.012719999999995,
+        "hours_gt_5x_p99": 0
+      },
+      {
+        "column": "kwh_common_areas_measured",
+        "coverage_hours": 8760,
+        "missing_hours": 0,
+        "negative_hours": 0,
+        "zero_hours": 0,
+        "zero_run_hours_ge24": 0,
+        "sum_kwh": 8569.709,
+        "max_hourly_kwh": 4.156,
+        "p99_hourly_kwh": 2.3619699999999977,
+        "hours_gt_5x_p99": 0
+      }
+    ],
+    "hp_meter_energy_to_grid_kwh_2023": 0.0,
+    "other_meters_in_object": [
+      {
+        "0_meter_id": 111754,
+        "0_installation_type": "Common areas"
+      },
+      {
+        "0_meter_id": 196102,
+        "0_installation_type": "Common areas"
+      }
+    ],
+    "apartment_composite_meter_ids": [
+      188588,
+      121918,
+      187717,
+      194172,
+      171192,
+      139662,
+      119731,
+      117968,
+      182321,
+      151532,
+      185365,
+      181825,
+      193093,
+      105131,
+      125939,
+      128730,
+      107411,
+      153394,
+      194689,
+      195314,
+      109387,
+      165341,
+      166118,
+      144973
+    ],
+    "apartment_composite_note": "SYNTHETIC: drawn at random (seeded) from EKZ apartment meters; not this building"
+  },
+  "weather_heapo": {
+    "Temperature_avg_hourly__Hg": {
+      "coverage_hours": 8760,
+      "min": -11.3,
+      "max": 35.5
+    },
+    "Humidity_avg_hourly__Hg": {
+      "coverage_hours": 8760,
+      "min": 20.8,
+      "max": 100.0
+    },
+    "Sunshine_duration_hourly__Hg": {
+      "coverage_hours": 8760,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "Precipitation_total_hourly__Hg": {
+      "coverage_hours": 8760,
+      "min": 0.0,
+      "max": 16.6
+    },
+    "WindSpeed_hourly__Hg": {
+      "coverage_hours": 8760,
+      "min": 0.0,
+      "max": 11.2
+    },
+    "Temperature_avg_hourly__8jB": {
+      "coverage_hours": 8760,
+      "min": -12.9,
+      "max": 36.0
+    },
+    "Humidity_avg_hourly__8jB": {
+      "coverage_hours": 8760,
+      "min": 19.9,
+      "max": 100.0
+    },
+    "Sunshine_duration_hourly__8jB": {
+      "coverage_hours": 8760,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "Precipitation_total_hourly__8jB": {
+      "coverage_hours": 8760,
+      "min": 0.0,
+      "max": 17.6
+    },
+    "WindSpeed_hourly__8jB": {
+      "coverage_hours": 8760,
+      "min": 0.2,
+      "max": 13.4
+    }
+  }
+}
