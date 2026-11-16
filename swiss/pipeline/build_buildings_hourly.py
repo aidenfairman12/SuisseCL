@@ -172,11 +172,14 @@ def build_mfh(row, qc, apt_pool):
         a, _ = read_q(os.path.join(base, 'smart_meter_data', f'{int(m)}.csv'), 'timestamp_utc', ['kWh_to_installation'])
         series.append(hourly_sum(a['kWh_to_installation'])[0].rename(int(m)))
     apt = pd.concat(series, axis=1)
-    comp = apt.sum(axis=1, min_count=units)  # NaN if any drawn apartment is missing that hour
+    # D-015: composite = units x mean of the drawn apartments that are present, if >= 80 % of them are present;
+    # otherwise NaN (no further filling here). Replaces the earlier 'any missing -> NaN' rule.
+    n_avail = apt.notna().sum(axis=1)
+    comp = (apt.mean(axis=1) * units).where(n_avail >= int(np.ceil(0.8 * units)))
     h = pd.DataFrame({'kwh_hp': hp, 'nmiss_q_hp': hp_n,
                       'kwh_common_areas_measured': (common.sum(axis=1, min_count=common.shape[1]) if common is not None else np.nan),
                       'kwh_apartments_synthetic': comp,
-                      'n_apartments_in_composite': units})
+                      'n_apartments_in_composite': units, 'n_apartments_available': n_avail})
     q.rename(columns={'kWh_to_installation': 'kwh_hp', 'kWh_to_grid': 'kwh_to_grid'}).to_csv(
         os.path.join(CAN, 'quarter_hourly', f"{row['role']}_2023_15min.csv"), index_label='timestamp_utc')
     cols = [stats(h['kwh_hp'], 'kwh_hp'), stats(h['kwh_apartments_synthetic'], 'kwh_apartments_synthetic')]

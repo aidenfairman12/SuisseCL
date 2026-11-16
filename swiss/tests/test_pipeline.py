@@ -214,3 +214,54 @@ def test_tariff_structure_matches_documented_two_tier_schedule():
     assert set(t.total_rp_kwh.round(2)) == {15.05, 19.05}
     assert np.allclose(t.total_rp_kwh, t.energy_rp_kwh + t.grid_rp_kwh)
     assert np.allclose(t.total_chf_kwh * 100, t.total_rp_kwh)
+
+
+# ------------------------------------------------------------------ A5 thermal model tests
+def _thermal(role):
+    return pd.read_csv(os.path.join(CAN, 'thermal', f'{role}_2023_thermal_hourly.csv'), index_col='timestamp_utc', parse_dates=True)
+
+
+def test_cop_matches_citylearn_heatpump_implementation():
+    """Implementation test (NOT validation): our COP equals citylearn HeatPump.get_cop for the same eta, T_sup."""
+    from citylearn.energy_model import HeatPump
+    from swiss.models.heat_pump import cop
+    t = np.array([-12.0, -3.0, 0.0, 7.5, 15.0, 20.0, 34.0, 35.0, 36.0, 40.0])
+    for eta, tsup in [(0.37, 35.0), (0.36, 45.0), (0.38, 55.0)]:
+        hp = HeatPump(nominal_power=1.0, efficiency=eta, target_heating_temperature=tsup)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            ref = hp.get_cop(t, heating=True)
+        np.testing.assert_allclose(cop(t, eta, tsup), ref)
+
+
+def test_calibrate_eta_hits_target_spf():
+    from swiss.models.heat_pump import calibrate_eta, cop
+    rng = np.random.default_rng(1)
+    e = rng.uniform(0.1, 2.0, 500); t = rng.uniform(-10, 18, 500)
+    eta = calibrate_eta(e, t, 35.0, 3.7)
+    assert abs((e * cop(t, eta, 35.0)).sum() / e.sum() - 3.7) < 1e-6
+
+
+@need_canonical
+@pytest.mark.parametrize('role', ROLES)
+def test_thermal_outputs_valid_and_energy_split_conserved(role):
+    d = _thermal(role)
+    assert len(d) == 8760 and d.notna().all().all()
+    assert (d.heating_demand_kwh >= 0).all() and (d.dhw_demand_kwh >= 0).all()
+    assert np.allclose(d.e_hp_baseline_kwh + d.e_hp_space_heating_kwh, d.e_hp_kwh)
+    assert (d.e_hp_space_heating_kwh >= -1e-12).all() and (d.cop_space_heating <= 20).all()
+
+
+@need_canonical
+def test_implied_spf_matches_documented_targets():
+    params = json.load(open(os.path.join(CAN, 'thermal', 'thermal_params.json')))
+    for role in ROLES:
+        d = _thermal(role)
+        sh = d.heating_demand_kwh.sum() / d.e_hp_space_heating_kwh.sum()
+        dhw = d.dhw_demand_kwh.sum() / d.e_hp_baseline_kwh.sum()
+        comb = (d.heating_demand_kwh.sum() + d.dhw_demand_kwh.sum()) / d.e_hp_kwh.sum()
+        assert abs(dhw - 2.8) < 1e-3
+        if role.startswith('SFH'):
+            assert abs(sh - 3.7) < 1e-3
+        else:
+            assert abs(comb - 3.1) < 1e-3
+        assert 0.3 < params[role]['eta_sh'] < 0.45  # Carnot fraction within plausible air-source range

@@ -1,0 +1,56 @@
+{
+ "SFH-low": {
+  "mode_target": "SH",
+  "spf_target": 3.7,
+  "eta_sh": 0.3692164947405361,
+  "eta_dhw": 0.37284840973679867,
+  "T_sup_sh_c": 35.0,
+  "T_sup_dhw_c": 55.0,
+  "spf_dhw": 2.8
+ },
+ "SFH-mid": {
+  "mode_target": "SH",
+  "spf_target": 3.7,
+  "eta_sh": 0.37014861767387586,
+  "eta_dhw": 0.38246045332790335,
+  "T_sup_sh_c": 35.0,
+  "T_sup_dhw_c": 55.0,
+  "spf_dhw": 2.8
+ },
+ "SFH-high": {
+  "mode_target": "SH",
+  "spf_target": 3.7,
+  "eta_sh": 0.3486076417785168,
+  "eta_dhw": 0.3879227876355734,
+  "T_sup_sh_c": 35.0,
+  "T_sup_dhw_c": 55.0,
+  "spf_dhw": 2.8
+ },
+ "MFH-small": {
+  "mode_target": "SH+DHW",
+  "spf_target": 3.1,
+  "eta_sh": 0.37421940651378904,
+  "eta_dhw": 0.37300380700334923,
+  "T_sup_sh_c": 45.0,
+  "T_sup_dhw_c": 55.0,
+  "spf_dhw": 2.8
+ },
+ "MFH-medium": {
+  "mode_target": "SH+DHW",
+  "spf_target": 3.1,
+  "eta_sh": 0.35960102098947244,
+  "eta_dhw": 0.355880281121021,
+  "T_sup_sh_c": 45.0,
+  "T_sup_dhw_c": 55.0,
+  "spf_dhw": 2.8
+ },
+ "MFH-large": {
+  "mode_target": "SH+DHW",
+  "spf_target": 3.1,
+  "eta_sh": 0.3647781037320805,
+  "eta_dhw": 0.3685169908160032,
+  "T_sup_sh_c": 45.0,
+  "T_sup_dhw_c": 55.0,
+  "spf_dhw": 2.8
+ }
+}
