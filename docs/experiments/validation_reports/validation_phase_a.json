@@ -1,0 +1,468 @@
+{
+ "V1_electricity_closure": {
+  "zero_action|SFH-low": {
+   "max_abs_err_kwh": 4.2747706174850464e-07,
+   "sum_net": 10741.590283602476
+  },
+  "zero_action|SFH-mid": {
+   "max_abs_err_kwh": 6.556510925292969e-07,
+   "sum_net": 11315.606293285266
+  },
+  "zero_action|SFH-high": {
+   "max_abs_err_kwh": 9.164214134216309e-07,
+   "sum_net": 14260.455169975758
+  },
+  "zero_action|MFH-small": {
+   "max_abs_err_kwh": 6.556510925292969e-07,
+   "sum_net": 25123.576933562756
+  },
+  "zero_action|MFH-medium": {
+   "max_abs_err_kwh": 1.9073486328125e-06,
+   "sum_net": 82733.63228559494
+  },
+  "zero_action|MFH-large": {
+   "max_abs_err_kwh": 1.6689300537109375e-06,
+   "sum_net": 70540.26489877701
+  },
+  "basic_rbc|SFH-low": {
+   "max_abs_err_kwh": 4.7497451305389404e-07,
+   "sum_net": 10771.118949860334
+  },
+  "basic_rbc|SFH-mid": {
+   "max_abs_err_kwh": 5.960464477539062e-07,
+   "sum_net": 11412.991330413985
+  },
+  "basic_rbc|SFH-high": {
+   "max_abs_err_kwh": 9.164214134216309e-07,
+   "sum_net": 14561.611234430224
+  },
+  "basic_rbc|MFH-small": {
+   "max_abs_err_kwh": 4.76837158203125e-07,
+   "sum_net": 25469.355069994926
+  },
+  "basic_rbc|MFH-medium": {
+   "max_abs_err_kwh": 1.9073486328125e-06,
+   "sum_net": 83627.20628476143
+  },
+  "basic_rbc|MFH-large": {
+   "max_abs_err_kwh": 1.430511474609375e-06,
+   "sum_net": 71449.79892539978
+  }
+ },
+ "V2_heat_and_storage_balance": {
+  "zero_action|SFH-low|heating": {
+   "max_abs_demand_closure_err_kwh": 0.0,
+   "tank_capacity_kwh": 3.489,
+   "soc_min": 0.0,
+   "soc_max": 0.0,
+   "implied_loss_kwh": 0.0,
+   "implied_loss_share_of_charge": 0.0
+  },
+  "zero_action|SFH-low|dhw": {
+   "max_abs_demand_closure_err_kwh": 0.0
+  },
+  "zero_action|SFH-mid|heating": {
+   "max_abs_demand_closure_err_kwh": 0.0,
+   "tank_capacity_kwh": 3.489,
+   "soc_min": 0.0,
+   "soc_max": 0.0,
+   "implied_loss_kwh": 0.0,
+   "implied_loss_share_of_charge": 0.0
+  },
+  "zero_action|SFH-mid|dhw": {
+   "max_abs_demand_closure_err_kwh": 0.0,
+   "tank_capacity_kwh": 3.6873,
+   "soc_min": 0.0,
+   "soc_max": 0.0,
+   "implied_loss_kwh": 0.0,
+   "implied_loss_share_of_charge": 0.0
+  },
+  "zero_action|SFH-high|heating": {
+   "max_abs_demand_closure_err_kwh": 0.0,
+   "tank_capacity_kwh": 3.489,
+   "soc_min": 0.0,
+   "soc_max": 0.0,
+   "implied_loss_kwh": 0.0,
+   "implied_loss_share_of_charge": 0.0
+  },
+  "zero_action|SFH-high|dhw": {
+   "max_abs_demand_closure_err_kwh": 0.0,
+   "tank_capacity_kwh": 24.3045,
+   "soc_min": 0.0,
+   "soc_max": 0.0,
+   "implied_loss_kwh": 0.0,
+   "implied_loss_share_of_charge": 0.0
+  },
+  "zero_action|MFH-small|heating": {
+   "max_abs_demand_closure_err_kwh": 0.0,
+   "tank_capacity_kwh": 2.9075,
+   "soc_min": 0.0,
+   "soc_max": 0.0,
+   "implied_loss_kwh": 0.0,
+   "implied_loss_share_of_charge": 0.0
+  },
+  "zero_action|MFH-small|dhw": {
+   "max_abs_demand_closure_err_kwh": 0.0,
+   "tank_capacity_kwh": 20.7689,
+   "soc_min": 0.0,
+   "soc_max": 0.0,
+   "implied_loss_kwh": 0.0,
+   "implied_loss_share_of_charge": 0.0
+  },
+  "zero_action|MFH-medium|heating": {
+   "max_abs_demand_closure_err_kwh": 0.0,
+   "tank_capacity_kwh": 8.141,
+   "soc_min": 0.0,
+   "soc_max": 0.0,
+   "implied_loss_kwh": 0.0,
+   "implied_loss_share_of_charge": 0.0
+  },
+  "zero_action|MFH-medium|dhw": {
+   "max_abs_demand_closure_err_kwh": 0.0,
+   "tank_capacity_kwh": 47.7199,
+   "soc_min": 0.0,
+   "soc_max": 0.0,
+   "implied_loss_kwh": 0.0,
+   "implied_loss_share_of_charge": 0.0
+  },
+  "zero_action|MFH-large|heating": {
+   "max_abs_demand_closure_err_kwh": 0.0,
+   "tank_capacity_kwh": 13.956,
+   "soc_min": 0.0,
+   "soc_max": 0.0,
+   "implied_loss_kwh": 0.0,
+   "implied_loss_share_of_charge": 0.0
+  },
+  "zero_action|MFH-large|dhw": {
+   "max_abs_demand_closure_err_kwh": 0.0,
+   "tank_capacity_kwh": 46.504,
+   "soc_min": 0.0,
+   "soc_max": 0.0,
+   "implied_loss_kwh": 0.0,
+   "implied_loss_share_of_charge": 0.0
+  },
+  "basic_rbc|SFH-low|heating": {
+   "max_abs_demand_closure_err_kwh": 5.066394805908203e-07,
+   "tank_capacity_kwh": 3.489,
+   "soc_min": 0.0,
+   "soc_max": 1.0,
+   "implied_loss_kwh": 102.79932361895777,
+   "implied_loss_share_of_charge": 0.18607627420748418
+  },
+  "basic_rbc|SFH-low|dhw": {
+   "max_abs_demand_closure_err_kwh": 0.0
+  },
+  "basic_rbc|SFH-mid|heating": {
+   "max_abs_demand_closure_err_kwh": 4.6193599700927734e-07,
+   "tank_capacity_kwh": 3.489,
+   "soc_min": 0.0,
+   "soc_max": 1.0,
+   "implied_loss_kwh": 105.92029580749664,
+   "implied_loss_share_of_charge": 0.11830400452751225
+  },
+  "basic_rbc|SFH-mid|dhw": {
+   "max_abs_demand_closure_err_kwh": 0.0,
+   "tank_capacity_kwh": 3.6873,
+   "soc_min": 0.0,
+   "soc_max": 1.0,
+   "implied_loss_kwh": 112.49866815676465,
+   "implied_loss_share_of_charge": 0.17714639152788636
+  },
+  "basic_rbc|SFH-high|heating": {
+   "max_abs_demand_closure_err_kwh": 5.066394805908203e-07,
+   "tank_capacity_kwh": 3.489,
+   "soc_min": 0.0,
+   "soc_max": 1.0,
+   "implied_loss_kwh": 105.18047212683456,
+   "implied_loss_share_of_charge": 0.13978752137960943
+  },
+  "basic_rbc|SFH-high|dhw": {
+   "max_abs_demand_closure_err_kwh": 0.0,
+   "tank_capacity_kwh": 24.3045,
+   "soc_min": 0.0,
+   "soc_max": 1.0,
+   "implied_loss_kwh": 700.8324562507756,
+   "implied_loss_share_of_charge": 0.4515367172544072
+  },
+  "basic_rbc|MFH-small|heating": {
+   "max_abs_demand_closure_err_kwh": 7.450580596923828e-07,
+   "tank_capacity_kwh": 2.9075,
+   "soc_min": 0.0,
+   "soc_max": 1.0,
+   "implied_loss_kwh": 86.89559312703088,
+   "implied_loss_share_of_charge": 0.12283767715110477
+  },
+  "basic_rbc|MFH-small|dhw": {
+   "max_abs_demand_closure_err_kwh": 1.1920928955078125e-07,
+   "tank_capacity_kwh": 20.7689,
+   "soc_min": 0.0,
+   "soc_max": 1.0,
+   "implied_loss_kwh": 509.53709145754425,
+   "implied_loss_share_of_charge": 0.11849223324129102
+  },
+  "basic_rbc|MFH-medium|heating": {
+   "max_abs_demand_closure_err_kwh": 3.2782554626464844e-06,
+   "tank_capacity_kwh": 8.141,
+   "soc_min": 0.0,
+   "soc_max": 1.0,
+   "implied_loss_kwh": 244.77695814732834,
+   "implied_loss_share_of_charge": 0.1415249903166922
+  },
+  "basic_rbc|MFH-medium|dhw": {
+   "max_abs_demand_closure_err_kwh": 7.152557373046875e-07,
+   "tank_capacity_kwh": 47.7199,
+   "soc_min": 0.0,
+   "soc_max": 1.0,
+   "implied_loss_kwh": 1492.9938688628727,
+   "implied_loss_share_of_charge": 0.18382432063828832
+  },
+  "basic_rbc|MFH-large|heating": {
+   "max_abs_demand_closure_err_kwh": 2.0265579223632812e-06,
+   "tank_capacity_kwh": 13.956,
+   "soc_min": 0.0,
+   "soc_max": 1.0,
+   "implied_loss_kwh": 421.7675464614115,
+   "implied_loss_share_of_charge": 0.13015453816040087
+  },
+  "basic_rbc|MFH-large|dhw": {
+   "max_abs_demand_closure_err_kwh": 2.384185791015625e-07,
+   "tank_capacity_kwh": 46.504,
+   "soc_min": 0.0,
+   "soc_max": 1.0,
+   "implied_loss_kwh": 1458.2410789750813,
+   "implied_loss_share_of_charge": 0.18837454312360263
+  }
+ },
+ "V3_stability": {
+  "zero_action|SFH-low|heating": {
+   "soc_in_0_1": true
+  },
+  "zero_action|SFH-low|finite": true,
+  "zero_action|SFH-mid|heating": {
+   "soc_in_0_1": true
+  },
+  "zero_action|SFH-mid|dhw": {
+   "soc_in_0_1": true
+  },
+  "zero_action|SFH-mid|finite": true,
+  "zero_action|SFH-high|heating": {
+   "soc_in_0_1": true
+  },
+  "zero_action|SFH-high|dhw": {
+   "soc_in_0_1": true
+  },
+  "zero_action|SFH-high|finite": true,
+  "zero_action|MFH-small|heating": {
+   "soc_in_0_1": true
+  },
+  "zero_action|MFH-small|dhw": {
+   "soc_in_0_1": true
+  },
+  "zero_action|MFH-small|finite": true,
+  "zero_action|MFH-medium|heating": {
+   "soc_in_0_1": true
+  },
+  "zero_action|MFH-medium|dhw": {
+   "soc_in_0_1": true
+  },
+  "zero_action|MFH-medium|finite": true,
+  "zero_action|MFH-large|heating": {
+   "soc_in_0_1": true
+  },
+  "zero_action|MFH-large|dhw": {
+   "soc_in_0_1": true
+  },
+  "zero_action|MFH-large|finite": true,
+  "basic_rbc|SFH-low|heating": {
+   "soc_in_0_1": true
+  },
+  "basic_rbc|SFH-low|finite": true,
+  "basic_rbc|SFH-mid|heating": {
+   "soc_in_0_1": true
+  },
+  "basic_rbc|SFH-mid|dhw": {
+   "soc_in_0_1": true
+  },
+  "basic_rbc|SFH-mid|finite": true,
+  "basic_rbc|SFH-high|heating": {
+   "soc_in_0_1": true
+  },
+  "basic_rbc|SFH-high|dhw": {
+   "soc_in_0_1": true
+  },
+  "basic_rbc|SFH-high|finite": true,
+  "basic_rbc|MFH-small|heating": {
+   "soc_in_0_1": true
+  },
+  "basic_rbc|MFH-small|dhw": {
+   "soc_in_0_1": true
+  },
+  "basic_rbc|MFH-small|finite": true,
+  "basic_rbc|MFH-medium|heating": {
+   "soc_in_0_1": true
+  },
+  "basic_rbc|MFH-medium|dhw": {
+   "soc_in_0_1": true
+  },
+  "basic_rbc|MFH-medium|finite": true,
+  "basic_rbc|MFH-large|heating": {
+   "soc_in_0_1": true
+  },
+  "basic_rbc|MFH-large|dhw": {
+   "soc_in_0_1": true
+  },
+  "basic_rbc|MFH-large|finite": true
+ },
+ "V4_no_double_counting_SFH": {
+  "SFH-low": {
+   "sim_net_kwh": 10741.590283602476,
+   "measured_total_kwh": 10741.584,
+   "rel_diff": 5.849791311391176e-07,
+   "max_abs_hourly_diff": 7.316589354822156e-06
+  },
+  "SFH-mid": {
+   "sim_net_kwh": 11315.606293285266,
+   "measured_total_kwh": 11315.6115,
+   "rel_diff": -4.601355159040895e-07,
+   "max_abs_hourly_diff": 4.905700683899283e-06
+  },
+  "SFH-high": {
+   "sim_net_kwh": 14260.455169975758,
+   "measured_total_kwh": 14260.465500000002,
+   "rel_diff": -7.243819806911277e-07,
+   "max_abs_hourly_diff": 9.918212890980271e-06
+  }
+ },
+ "V5_tariff_arithmetic_SFH-mid": {
+  "cost_15min_chf": 1836.1772394999998,
+  "cost_hourly_chf": 1836.1772394999996,
+  "rel_diff": -1.2382991715175984e-16,
+  "note": "measured hours only (24 h gap excluded in both); excl. VAT and levies"
+ },
+ "V6_seasonality": {
+  "SFH-low": {
+   "corr_monthly_hp_elec_vs_temp": -0.8899466466012567,
+   "peak_month_heating_demand": 1,
+   "summer_share_of_heating_demand_JJA": 0.03324845457109898
+  },
+  "SFH-mid": {
+   "corr_monthly_hp_elec_vs_temp": -0.8920563711415888,
+   "peak_month_heating_demand": 1,
+   "summer_share_of_heating_demand_JJA": 0.04182959292742816
+  },
+  "SFH-high": {
+   "corr_monthly_hp_elec_vs_temp": -0.848066441023237,
+   "peak_month_heating_demand": 1,
+   "summer_share_of_heating_demand_JJA": 0.08346214284531493
+  },
+  "MFH-small": {
+   "corr_monthly_hp_elec_vs_temp": -0.8374158406571516,
+   "peak_month_heating_demand": 1,
+   "summer_share_of_heating_demand_JJA": 0.16888463867830503
+  },
+  "MFH-medium": {
+   "corr_monthly_hp_elec_vs_temp": -0.789864495507524,
+   "peak_month_heating_demand": 1,
+   "summer_share_of_heating_demand_JJA": 0.15220681627750515
+  },
+  "MFH-large": {
+   "corr_monthly_hp_elec_vs_temp": -0.8028723942596999,
+   "peak_month_heating_demand": 1,
+   "summer_share_of_heating_demand_JJA": 0.150420789057632
+  }
+ },
+ "V7_timestamp_alignment_demand_vs_temperature": {
+  "SFH-low": {
+   "corr_by_lag_h": {
+    "-4": -0.2921306239103757,
+    "-3": -0.30963340256458327,
+    "-2": -0.32647169437245827,
+    "-1": -0.33963412901806594,
+    "0": -0.34867180883988264,
+    "1": -0.34773938427824136,
+    "2": -0.3381539362629265,
+    "3": -0.3249417279047319,
+    "4": -0.3101874185273975
+   },
+   "best_lag_h": 0
+  },
+  "SFH-mid": {
+   "corr_by_lag_h": {
+    "-4": -0.4103997591712011,
+    "-3": -0.4566870217335006,
+    "-2": -0.49792858971108517,
+    "-1": -0.5294765962774062,
+    "0": -0.5504911038815302,
+    "1": -0.5512491379835395,
+    "2": -0.5360603778600245,
+    "3": -0.5138665752246299,
+    "4": -0.49340542199039367
+   },
+   "best_lag_h": 1
+  },
+  "SFH-high": {
+   "corr_by_lag_h": {
+    "-4": -0.17011629694815647,
+    "-3": -0.20366326521216627,
+    "-2": -0.23679905553587197,
+    "-1": -0.2610916595389301,
+    "0": -0.2663297763557928,
+    "1": -0.26207969438971906,
+    "2": -0.2590693754320488,
+    "3": -0.25158361936824625,
+    "4": -0.2545645197547028
+   },
+   "best_lag_h": 0
+  },
+  "MFH-small": {
+   "corr_by_lag_h": {
+    "-4": -0.3370058173228729,
+    "-3": -0.35476404126472505,
+    "-2": -0.37590361315549864,
+    "-1": -0.39939145764725603,
+    "0": -0.41644382122530416,
+    "1": -0.42355630783829373,
+    "2": -0.41847206253751423,
+    "3": -0.4085237694057824,
+    "4": -0.39376778695966086
+   },
+   "best_lag_h": 1
+  },
+  "MFH-medium": {
+   "corr_by_lag_h": {
+    "-4": -0.10885326249636691,
+    "-3": -0.09862484249006073,
+    "-2": -0.08667847604725046,
+    "-1": -0.08186921818994815,
+    "0": -0.08660051170876742,
+    "1": -0.09144863455274384,
+    "2": -0.09936348903640108,
+    "3": -0.10671821994422075,
+    "4": -0.11148070416170214
+   },
+   "best_lag_h": 4
+  },
+  "MFH-large": {
+   "corr_by_lag_h": {
+    "-4": -0.18766517697563387,
+    "-3": -0.18018125997601306,
+    "-2": -0.16663938004101703,
+    "-1": -0.1527276957430402,
+    "0": -0.1433165274493161,
+    "1": -0.13578626598105023,
+    "2": -0.1382894272658632,
+    "3": -0.1462580465163931,
+    "4": -0.15771357693720683
+   },
+   "best_lag_h": -4
+  }
+ },
+ "V8_carbon_arithmetic": {
+  "zero_action_kg": 13522.757157033557,
+  "basic_rbc_kg": 13883.916837991403,
+  "ratio_independent": 1.0267075476372063,
+  "ratio_citylearn_kpi": 1.0235570475520495,
+  "abs_diff": 0.0031505000851568266,
+  "zero_action_mean_g_per_kwh": 62.97999315403874
+ }
+}

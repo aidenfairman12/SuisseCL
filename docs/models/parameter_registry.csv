@@ -18,3 +18,15 @@ M-001,eta Carnot fraction space heating MFH-medium,eta_sh,0.3596,-,calibrated to
 M-001,eta Carnot fraction DHW MFH-medium,eta_dhw,0.3559,-,calibrated to DHW SPF 2.8 with T_sup 55 C,calibrated
 M-001,eta Carnot fraction space heating MFH-large,eta_sh,0.3648,-,calibrated to SPF target 3.1 (SH+DHW) with T_sup 45.0 C (swiss/pipeline/build_thermal_demand.py),calibrated
 M-001,eta Carnot fraction DHW MFH-large,eta_dhw,0.3685,-,calibrated to DHW SPF 2.8 with T_sup 55 C,calibrated
+M-002,EF Nuclear,ef_g_per_kwh,12,gCO2eq/kWh,IPCC AR5 Annex III Table A.III.2 lifecycle median,literature
+M-002,EF Hydropower (RoR, reservoir),ef_g_per_kwh,24,gCO2eq/kWh,same,literature
+M-002,EF Biomass dedicated,ef_g_per_kwh,230,gCO2eq/kWh,same,literature
+M-002,EF Geothermal,ef_g_per_kwh,38,gCO2eq/kWh,same,literature
+M-002,EF Wind onshore,ef_g_per_kwh,11,gCO2eq/kWh,same,literature
+M-002,EF Wind offshore,ef_g_per_kwh,12,gCO2eq/kWh,same,literature
+M-002,EF Coal PC,ef_g_per_kwh,820,gCO2eq/kWh,same,literature
+M-002,EF Gas combined cycle,ef_g_per_kwh,490,gCO2eq/kWh,same,literature
+M-002,EF Solar PV rooftop (CH),ef_g_per_kwh,41,gCO2eq/kWh,same, judgement A-009,literature
+M-002,EF Solar PV utility (neighbours),ef_g_per_kwh,48,gCO2eq/kWh,same, judgement A-009,literature
+M-002,EF Lignite / coal-derived gas / oil (proxy),ef_g_per_kwh,820,gCO2eq/kWh,PROXY coal PC A-006/A-007,literature
+M-002,EF Waste / Others (proxy),ef_g_per_kwh,230,gCO2eq/kWh,PROXY biomass A-008,literature

@@ -50,8 +50,9 @@ def solve_eta_sh_combined(e_sh, e_dhw, t, t_sh, eta_dhw, target):
     return (lo + hi) / 2
 
 
-def run(spf_scale=1.0, write=True):
+def run(spf_scale=1.0, write=True, out_subdir='thermal', t_sh=None):
     w = pd.read_csv(os.path.join(CAN, 'weather_klo_2023_hourly.csv'), index_col='timestamp_utc', parse_dates=True)
+    t_sh_map = t_sh or T_SH
     out, qc = {}, {}
     for role in ROLES:
         kind = role[:3]
@@ -64,10 +65,10 @@ def run(spf_scale=1.0, write=True):
         target = target * spf_scale
         eta_dhw = calibrate_eta(e_d, t.to_numpy(), T_DHW, SPF_DHW * spf_scale)
         if mode == 'SH':
-            eta_sh = calibrate_eta(e_s, t.to_numpy(), T_SH[kind], target)
+            eta_sh = calibrate_eta(e_s, t.to_numpy(), t_sh_map[kind], target)
         else:
-            eta_sh = solve_eta_sh_combined(e_s, e_d, t.to_numpy(), T_SH[kind], eta_dhw, target)
-        cop_sh = cop(t.to_numpy(), eta_sh, T_SH[kind])
+            eta_sh = solve_eta_sh_combined(e_s, e_d, t.to_numpy(), t_sh_map[kind], eta_dhw, target)
+        cop_sh = cop(t.to_numpy(), eta_sh, t_sh_map[kind])
         cop_dhw = cop(t.to_numpy(), eta_dhw, T_DHW)
         q_sh, q_dhw = e_s * cop_sh, e_d * cop_dhw
         if kind == 'SFH':
@@ -87,7 +88,7 @@ def run(spf_scale=1.0, write=True):
         cold = day[day.outdoor_temp_c < 12]
         hdd = np.maximum(15.0 - cold.outdoor_temp_c.to_numpy(), 0)
         qtot = (cold.heating_demand_kwh + cold.dhw_demand_kwh).to_numpy()
-        qc[role] = {'mode_target': mode, 'spf_target': target, 'eta_sh': eta_sh, 'eta_dhw': eta_dhw, 'T_sup_sh_c': T_SH[kind],
+        qc[role] = {'mode_target': mode, 'spf_target': target, 'eta_sh': eta_sh, 'eta_dhw': eta_dhw, 'T_sup_sh_c': t_sh_map[kind],
                     'baseline_kwh_per_day_B': B, 'baseline_share_of_hp_electricity': float(e_d.sum() / np.nansum(e)),
                     'annual_hp_electricity_kwh': float(np.nansum(e)), 'annual_heating_demand_kwh': float(q_sh.sum()),
                     'annual_dhw_demand_kwh': float(q_dhw.sum()),
@@ -104,12 +105,12 @@ def run(spf_scale=1.0, write=True):
             qc[role]['annual_total_heat_kwh_per_m2'] = float((q_sh.sum() + q_dhw.sum()) / AREA[role])
         qc[role]['nonshiftable_classification'] = nonshift_class
     if write:
-        os.makedirs(os.path.join(CAN, 'thermal'), exist_ok=True)
+        os.makedirs(os.path.join(CAN, out_subdir), exist_ok=True)
         for role, d in out.items():
-            d.to_csv(os.path.join(CAN, 'thermal', f'{role}_2023_thermal_hourly.csv'), index_label='timestamp_utc')
+            d.to_csv(os.path.join(CAN, out_subdir, f'{role}_2023_thermal_hourly.csv'), index_label='timestamp_utc')
         json.dump({r: {k: v for k, v in q.items() if k in ('eta_sh', 'eta_dhw', 'T_sup_sh_c', 'mode_target', 'spf_target')}
                    | {'T_sup_dhw_c': T_DHW, 'spf_dhw': SPF_DHW} for r, q in qc.items()},
-                  open(os.path.join(CAN, 'thermal', 'thermal_params.json'), 'w'), indent=1)
+                  open(os.path.join(CAN, out_subdir, 'thermal_params.json'), 'w'), indent=1)
     return out, qc
 
 

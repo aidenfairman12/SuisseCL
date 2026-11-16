@@ -1,0 +1,6 @@
+ALG-001_zero_action {'reward_return': -26277.0, 'district_import_kwh': 214715.126, 'district_peak_kw': 72.013, 'cost_chf_excl_vat': 35750.324, 'mean_daily_peak_kw': 45.507, 'high_tariff_import_share': 0.4}
+ALG-002_business_as_usual {'reward_return': -26277.0, 'district_import_kwh': 214715.126, 'district_peak_kw': 72.013, 'cost_chf_excl_vat': 35750.324, 'mean_daily_peak_kw': 45.507, 'high_tariff_import_share': 0.4}
+ALG-003_basic_rbc {'reward_return': -26226.716, 'district_import_kwh': 217292.082, 'district_peak_kw': 67.636, 'cost_chf_excl_vat': 35930.577, 'mean_daily_peak_kw': 45.349, 'high_tariff_import_share': 0.371}
+ALG-004_hour_rbc_tariff_r0.05 {'reward_return': -26311.369, 'district_import_kwh': 216939.97, 'district_peak_kw': 69.302, 'cost_chf_excl_vat': 35918.178, 'mean_daily_peak_kw': 45.485, 'high_tariff_import_share': 0.377}
+ALG-004_hour_rbc_tariff_r0.10 {'reward_return': -26285.959, 'district_import_kwh': 217200.447, 'district_peak_kw': 68.277, 'cost_chf_excl_vat': 35891.518, 'mean_daily_peak_kw': 45.491, 'high_tariff_import_share': 0.369}
+ALG-004_hour_rbc_tariff_r0.20 {'reward_return': -26581.979, 'district_import_kwh': 217233.363, 'district_peak_kw': 72.868, 'cost_chf_excl_vat': 35853.509, 'mean_daily_peak_kw': 45.517, 'high_tariff_import_share': 0.364}

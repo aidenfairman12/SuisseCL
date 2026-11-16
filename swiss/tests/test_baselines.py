@@ -47,3 +47,16 @@ def test_rbc_moves_energy_and_reward_is_finite_negative():
     assert np.isfinite(r0) and r0 < 0 and np.isfinite(r1)
     assert not np.allclose(i0, i1)          # storage actions change the load shape
     assert i1.sum() >= i0.sum() * 0.99      # storage losses cannot create energy
+
+
+def test_validation_report_checks_pass_thresholds():
+    import json
+    p = os.path.join(ROOT, 'docs', 'experiments', 'validation_reports', 'validation_phase_a.json')
+    if not os.path.exists(p):
+        pytest.skip('validation not run')
+    r = json.load(open(p))
+    assert max(v['max_abs_err_kwh'] for v in r['V1_electricity_closure'].values()) < 1e-3
+    assert max(v['max_abs_demand_closure_err_kwh'] for v in r['V2_heat_and_storage_balance'].values()) < 1e-3
+    assert all(v if isinstance(v, bool) else v['soc_in_0_1'] for v in r['V3_stability'].values())
+    assert all(abs(v['rel_diff']) < 1e-4 for v in r['V4_no_double_counting_SFH'].values())
+    assert all(v['implied_loss_kwh'] >= -1e-6 for v in r['V2_heat_and_storage_balance'].values() if 'implied_loss_kwh' in v)

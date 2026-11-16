@@ -32,10 +32,10 @@ def buffer_kwh(role):
     return litres * WH_PER_L_K * 10.0 / 1000.0
 
 
-def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None):
+def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_eff=TANK_EFF, thermal_subdir='thermal'):
     out_dir = os.path.join(ROOT, 'swiss', 'datasets', out_name)
     os.makedirs(out_dir, exist_ok=True)
-    params = json.load(open(os.path.join(CAN, 'thermal', 'thermal_params.json')))
+    params = json.load(open(os.path.join(CAN, thermal_subdir, 'thermal_params.json')))
     w = pd.read_csv(os.path.join(CAN, 'weather_klo_2023_hourly.csv'), index_col='timestamp_utc', parse_dates=True)
     tar = pd.read_csv(os.path.join(CAN, 'tariff_ekz_standard_2023_hourly.csv'), index_col='timestamp_utc', parse_dates=True)
     idx = w.index
@@ -67,7 +67,7 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None):
 
     buildings, manifest = {}, {}
     for i, role in enumerate(ROLES, 1):
-        d = pd.read_csv(os.path.join(CAN, 'thermal', f'{role}_2023_thermal_hourly.csv'), index_col='timestamp_utc', parse_dates=True)
+        d = pd.read_csv(os.path.join(CAN, thermal_subdir, f'{role}_2023_thermal_hourly.csv'), index_col='timestamp_utc', parse_dates=True)
         assert (d.index == idx).all()
         name = f'Building_{i}'
         es = pd.DataFrame({
@@ -93,12 +93,12 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None):
                             'attributes': {'nominal_power': round(max(peak_dhw * 1.1, 0.01), 4), 'efficiency': round(p['eta_dhw'], 6),
                                            'target_heating_temperature': p['T_sup_dhw_c'], 'target_cooling_temperature': 8.0}},
              'heating_storage': {'type': 'citylearn.energy_model.StorageTank', 'autosize': False,
-                                 'attributes': {'capacity': round(sh_cap, 4), 'efficiency': TANK_EFF, 'loss_coefficient': LOSS_COEFF}}}
+                                 'attributes': {'capacity': round(sh_cap, 4), 'efficiency': tank_eff, 'loss_coefficient': LOSS_COEFF}}}
         dhw_cap = 0.0
         if mean_dhw_day >= DHW_MIN_KWH_DAY:
             dhw_cap = mean_dhw_day * tank_scale
             b['dhw_storage'] = {'type': 'citylearn.energy_model.StorageTank', 'autosize': False,
-                                'attributes': {'capacity': round(dhw_cap, 4), 'efficiency': TANK_EFF, 'loss_coefficient': LOSS_COEFF}}
+                                'attributes': {'capacity': round(dhw_cap, 4), 'efficiency': tank_eff, 'loss_coefficient': LOSS_COEFF}}
         buildings[name] = b
         manifest[name] = {'role': role, 'heating_tank_kwh_th': round(sh_cap, 3), 'dhw_tank_kwh_th': round(dhw_cap, 3),
                           'hp_sh_nominal_kw': b['heating_device']['attributes']['nominal_power'],
@@ -131,5 +131,7 @@ if __name__ == '__main__':
     ap.add_argument('--tank-scale', type=float, default=1.0)
     ap.add_argument('--out-name', default='swiss_district_2023')
     ap.add_argument('--carbon-file', default=None)
+    ap.add_argument('--tank-eff', type=float, default=TANK_EFF)
+    ap.add_argument('--thermal-subdir', default='thermal')
     a = ap.parse_args()
-    main(a.tank_scale, a.out_name, a.carbon_file)
+    main(a.tank_scale, a.out_name, a.carbon_file, a.tank_eff, a.thermal_subdir)

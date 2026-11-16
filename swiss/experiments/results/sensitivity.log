@@ -1,0 +1,21 @@
+reference done
+tanks_x0.5 done
+tanks_x2 done
+tank_eff_0.99 done
+flat_cop_T80 done
+          variant        controller  cost_chf  cost_vs_zero_pct  import_vs_zero_pct  peak_vs_zero_pct  high_tariff_share_pts_vs_zero
+0       reference       zero_action  35750.32              0.00                0.00              0.00                           0.00
+1       reference         basic_rbc  35930.58              0.50                1.20             -6.08                          -2.86
+2       reference  tariff_rbc_r0.10  35891.52              0.39                1.16             -5.19                          -3.14
+3      tanks_x0.5       zero_action  35750.32              0.00                0.00              0.00                           0.00
+4      tanks_x0.5         basic_rbc  35828.35              0.22                0.69             -3.14                          -1.94
+5      tanks_x0.5  tariff_rbc_r0.10  35802.88              0.15                0.68             -3.57                          -2.18
+6        tanks_x2       zero_action  35750.32              0.00                0.00              0.00                           0.00
+7        tanks_x2         basic_rbc  36142.79              1.10                2.09             -6.74                          -4.03
+8        tanks_x2  tariff_rbc_r0.10  36081.56              0.93                2.01              1.79                          -4.43
+9   tank_eff_0.99       zero_action  35750.32              0.00                0.00              0.00                           0.00
+10  tank_eff_0.99         basic_rbc  35867.91              0.33                1.01             -6.13                          -2.81
+11  tank_eff_0.99  tariff_rbc_r0.10  35830.23              0.22                0.97             -5.19                          -3.09
+12   flat_cop_T80       zero_action  35750.32              0.00                0.00              0.00                           0.00
+13   flat_cop_T80         basic_rbc  35917.88              0.47                1.16             -5.97                          -2.85
+14   flat_cop_T80  tariff_rbc_r0.10  35879.65              0.36                1.12             -5.36                          -3.13
