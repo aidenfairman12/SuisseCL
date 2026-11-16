@@ -60,3 +60,14 @@ def test_validation_report_checks_pass_thresholds():
     assert all(v if isinstance(v, bool) else v['soc_in_0_1'] for v in r['V3_stability'].values())
     assert all(abs(v['rel_diff']) < 1e-4 for v in r['V4_no_double_counting_SFH'].values())
     assert all(v['implied_loss_kwh'] >= -1e-6 for v in r['V2_heat_and_storage_balance'].values() if 'implied_loss_kwh' in v)
+
+
+def test_carbon_epfl_comparison_results_recorded_and_shape_agrees():
+    import json
+    p = os.path.join(ROOT, 'docs', 'data', 'data_quality_reports', 'carbon_epfl_comparison.json')
+    if not os.path.exists(p):
+        pytest.skip('comparison not run')
+    r = json.load(open(p))
+    for y in ('2016', '2017'):
+        assert r[y]['hourly_consumption_vs_epfl']['pearson'] > 0.9 and r[y]['monthly_corr'] > 0.9
+        assert 0.4 < r[y]['hourly_consumption_vs_epfl']['ratio_mean'] < 0.9   # level differs from EPFL (documented)
