@@ -1,0 +1,7 @@
+role,source,id,stratum,n_pool,kwh_total_2023,kwh_hp_2023,area_m2,residents,pv_flag,units,object_id
+SFH-low,HEAPO,7069411,low,9,10721.283,4722.915999999999,220.0,4.0,False,1,
+SFH-mid,HEAPO,8011310,mid,8,11293.139,6037.982999999999,166.0,4.0,,1,
+SFH-high,HEAPO,1181060,high,9,14221.240999999998,11493.167,260.0,2.0,,1,
+MFH-small,EKZ,154832,small,38,,12715.387,,,,5,229735.0
+MFH-medium,EKZ,145442,medium,18,,25698.188,,,,14,293577.0
+MFH-large,EKZ,197873,large,3,,21101.383,,,,24,274987.0

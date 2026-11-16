@@ -1,0 +1,10 @@
+{
+  "kwh_hp_f/kwh_other_f/kwh_total_f": "measured where gap_filled_flag==0; SYNTHETIC where gap_filled_flag==1 (mean of day-1 and day+1, D-011)",
+  "kwh_hp": "measured (HP sub-meter, 15-min summed to hourly)",
+  "kwh_other": "measured",
+  "kwh_total": "measured",
+  "kwh_common_areas_measured": "measured (linked common-area meters of same object)",
+  "kwh_apartments_synthetic": "synthetic (seeded sample of unrelated EKZ apartment meters)",
+  "local_time/dst_active": "derived from UTC index (Europe/Zurich)",
+  "nmiss_q_*": "derived QC count"
+}
