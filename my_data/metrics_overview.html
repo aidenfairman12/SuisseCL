@@ -27,7 +27,7 @@ td.n.best::after{content:" ★";color:var(--hi)}
 </style></head><body><div class="wrap">
 <h1>CityLearn metrics guide</h1>
 <p class="sub" id="sub"></p>
-<div class="how"><b>How to read this.</b> Every metric is a <b>lower-is-better</b> score. Most are divided by a reference run called <i>business as usual</i> (BAU), so 1.0 means "same as BAU", below 1 is better and above 1 is worse. The four groups below answer four different questions, and a controller can win one and lose another, so no single column is "the best" overall.
+<div class="how"><b>How to read this.</b> Every metric is a <b>lower-is-better</b> score. Most are divided by a reference called the <i>conventional counterfactual</i> (per the CityLearn docs: the same buildings without storage and without partial-load control, with PV kept), so 1.0 means "same as that reference", below 1 is better and above 1 is worse. The four groups below answer four different questions, and a controller can win one and lose another, so no single column is "the best" overall.
 <div class="legend"><span>Shading is relative within each row:</span><span><span class="sw"></span> darker = better</span><span>★ = best in row</span></div></div>
 <div id="root"></div>
 <p class="note">Temperature rows are raw degrees °C, not ratios to BAU. Source: CityLearn <code>env.evaluate()</code>, district level.</p>

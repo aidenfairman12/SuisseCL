@@ -7,6 +7,7 @@ Swiss building data (heat pumps, Swiss tariffs and climate).
 ## Layout
 - `my_data/run.py` – baseline controllers (do nothing, hour rule, RBCs) on full CityLearn datasets
 - `my_data/rl.py` – train SAC / MARLISA on the first part of a dataset, score on held-out later weeks
+- `my_data/rewards.py` – composite reward (comfort, cost, carbon, peak, ramping; normalised, weights swappable)
 - `my_data/make_report.py` + `metrics_template.html` – builds `metrics_overview.html`, a guide to all 21 KPIs
 - `my_data/hpc/` – UBELIX (Slurm) setup and job script
 - `my_data/results/` – district KPI tables (CSV)
@@ -29,15 +30,17 @@ thermal model that fails under NumPy 2 with torch 2.2.2.
 ```bash
 python my_data/run.py [dataset ...]                    # baselines, default 2023 phase_3_1..3
 python my_data/rl.py baselines                         # baselines on the held-out window
-python my_data/rl.py sac_central 30                    # also: sac_decentral, marlisa
+python my_data/rl.py scales                            # once: reward normalisation scales -> results/reward_scales.json
+python my_data/rl.py sac_central --episodes 30 --reward composite --seed 0   # also: sac_decentral, marlisa
+#   --weights comfort=1,cost=1,carbon=1,peak=1,ramp=1   (defaults shown)
 CITYLEARN_DATA=/path/to/datasets python my_data/rl.py ...   # override dataset location
 ```
-On UBELIX: run `my_data/hpc/setup_env.sh` once, then `sbatch my_data/hpc/train.sbatch <agent> 30`.
+On UBELIX: run `my_data/hpc/setup_env.sh` once, then `cd my_data && sbatch hpc/train.sbatch <agent> --reward composite --seed 0`.
 
 ## Protocol
 Dataset `citylearn_challenge_2023_phase_3_1` (6 buildings). Train on steps 0-1535,
 evaluate on steps 1536-2207 (28 unseen days). All scores are CityLearn KPIs
-normalised to a business-as-usual run (lower is better).
+normalised to CityLearn's conventional counterfactual (same buildings without storage and partial-load control, PV kept; lower is better).
 
 ## Status
 - Held-out result so far: SAC (central) cut uncomfortable hours to 0.17 (best rule: 0.70) at
