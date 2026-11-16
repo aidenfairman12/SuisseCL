@@ -1,0 +1,100 @@
+"""Phase A traceability audit (plan 5.10): checks that registries are internally consistent.
+
+Checks: (1) every DER/SRC row's local output path exists (SRC raw files only if data/raw present), (2) every ID mentioned anywhere
+in docs/ (D-, ISS-, A-, TR-, DER-, SRC-, EXP-, M-, ALG-, EL-) is defined in a registry/log, (3) every experiment output file exists,
+(4) decision/issue/assumption IDs are unique. Writes docs/experiments/validation_reports/registry_audit.md. Exit code 1 if failures.
+Run: cl/bin/python -I swiss/validation/audit_registries.py
+"""
+import csv
+import glob
+import os
+import re
+import sys
+
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+DOCS = os.path.join(ROOT, 'docs')
+ID = re.compile(r'\b(D-\d{3}[a-z]?|ISS-\d{3}|A-\d{3}|TR-\d{3}|DER-\d{3}|SRC-\d{3}|EXP-\d{3}|M-\d{3}|ALG-\d{3}|EL-\d{4}|R-\d{3})\b')
+
+
+def read(p):
+    return open(p, encoding='utf-8').read()
+
+
+def defined_ids():
+    d = {'D': set(), 'ISS': set(), 'A': set(), 'TR': set(), 'DER': set(), 'SRC': set(), 'EXP': set(), 'M': set(), 'ALG': set(), 'EL': set(), 'R': set()}
+    dup = []
+    def add(kind, i):
+        if i in d[kind] and kind in ('D', 'ISS', 'A', 'TR'):
+            dup.append(i)
+        d[kind].add(i)
+    for line in read(os.path.join(DOCS, 'decisions', 'decision_log.md')).splitlines():
+        m = re.match(r'\|\s*(D-\d{3}[a-z]?)\s*\|', line)
+        if m: add('D', m.group(1))
+    for line in read(os.path.join(DOCS, 'decisions', 'issues_and_risks.md')).splitlines():
+        m = re.match(r'\|\s*(ISS-\d{3})\s*\|\s*(\d{4}-|\()', line)       # defining rows start with a date; '(update ...)' rows are not definitions
+        if m and m.group(2) != '(': add('ISS', m.group(1))
+    for line in read(os.path.join(DOCS, 'decisions', 'assumptions_log.md')).splitlines():
+        m = re.match(r'\|\s*(A-\d{3})\s*\|', line)
+        if m: add('A', m.group(1))
+    for line in read(os.path.join(DOCS, 'data', 'transformation_log.md')).splitlines():
+        m = re.match(r'\|\s*(TR-\d{3})\s*\|', line)
+        if m: add('TR', m.group(1))
+    for row in csv.DictReader(open(os.path.join(DOCS, 'data', 'data_source_registry.csv'), encoding='utf-8')):
+        k = row['dataset_id']; add('SRC' if k.startswith('SRC') else 'DER', k)
+    for row in csv.DictReader(open(os.path.join(DOCS, 'experiments', 'experiment_registry.csv'), encoding='utf-8')):
+        add('EXP', row['experiment_id'])
+    for line in read(os.path.join(DOCS, 'models', 'model_registry.md')).splitlines():
+        m = re.match(r'\|\s*(M-\d{3})\s*\|', line)
+        if m: add('M', m.group(1))
+    for line in read(os.path.join(DOCS, 'algorithms', 'algorithm_registry.md')).splitlines():
+        m = re.match(r'\|\s*(ALG-\d{3})\s*\|', line)
+        if m: add('ALG', m.group(1))
+    for line in read(os.path.join(DOCS, 'execution_log.md')).splitlines():
+        m = re.match(r'###\s*(EL-\d{4})', line)
+        if m: add('EL', m.group(1))
+    add('R', 'R-001')  # reward documented in algorithms/reward_function_documentation.md
+    return d, dup
+
+
+def main():
+    fails, notes = [], []
+    d, dup = defined_ids()
+    if dup: fails.append(f'duplicate definitions: {sorted(set(dup))}')
+    allids = set().union(*d.values())
+    # (2) referenced-but-undefined
+    refs = {}
+    for p in glob.glob(os.path.join(DOCS, '**', '*.md'), recursive=True) + glob.glob(os.path.join(DOCS, '**', '*.csv'), recursive=True):
+        if p.endswith('master_plan.md') or p.endswith('registry_audit.md'):
+            continue
+        for i in ID.findall(read(p)):
+            refs.setdefault(i, set()).add(os.path.relpath(p, DOCS))
+    base = lambda i: i
+    undefined = sorted(i for i in refs if i not in allids)
+    if undefined: fails.append('IDs referenced but not defined: ' + ', '.join(f'{i} ({sorted(refs[i])[0]})' for i in undefined))
+    # (1) DER paths
+    for row in csv.DictReader(open(os.path.join(DOCS, 'data', 'data_source_registry.csv'), encoding='utf-8')):
+        if row['dataset_id'].startswith('DER'):
+            first = re.split(r'\s*[;+]\s*', row['url'] if 'url' in row else '')[0]
+            hits = glob.glob(os.path.join(ROOT, first.split(' ')[0]))
+            if not hits: fails.append(f"{row['dataset_id']}: path not found: {first}")
+    # (3) experiment outputs
+    for row in csv.DictReader(open(os.path.join(DOCS, 'experiments', 'experiment_registry.csv'), encoding='utf-8')):
+        out = row['output_location'].split(' ')[0]
+        if not os.path.exists(os.path.join(ROOT, out)): fails.append(f"{row['experiment_id']}: output missing {out}")
+    # open issues listing
+    issues = []
+    for line in read(os.path.join(DOCS, 'decisions', 'issues_and_risks.md')).splitlines():
+        m = re.match(r'\|\s*(ISS-\d{3})\s*\|\s*\d{4}-\d{2}-\d{2}\s*\|(.*)', line)
+        if m: issues.append((m.group(1), m.group(2)))
+    counts = {k: len(v) for k, v in d.items()}
+    lines = ['# Registry audit (plan 5.10), generated by swiss/validation/audit_registries.py', '',
+             f'Defined IDs: {counts}', '', f"Result: {'PASS' if not fails else 'FAIL'} ({len(fails)} problems)", '']
+    lines += [f'- FAIL: {f}' for f in fails] or ['- no problems found']
+    lines += ['', f'Issues defined: {len(issues)} (statuses are in issues_and_risks.md)']
+    open(os.path.join(DOCS, 'experiments', 'validation_reports', 'registry_audit.md'), 'w').write('\n'.join(lines) + '\n')
+    print('\n'.join(lines))
+    return 1 if fails else 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

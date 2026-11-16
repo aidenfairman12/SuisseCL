@@ -277,3 +277,9 @@ No account created, no API key used, nothing downloaded for this step.
 - Baselines re-run on the dataset that now includes the carbon series: EXP-007..012 registered (EXP-001..006 retained; no-carbon results kept in `baselines_2023_nocarbon.csv`). Carbon KPI (CityLearn, counterfactual = 1): BasicRBC 1.0236, tariff-RBC r=0.05/0.10/0.20: 1.0174/1.0208/1.0193; cost KPI 1.0035–1.0054; other results unchanged.
 - **V8 carbon arithmetic:** independent ratio 1.0267 vs KPI 1.0236 (0.3 % unexplained difference). Interpretation recorded in the validation report: cost and carbon conflict (cheap night hours have the highest modeled carbon intensity), subject to ISS-033.
 - Energy-Charts download ~119/216; the 2016–17 method check still pending.
+
+### EL-0043 — 2026-11-17 — task (A9 close-out: docs, audit, reproducibility, completion report)
+- **Docs written:** `architecture.md` (v1.0), `models/model_assumptions.md`, `reproduction.md`, `project_overview.md`; lockfile `swiss/requirements-lock.txt`; `swiss/run_pipeline.sh`.
+- **Registry audit:** `swiss/validation/audit_registries.py` → `experiments/validation_reports/registry_audit.md`: PASS, 0 broken references (negative test: an invented non-existent issue ID was detected, then removed).
+- **Reproducibility check:** `bash swiss/run_pipeline.sh` re-run on the existing tree (about 10 minutes): all 31 previously manifested derived files were byte-identical (SHA-256); only the new `carbon_intensity_citylearn_2023.csv` was added to the manifest. The CityLearn dataset files were unchanged. Not run from a clean checkout.
+- **Completion report:** `phases/phase_a_completion_report.md` written (task status, acceptance criteria assessment, inventories, findings, limitations, defaults awaiting confirmation, proposed changes to B and C). Pending: EPFL 2016–17 carbon method check. Per plan 9.5 I stop and await approval; Phases B and C remain unauthorized.
