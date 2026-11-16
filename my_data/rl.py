@@ -25,6 +25,7 @@ TEST = (1536, 2207)    # last 28 days, never seen in training
 OUT = base.OUT
 # SAC settings from the dataset's schema.json agent block (the organisers' example agent); library defaults otherwise.
 # Step timings (standardize/end_exploration) are left at the library's episode-length-aware defaults.
+CURVE_KPIS = ['cost_total', 'carbon_emissions_total', 'daily_peak_average', 'all_time_peak_average', 'ramping_average', 'discomfort_proportion']
 PRESETS = {'challenge': dict(hidden_dimension=[256, 256], discount=0.9, lr=0.001, batch_size=512, alpha=1.0)}
 
 def env_for(window, central, reward=None, seed=None, weights=None):
@@ -94,11 +95,16 @@ def main():
     train_env = env_for(TRAIN, central, a.reward, a.seed, weights)
     agent = cls(train_env, **(PRESETS[a.preset] if a.preset else {}))
     t = time.time()
+    tag = a.kind + (f'_{a.reward}' if a.reward else '') + (f'_{a.preset}' if a.preset else '') + f'_s{a.seed}'
+    curve = []
     for ep in range(a.episodes):   # one call per episode so we can see progress
         agent.learn(episodes=1)
-        print(f'[{a.kind} s{a.seed}] episode {ep+1}/{a.episodes}  {time.time()-t:.0f}s', flush=True)
+        # learning curve: district KPIs of the TRAINING episode just played (includes exploration noise)
+        k = base.district(train_env)[CURVE_KPIS].to_dict()
+        curve.append(dict(episode=ep + 1, seconds=round(time.time() - t), **k))
+        pd.DataFrame(curve).to_csv(f'{OUT}/curve_{tag}.csv', index=False)   # rewritten each episode (survives a timeout)
+        print(f'[{a.kind} s{a.seed}] episode {ep+1}/{a.episodes}  {time.time()-t:.0f}s  cost={k["cost_total"]:.3f} disc={k["discomfort_proportion"]:.3f}', flush=True)
     score = evaluate(agent, env_for(TEST, central, a.reward, a.seed, weights))
-    tag = a.kind + (f'_{a.reward}' if a.reward else '') + (f'_{a.preset}' if a.preset else '') + f'_s{a.seed}'
     score.to_csv(f'{OUT}/rl_{tag}.csv', header=[tag])
     print(f'[{tag}] done in {time.time()-t:.0f}s -> rl_{tag}.csv')
 
