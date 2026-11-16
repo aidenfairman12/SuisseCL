@@ -1,1 +1,20 @@
 model_id,name,parameter,value,unit,source,classification
+M-001,AWHP SPF space heating+DHW new building (35-30 C),spf_sh_dhw_new,3.5,-,"Arpagaus C., Berthold M., Uhlmann M., Kuster R., Eschmann M., Bertsch S. (2023) Field Experience with Residential Heat Pumps in Switzerland: Potential for Improvement and Future Developments, 14th IEA Heat Pump Conference, Paper 478, Table 1 (2018 field data, 14 AWHP) - verified in full text",literature (measured field average)
+M-001,AWHP SPF space heating only new building,spf_sh_new,3.7,-,same paper Table 1,literature
+M-001,AWHP SPF DHW only,spf_dhw,2.8,-,same paper Table 1,literature
+M-001,AWHP SPF space heating+DHW renovation (45-40 C),spf_sh_dhw_reno,3.1,-,same paper Table 1 (SH 3.3),literature
+M-001,AWHP SPF space heating old building (55-50 C),spf_sh_old,2.9,-,same paper Table 1,literature
+M-001,SPF boundary,spf_boundary,SPF+ (EnergieSchweiz),-,"compressor, fan, control electronics, standby; excludes sink circulation pump and electric auxiliary heaters (those are in HUR). Our HP-meter boundary may differ - unknown",literature
+M-001,Carnot fraction range air-source space heating (Austrian field study),eta_carnot_range,0.32-0.44,-,"found in search snippet only; primary paper NOT yet read",literature (unverified)
+M-001,eta Carnot fraction space heating SFH-low,eta_sh,0.3692,-,calibrated to SPF target 3.7 (SH) with T_sup 35.0 C (swiss/pipeline/build_thermal_demand.py),calibrated
+M-001,eta Carnot fraction DHW SFH-low,eta_dhw,0.3728,-,calibrated to DHW SPF 2.8 with T_sup 55 C,calibrated
+M-001,eta Carnot fraction space heating SFH-mid,eta_sh,0.3701,-,calibrated to SPF target 3.7 (SH) with T_sup 35.0 C (swiss/pipeline/build_thermal_demand.py),calibrated
+M-001,eta Carnot fraction DHW SFH-mid,eta_dhw,0.3825,-,calibrated to DHW SPF 2.8 with T_sup 55 C,calibrated
+M-001,eta Carnot fraction space heating SFH-high,eta_sh,0.3486,-,calibrated to SPF target 3.7 (SH) with T_sup 35.0 C (swiss/pipeline/build_thermal_demand.py),calibrated
+M-001,eta Carnot fraction DHW SFH-high,eta_dhw,0.3879,-,calibrated to DHW SPF 2.8 with T_sup 55 C,calibrated
+M-001,eta Carnot fraction space heating MFH-small,eta_sh,0.3742,-,calibrated to SPF target 3.1 (SH+DHW) with T_sup 45.0 C (swiss/pipeline/build_thermal_demand.py),calibrated
+M-001,eta Carnot fraction DHW MFH-small,eta_dhw,0.3730,-,calibrated to DHW SPF 2.8 with T_sup 55 C,calibrated
+M-001,eta Carnot fraction space heating MFH-medium,eta_sh,0.3596,-,calibrated to SPF target 3.1 (SH+DHW) with T_sup 45.0 C (swiss/pipeline/build_thermal_demand.py),calibrated
+M-001,eta Carnot fraction DHW MFH-medium,eta_dhw,0.3559,-,calibrated to DHW SPF 2.8 with T_sup 55 C,calibrated
+M-001,eta Carnot fraction space heating MFH-large,eta_sh,0.3648,-,calibrated to SPF target 3.1 (SH+DHW) with T_sup 45.0 C (swiss/pipeline/build_thermal_demand.py),calibrated
+M-001,eta Carnot fraction DHW MFH-large,eta_dhw,0.3685,-,calibrated to DHW SPF 2.8 with T_sup 55 C,calibrated

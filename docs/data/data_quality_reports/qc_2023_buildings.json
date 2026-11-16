@@ -200,14 +200,14 @@
       },
       {
         "column": "kwh_apartments_synthetic",
-        "coverage_hours": 8540,
-        "missing_hours": 220,
+        "coverage_hours": 8760,
+        "missing_hours": 0,
         "negative_hours": 0,
         "zero_hours": 0,
         "zero_run_hours_ge24": 0,
-        "sum_kwh": 10402.067,
+        "sum_kwh": 10644.4395,
         "max_hourly_kwh": 6.925000000000001,
-        "p99_hourly_kwh": 3.4598300000000015,
+        "p99_hourly_kwh": 3.4630499999999995,
         "hours_gt_5x_p99": 0
       },
       {
@@ -260,14 +260,14 @@
       },
       {
         "column": "kwh_apartments_synthetic",
-        "coverage_hours": 8509,
-        "missing_hours": 251,
+        "coverage_hours": 8760,
+        "missing_hours": 0,
         "negative_hours": 0,
         "zero_hours": 0,
         "zero_run_hours_ge24": 0,
-        "sum_kwh": 37025.407999999996,
+        "sum_kwh": 38102.3212051282,
         "max_hourly_kwh": 16.557,
-        "p99_hourly_kwh": 10.5392,
+        "p99_hourly_kwh": 10.546161666666666,
         "hours_gt_5x_p99": 0
       },
       {
@@ -333,14 +333,14 @@
       },
       {
         "column": "kwh_apartments_synthetic",
-        "coverage_hours": 8503,
-        "missing_hours": 257,
+        "coverage_hours": 8760,
+        "missing_hours": 0,
         "negative_hours": 0,
         "zero_hours": 0,
         "zero_run_hours_ge24": 0,
-        "sum_kwh": 39664.670999999995,
-        "max_hourly_kwh": 14.529000000000002,
-        "p99_hourly_kwh": 11.012719999999995,
+        "sum_kwh": 40874.61369904009,
+        "max_hourly_kwh": 14.529000000000003,
+        "p99_hourly_kwh": 10.981299999999996,
         "hours_gt_5x_p99": 0
       },
       {

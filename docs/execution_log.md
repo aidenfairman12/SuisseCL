@@ -196,3 +196,53 @@ No account created, no API key used, nothing downloaded for this step.
 - User asked to commit. Three commits: `615e8b4` (docs and audit tree), `f325273` (pipeline scripts, tests, requirements-dev), `b068bf9` (derived datasets under `data/interim` and `data/canonical`). `data/raw/` is gitignored (not committed).
 - **Version note:** registry/transformation-log rows that say "git 35c59a9 + uncommitted" refer to outputs produced before these commits; the code that produced them is in `f325273` (later scripts edits, if any, are logged separately).
 - Energy-Charts download still running (check `ls data/raw/energy_charts/*.json | wc -l`, 216 expected).
+
+### EL-0027 — 2026-11-16 — task (A5 design started; no code)
+- **Exploration:** daily HP electricity vs KLO temperature for the six buildings; HEAPO survey flags for the three SFH (floor heating all; DHW by HP only SFH-low, electric water heater for SFH-mid/high; EV in SFH-low). Winter R² 0.85/0.92/0.80 (SFH), 0.48–0.66 (MFH); warm-day HP use ≈ DHW: 0.2/1.6/10.3 kWh/day (SFH), 10.5/28.9/25.6 (MFH).
+- **Sources found (not yet read in full):** Swiss field SPF ≈ 3.5 (14 air-to-water HPs, IEA HPC 2023-era paper), WPZ Buchs 2021 ≈ 3.6, Austrian field Carnot-fraction range 0.32–0.44 (air-source space heating). Staffell et al. 2012 is the empirical COP-regression reference. Numbers to be verified from primary papers before entering the parameter registry.
+- **Written:** `docs/models/heating_dhw_model_design.md` (v0.1), `models/model_registry.md` (M-001 proposed), D-014 (proposed), ISS-026..028. Correction recorded: the D-003 "closed-loop check" is tautological if the same COP form is used (implementation test only).
+- **Waiting on user:** Q1 (DHW with electric water heaters), Q2 (SPF anchor), Q3 (EV in SFH-low).
+- **Background job:** Energy-Charts download running (see EL-0025).
+
+### EL-0028 — 2026-11-16 — decision
+- **User answered Q1: option (a).** Recorded as D-014a. D-014 overall remains proposed pending Q2 (SPF anchor) and Q3 (EV in SFH-low).
+
+### EL-0029 — 2026-11-16 — decision
+- **User answered Q2: SPF 3.5** (D-014b). Next: verify the source paper; Q3 (EV in SFH-low) still open.
+
+### EL-0030 — 2026-11-16 — task (A5, SPF source verified)
+- **Read** Arpagaus et al. (2023), IEA HPC Paper 478 (full text via pdftotext of the Sp.se PDF). Table 1 (2018 field data): AWHP new building SH 3.7 / DHW 2.8 / SH+DHW 3.5; renovation (45–40 °C) SH 3.3 / SH+DHW 3.1; old (55–50 °C) SH 2.9. BWHP new SH+DHW 4.9. SPF boundary = EnergieSchweiz SPF+ (compressor, fan, control electronics, standby; not sink pump nor auxiliary heaters). Values entered in `models/parameter_registry.csv` with citation (Carnot-fraction range 0.32–0.44 still unverified, snippet only).
+- **Consequence:** the user's 3.5 is the *combined* new-building value; D-014c proposes mapping SFH → 3.7 (SH) and MFH → 3.1 (combined, 45 °C) or keeping 3.5 everywhere — awaiting user.
+- Energy-Charts download: count with `ls data/raw/energy_charts/*.json | wc -l`.
+
+### EL-0031 — 2026-11-16 — decision
+- **User chose per-mode SPF values** (D-014d): SFH 3.7 (SH), MFH 3.1 (combined, 45 °C assumption). Q3 (EV in SFH-low) still open. A5 implementation can start once Q3 is answered (or proceeds with SFH-low kept and flagged, the recommended default).
+
+### EL-0032 — 2026-11-16 — decision
+- **User answered Q3: keep SFH-low** (D-014e). M-001 accepted; A5 implementation starts. Uniform treatment recorded: non-space-heating baseline of HP electricity → `dhw_demand` for all six (labelled "HP baseline load").
+
+### EL-0033 — 2026-11-16 — task (A5 implemented: M-001 thermal demand)
+- **Code:** `swiss/models/heat_pump.py` (COP, η calibration, baseline split), `swiss/pipeline/build_thermal_demand.py` → DER-009 (`data/canonical/thermal/`), TR-008. Also D-015 (apartment composite rule; 0 NaN hours now) and the pipeline rebuild; MANIFEST regenerated. 44 tests pass (9 new: COP equals CityLearn's `get_cop`; η calibration; SPF targets met; no NaN/negatives; split conserves energy).
+- **Results:** see `docs/data/data_quality_reports/qc_thermal_2023.md`. η = 0.35–0.39; SFH heat 79–153 kWh/m²a; baseline (DHW-like) share 1–29 % of HP electricity.
+- **Negative finding (not hidden):** the linearity diagnostic does not support the Carnot-form temperature dependence (derived heat less linear vs HDD than raw electricity for all six). Annual heat level is anchored by the literature SPF; timing is uncertain. Candidate follow-ups (need user input): (i) accept and document as limitation (current), (ii) add a flatter-COP sensitivity run in A9, (iii) custom device with empirical COP (heavier; deviates from stock CityLearn).
+- **Not yet done in A5:** model assumptions doc (`models/model_assumptions.md`) polish, DHW storage decision (none, unchanged), read primary paper for Carnot range. Energy-Charts download in progress (25/216 files at last check).
+
+### EL-0034 — 2026-11-16 — finding and course correction (A5)
+- **User chose "Custom COP device".** Before building, I tried to calibrate its slope: held-out check (fit Jan–Mar, test Oct–Dec) and an R²-vs-slope profile. The profile improves for *negative* slopes in all six buildings, so the HDD-linearity criterion is ill-posed and the slope is not identifiable from electricity data. Also found in the paper already used for SPF: variable-speed air-source heat pumps have a Carnot efficiency of about 40 % over the whole temperature range, which is the stock CityLearn form with η ≈ 0.4 (ours 0.35–0.39).
+- **Consequence:** no custom device was implemented. The earlier "negative finding" (EL-0033) is reclassified as "uninformative diagnostic" (addendum in `qc_thermal_2023.md`). D-016 proposed: keep the stock HeatPump, sensitivity in A9. Needs user confirmation because it overrides their choice, made on my earlier framing.
+- **New issue ISS-029:** no storage assets in the Phase A district → controllers have little to act on; design decision required before A8.
+- Energy-Charts download: 33/216 files.
+
+### EL-0035 — 2026-11-16 — decision
+- **User accepted D-016:** stock CityLearn HeatPump with calibrated η; no custom COP device in Phase A; flatter-COP sensitivity run planned for A9. M-001 implementation considered complete for A5 (apart from the model-assumptions document and storage design, ISS-029).
+
+### EL-0036 — 2026-11-16 — proposal (storage options, D-017)
+- User asked for storage options (ISS-029). Computed per-building peaks from DER-009: peak heat kWh_th/h SFH 22/16/33, MFH 28/108/97; p99 13.5/13.0/16.8, 15.3/59.5/46.0; peak HP electricity 4.9/4.4/11.2, 6.8/21.2/18.1 kWh/h; DHW demand per day 0.5/3.7/24.3 (SFH), 21/48/47 (MFH). Four options recorded as D-017 (proposed). New caution ISS-030: derived hourly peaks look high for houses. Awaiting user choice.
+
+### EL-0037 — 2026-11-16 — task (A7 first pass: CityLearn dataset and environment)
+- **User chose storage option 1 (tanks):** D-017 accepted, sizes D-017a; conventions D-018 (base `Building` class, constant 21 °C indoor placeholder, no real forecasts, carbon null).
+- **Built:** `swiss/citylearn_build/build_dataset.py` → `swiss/datasets/swiss_district_2023/` (DER-010, TR-009): schema.json, six building CSVs, weather.csv, pricing.csv, `build_manifest.json` (tank sizes, nominal powers). Stock `HeatPump` (heating, DHW), `StorageTank` heating buffer (6) and DHW tank (5; none for SFH-low), no PV/battery.
+- **Result:** `CityLearnEnv` initialises (0.3 s) and runs the full 2023 episode (8,759 steps, 27 s) with zero actions and with constant 0.5 charging actions; **no end-of-episode error** (ISS-010 no longer blocking). 12 action slots reported (heating_storage + dhw_storage per building even though SFH-low has no DHW tank — to be checked in A8), 25 observations.
+- **Implementation consistency (not validation):** simulated HP electricity (SH + DHW devices) equals measured within 1 % in every building (e.g. Building_1 4,731 vs 4,730 kWh; Building_5 25,712 vs 25,716).
+- **Tests:** 47 pass (3 new integration tests, ~42 s total).
+- **Open before A7 can be called complete:** carbon series (waiting on download, 46/216 files), action-list check, documentation of reproduction commands, reward function (A8).
