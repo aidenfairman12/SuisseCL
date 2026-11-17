@@ -1,6 +1,16 @@
 # Audit dashboard: implementation plan (Swiss Phase A)
 
-Status: ready for implementation. Written 2026-11-17 from a design session with the owner.
+Status: implemented (milestones 1-6, PR #1), then **re-platformed on 2026-11-17** (see "Revision 2026-11-17" below).
+Written 2026-11-17 from a design session with the owner.
+
+## Revision 2026-11-17: guided pages on Next.js (supersedes parts of §1, §5, §7, §8.7)
+The first version put everything on one long page and overwhelmed its reader. The owner chose **guided pages**, a **Next.js rebuild** and **private hosting on Vercel**. The Python side (parsers, provenance graph, `ui_map.yaml`, `lint.py`, traces, freshness check) is unchanged and remains the only source of facts.
+- **Stack:** `web/` = Next.js (static export) + Tailwind + shadcn/ui + Apache ECharts. It only reads `web/public/bundle/*.json`; it holds no facts of its own. The old `dashboard/` (static HTML + Plotly) was removed; it is in git history (PR #1).
+- **Bundle:** `build_bundle.py` writes plain JSON to `web/public/bundle/` (committed, so Vercel needs no Python). `lint.py` and `test_dashboard.py` read it there and scan `web/src` for card keys, KPI columns and figure names.
+- **Pages:** Overview (the illustrated district, headline numbers, what is measured vs synthetic, flow diagram), Inputs (weather, price, carbon, buildings with trust overlay and click-for-hour), Model (heat pumps, tanks, environment, reward), Results (controller comparison, hour-by-hour with KPI drill-down, sensitivity, all KPIs), Audit (registry, validation, open issues, quality reports, snapshot integrity). The audit card is a side sheet opened from anywhere (`?node=ID`): summary, numbers, one figure and the lineage breadcrumb are always visible; method/code, parameters, QC, related items, full lineage and the registry row are in closed sections.
+- **§8.7 replaced:** works offline only as a built site served by any static server (no `file://`); hosting on Vercel must be **private** (D-004 and the meter-data licences make a public link a publication).
+- The original design below is kept for the requirements it still defines (§2-§4, §6, §8.1-8.6, §8.8).
+
 Read `docs/HANDOFF.md` §3 (environment pins) and §8 (working agreements) first. In short: ask the owner before
 committing, pushing or downloading anything, and never invent numbers.
 
@@ -19,8 +29,8 @@ proxies A-006..A-009), a stacked import-by-neighbour figure, the EPFL 2016-17 me
 ### Decisions already made (owner, 2026-11-17)
 | Topic | Decision |
 |---|---|
-| Stack | **Static HTML.** A Python build script writes a JSON bundle; one `index.html` with vanilla JS and a **vendored** chart library renders it. No server. Python side uses only what is in `swiss/requirements-lock.txt` (pandas, numpy, PyYAML). |
-| Bundle in git | **Committed.** `dashboard/bundle/` is regenerated and committed with each results change, so every commit is a frozen, auditable snapshot that opens from a fresh clone. |
+| Stack | *(superseded, see Revision)* ~~Static HTML, vanilla JS, vendored Plotly.~~ A Python build script writes a JSON bundle; `web/` (Next.js static export) renders it. Python side uses only what is in `swiss/requirements-lock.txt` (pandas, numpy, PyYAML). |
+| Bundle in git | **Committed.** `web/public/bundle/` is regenerated and committed with each results change, so every commit is a frozen, auditable snapshot that opens from a fresh clone. |
 | System map | **Hand-drawn SVG.** |
 | Scope | **Swiss Phase A only**: `swiss/`, `data/canonical/`, `swiss/datasets/swiss_district_2023` + 4 sensitivity variants, EXP-001..012. The `my_data/` cooling work is out of scope. |
 | Run traces | **Yes.** Extend `run_baselines.py` to save per-step traces so every KPI can be drilled down to hours. |
@@ -202,15 +212,15 @@ Requirements:
 
 ```
 swiss/dashboard/
-  build_bundle.py      # reads §2 sources -> dashboard/bundle/{provenance.json, series/*.json, figures/*.json, meta.json}
+  build_bundle.py      # reads §2 sources -> web/public/bundle/{provenance,meta,series_inputs,figures,results,trace_*}.json
   parse_registries.py  # markdown/CSV registry parsers + ID extraction
   figures.py           # precomputed figure data (COP curves, EPFL check, heatmaps, ...) as JSON for the chart lib
   ui_map.yaml          # the only hand-written mapping (§3)
   lint.py              # orphan / dangling-ID / placeholder checks; non-zero exit on failure
-dashboard/
-  index.html  app.js  style.css
-  vendor/plotly-basic.min.js   # vendored; pin the version in a comment; no CDN (works offline)
-  bundle/                      # generated; COMMITTED (owner decision) so a fresh clone opens without Python
+web/                           # Next.js UI (static export); see web/README.md
+  src/app/                     # pages: Overview, Inputs, Model, Results, Audit
+  src/components/              # audit card (sheet), district illustration, charts (ECharts), page components
+  public/bundle/               # generated JSON; COMMITTED (owner decision) so Vercel builds without Python
 swiss/tests/test_dashboard.py
 ```
 
@@ -218,7 +228,7 @@ Commands:
 ```bash
 PYTHONPATH=. cl/bin/python -I swiss/experiments/run_baselines.py --traces
 PYTHONPATH=. cl/bin/python -I swiss/dashboard/build_bundle.py
-cl/bin/python -m http.server -d dashboard 8000   # or open dashboard/index.html directly
+cd web && npm ci && npm run dev    # http://localhost:3000 (npm run build exports the static site to web/out)
 ```
 
 Data size: keep the bundle at a few MB. Series are 8,760 points; send them as typed arrays in JSON, rounded to a
@@ -241,7 +251,7 @@ events). uPlot is an acceptable lighter alternative if Plotly proves slow with m
    (also run in `test_dashboard.py`) fails if any input changed since the bundle was built, so a stale bundle cannot be
    committed unnoticed. The page shows the build commit and time.
 6. Traces reproduce the aggregate results exactly (§6).
-7. Works offline in a current Chrome/Safari/Firefox, opened from `file://` or a local server.
+7. *(replaced, see Revision)* The built site works from any static server, offline.
 8. Owner walkthrough: starting from the carbon curve, they reach the IPCC table, the EPFL check and the code in at
    most 3 clicks. The same holds for the COP model and the tank assumption.
 

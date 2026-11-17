@@ -18,7 +18,7 @@ from swiss.dashboard.bundle_io import read_bundle_file  # noqa: E402
 from swiss.dashboard.parse_registries import (extract_ids, normalise_classification, parse_csv_registry,  # noqa: E402
                                               parse_md_registry, parse_md_tables)
 
-BUNDLE = os.path.join(ROOT, 'dashboard', 'bundle')
+BUNDLE = os.path.join(ROOT, 'web', 'public', 'bundle')
 
 
 def p(rel):
@@ -27,12 +27,12 @@ def p(rel):
 
 @pytest.fixture(scope='module')
 def prov():
-    return read_bundle_file(os.path.join(BUNDLE, 'provenance.js'))['nodes']
+    return read_bundle_file(os.path.join(BUNDLE, 'provenance.json'))['nodes']
 
 
 @pytest.fixture(scope='module')
 def meta():
-    return read_bundle_file(os.path.join(BUNDLE, 'meta.js'))
+    return read_bundle_file(os.path.join(BUNDLE, 'meta.json'))
 
 
 # ---------------------------------------------------------------- parsers
@@ -181,7 +181,7 @@ def test_values_match_sources(prov):
 
 @pytest.fixture(scope='module')
 def series():
-    return read_bundle_file(os.path.join(BUNDLE, 'series_inputs.js'))
+    return read_bundle_file(os.path.join(BUNDLE, 'series_inputs.json'))
 
 
 def test_series_match_canonical_files(series):
@@ -204,7 +204,7 @@ def test_series_match_canonical_files(series):
 
 
 def test_selection_figure_matches_selection_file():
-    f = read_bundle_file(os.path.join(BUNDLE, 'figures.js'))
+    f = read_bundle_file(os.path.join(BUNDLE, 'figures.json'))
     assert f['building_selection']['pool_sizes'] == {'sfh': 26, 'mfh': 59}
     with open(p('data/interim/selected_buildings.csv')) as fh:
         ids = [int(r['id']) for r in csv.DictReader(fh)]
@@ -218,7 +218,7 @@ def test_selection_figure_matches_selection_file():
 def test_model_figures_match_sources():
     import numpy as np
     from swiss.models.heat_pump import cop
-    f = read_bundle_file(os.path.join(BUNDLE, 'figures.js'))
+    f = read_bundle_file(os.path.join(BUNDLE, 'figures.json'))
     tp = json.load(open(p('data/canonical/thermal/thermal_params.json')))
     c = f['cop_curves']
     i = c['t_out_c'].index(0.0)
@@ -293,7 +293,7 @@ def test_traces_do_not_change_rollout():
 
 def test_results_bundle_equals_results_files():
     import pandas as pd
-    r = read_bundle_file(os.path.join(BUNDLE, 'results.js'))
+    r = read_bundle_file(os.path.join(BUNDLE, 'results.json'))
     csv_ = pd.read_csv(p('swiss/experiments/results/baselines_2023.csv'))
     by = {x['controller']: x for x in r['rows']}
     for _, row in csv_.iterrows():
@@ -313,8 +313,8 @@ def test_results_bundle_equals_results_files():
 
 def test_system_map_boxes_have_cards(prov):
     import re
-    html = open(p('dashboard/index.html'), encoding='utf-8').read()
-    boxes = re.findall(r'class="mbox[^"]*" data-ui="([^"]+)"', html)
+    tsx = open(p('web/src/components/overview/flow-diagram.tsx'), encoding='utf-8').read()
+    boxes = re.findall(r'\{ ui: "([^"]+)"', tsx)
     assert len(boxes) >= 12
     for b in boxes:
         assert b in prov
@@ -326,7 +326,7 @@ def test_system_map_boxes_have_cards(prov):
 
 
 def test_district_view_data_matches_sources():
-    f = read_bundle_file(os.path.join(BUNDLE, 'figures.js'))['district']
+    f = read_bundle_file(os.path.join(BUNDLE, 'figures.json'))['district']
     man = json.load(open(p('swiss/datasets/swiss_district_2023/build_manifest.json')))
     assert [b['building'] for b in f['buildings']] == list(man)
     for b in f['buildings']:
@@ -334,10 +334,35 @@ def test_district_view_data_matches_sources():
         assert (b['role'], b['heating_tank_kwh_th'], b['dhw_tank_kwh_th'], b['hp_sh_nominal_kw']) == \
                (m['role'], m['heating_tank_kwh_th'], m['dhw_tank_kwh_th'], m['hp_sh_nominal_kw'])
     assert [b['units'] for b in f['buildings'] if b['type'] == 'MFH'] == [5, 14, 24]
-    t = read_bundle_file(os.path.join(BUNDLE, 'trace_ALG-003_basic_rbc.js'))['arrays']
+    t = read_bundle_file(os.path.join(BUNDLE, 'trace_ALG-003_basic_rbc.json'))['arrays']
     assert all(f'b{i}_hp_kwh_el' in t for i in range(1, 7))
 
 
 def test_dirty_check_ignores_bundle_even_on_first_line():
-    assert bb.dirty_lines(' M dashboard/bundle/figures.js\n M dashboard/bundle/meta.js\n') == []
-    assert bb.dirty_lines(' M dashboard/bundle/meta.js\n M swiss/dashboard/lint.py\n') == [' M swiss/dashboard/lint.py']
+    assert bb.dirty_lines(' M web/public/bundle/figures.json\n M web/public/bundle/meta.json\n') == []
+    assert bb.dirty_lines('?? web/public/bundle/meta.json\n M swiss/dashboard/lint.py\n') == [' M swiss/dashboard/lint.py']
+
+
+# ---------------------------------------------------------------- web UI sources are linted against ui_map (P5)
+
+def test_web_sources_are_scanned_and_figures_resolve():
+    import re
+    srcs = dict(lint.web_sources())
+    assert any(k.endswith('flow-diagram.tsx') for k in srcs) and any(k.endswith('scene.tsx') for k in srcs)
+    keys = set()
+    for text in srcs.values():
+        keys |= set(re.findall(r'["\']((?:series|card|kpi|panel):[a-z0-9_]+)["\']', text))
+    assert {'card:district', 'card:tanks', 'series:carbon_intensity'} <= keys
+    registry = open(lint.REGISTRY, encoding='utf-8').read()
+    figs = set(re.findall(r'^  (\w+): \{ title:', registry, re.M))
+    assert len(figs) >= 22 and 'cop_curves' in figs
+    import yaml
+    ui = yaml.safe_load(open(bb.UI_MAP, encoding='utf-8'))
+    used = {f for k, e in ui.items() if not k.startswith('_') for f in (e.get('figures') or [])}
+    assert used <= figs
+
+
+def test_bundle_files_are_plain_json():
+    for name in ('meta', 'provenance', 'figures', 'results', 'series_inputs'):
+        with open(os.path.join(BUNDLE, f'{name}.json'), encoding='utf-8') as f:
+            assert isinstance(json.load(f), dict)
