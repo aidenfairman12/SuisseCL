@@ -29,6 +29,7 @@ PYTHONPATH=. cl/bin/python -I swiss/experiments/run_sensitivity.py       # ~8 mi
 PYTHONPATH=. cl/bin/python -I swiss/validation/validate_phase_a.py       # ~1 min
 cl/bin/python -I swiss/validation/audit_registries.py                    # registry traceability audit
 cl/bin/python -I swiss/contract/export_v1.py                             # ~5 min: contract v1 sample (web/public/bundle/sim/), real rollouts
+cl/bin/python -I swiss/contract/export_v1.py --full --out web/public/bundle/sim_full   # ~5 min: full-year contract bundle (about 57 MB)
 cl/bin/python -I swiss/validation/mechanism_check.py                     # mechanism-check report from comparisons_year.json
 PYTHONPATH=. cl/bin/python -I swiss/dashboard/build_bundle.py            # audit bundle (build on a clean committed tree)
 ```

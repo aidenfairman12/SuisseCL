@@ -32,6 +32,7 @@ Raw data are not in git; sources, licences and download steps are in `docs/repro
 PYTHONPATH=. cl/bin/python -m pytest swiss/tests -q                      # full test suite (about 3 minutes, includes real rollouts)
 PYTHONPATH=. cl/bin/python -I swiss/experiments/run_baselines.py        # baseline controllers, full year
 cl/bin/python -I swiss/contract/export_v1.py                            # data contract v1 sample for the dashboard (about 5 minutes)
+cl/bin/python -I swiss/contract/export_v1.py --full --out web/public/bundle/sim_full   # full-year contract bundle (about 57 MB, about 5 minutes)
 cl/bin/python -I swiss/validation/mechanism_check.py                    # mechanism-check report from the exported comparisons
 PYTHONPATH=. cl/bin/python -I swiss/dashboard/build_bundle.py           # audit bundle (build on a clean committed tree)
 PYTHONPATH=. cl/bin/python -I swiss/dashboard/lint.py --check-fresh     # dashboard guards: provenance, roles, carbon wording, freshness

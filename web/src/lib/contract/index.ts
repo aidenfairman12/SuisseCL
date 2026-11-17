@@ -7,14 +7,18 @@ import type { BuildingsFile, ComparisonsFile, ComponentsFile, ConditionsFile, Ma
 export * from "./types";
 export * from "./units";
 
-const useSim = <T>(file: string | null) => useBundleFile<T>(file ? `sim/${file}` : null);
+/** "sample" = /bundle/sim/ (48 hours, committed for development); "full" = /bundle/sim_full/ (the whole year). Same files, same schema: read the length from scope.n_steps. */
+export type SimVariant = "sample" | "full";
+const simDir = (variant: SimVariant) => (variant === "full" ? "sim_full" : "sim");
+const useSim = <T>(file: string | null, variant: SimVariant = "sample") => useBundleFile<T>(file ? `${simDir(variant)}/${file}` : null);
 
-export const useManifest = () => useSim<Manifest>("manifest");
-export const useBuildings = () => useSim<BuildingsFile>("buildings");
-export const useComponents = () => useSim<ComponentsFile>("components");
-export const useConditions = () => useSim<ConditionsFile>("conditions");
+export const useManifest = (variant: SimVariant = "sample") => useSim<Manifest>("manifest", variant);
+export const useBuildings = (variant: SimVariant = "sample") => useSim<BuildingsFile>("buildings", variant);
+export const useComponents = (variant: SimVariant = "sample") => useSim<ComponentsFile>("components", variant);
+export const useConditions = (variant: SimVariant = "sample") => useSim<ConditionsFile>("conditions", variant);
 /** Comparisons over the file's `scope`: the sample window (comparisons) or the whole simulated year (comparisons_year). Check `scope.kind` before labelling. */
-export const useComparisons = () => useSim<ComparisonsFile>("comparisons");
-export const useComparisonsYear = () => useSim<ComparisonsFile>("comparisons_year");
+export const useComparisons = (variant: SimVariant = "sample") => useSim<ComparisonsFile>("comparisons", variant);
+export const useComparisonsYear = (variant: SimVariant = "sample") => useSim<ComparisonsFile>("comparisons_year", variant);
 /** One run = one controller in one scenario (ids from manifest.controllers / manifest.scenarios). Pass null until chosen. */
-export const useRun = (scenario: string | null, controller: string | null) => useSim<RunFile>(scenario && controller ? `runs/${scenario}/${controller}` : null);
+export const useRun = (scenario: string | null, controller: string | null, variant: SimVariant = "sample") =>
+  useSim<RunFile>(scenario && controller ? `runs/${scenario}/${controller}` : null, variant);

@@ -211,7 +211,9 @@ schemas are in `swiss/contract/schema/`, TypeScript types and hooks in `web/src/
 `useComponents`, `useConditions`, `useRun`, `useComparisons`, plus `meanKw` for power). It supersedes the draft field names this
 brief listed earlier (for example `hp_dhw_*` is now `hp_hw_*`, "hw" = hot water and other base load).
 
-The current files are a **48-hour sample** (Monday 2023-12-04 and the following day, the coldest weekday of 2023) with all six
+**Update 2026-11-17 (D-028): the full year is available too** in `web/public/bundle/sim_full/` (same files, same schema, 8,759 steps, about 10 MB per run, so load one controller at a time). Pass the variant to the hooks, for example `useRun("base", controller, "full")`; the default stays the 48-hour sample.
+
+The sample files are a **48-hour sample** (Monday 2023-12-04 and the following day, the coldest weekday of 2023) with all six
 controllers, produced from real CityLearn rollouts. The full year will use the same files and schema (`--full`), so build against the
 sample and read the length from `scope.n_steps`. Every variable's label, unit, provenance and source IDs are in `manifest.variables`;
 show the label, never the field id.
