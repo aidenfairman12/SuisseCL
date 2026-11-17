@@ -24,12 +24,32 @@ npm run build    # static site in web/out (type-check included); npm run lint
 
 ## Hosting on Vercel (private only)
 
-The bundle contains hourly data derived from the HEAPO and EKZ meters, and the JASM data may be used only while the
-project stays private (D-004). A public URL counts as publishing, so **do not deploy without access protection**.
+Default to private until the checks below are done. This is **not** about JASM: that unlicensed source (SRC-003, the
+subject of D-004) is not used anywhere. No pipeline code, transformation, model or dashboard item depends on it, and none
+of its files are tracked in git. What the dashboard does contain:
 
-1. In Vercel, import the (private) GitHub repository.
-2. Settings: **Root Directory** `web`, Framework Preset **Next.js** (auto-detected), install command `npm ci`,
-   build command `npm run build`. No environment variables are needed; no server code runs (`output: "export"`).
-3. Before the first production deploy, turn on protection under *Settings → Deployment Protection* (Vercel
-   Authentication, or Password Protection if your plan offers it) for **Production** as well as previews.
-4. After deploying, open the production URL in a private window while logged out and confirm it is blocked.
+- hourly data derived from HEAPO and EKZ (CC BY 4.0), MeteoSwiss data (citation "Source: MeteoSwiss" required) and
+  Energy-Charts data (attribution "energy-charts.info" required). The footer shows each source's licence text from the registry;
+- aggregate statistics from the EPFL carbon series (dataset CC BY 4.0, article CC BY-NC-ND);
+- unvalidated work in progress: a modeled carbon series whose level is about 61–62 % of the EPFL reference, and the open issues.
+
+Before a public URL, still to check (all recorded in the registry as unverified): the MeteoSwiss terms-of-use page was not
+read, and the Energy-Charts per-response licence field has not been checked. This is not a legal review.
+
+1. **Team default first (recommended).** In the Vercel team's settings, set the Deployment Protection default to
+   **All Deployments** with **Vercel Authentication**, so a new project is never public, not even for its first deploy.
+2. **Import** the private GitHub repository (grant the Vercel GitHub app access to this repository only).
+3. **Project settings:** Root Directory `web`; Framework Preset Next.js; build command `npm run build`; install command
+   default; Production Branch `main`; no environment variables (static export, no server code).
+4. **Protect:** *Settings → Deployment Protection* → Vercel Authentication **on**, scope **All Deployments**.
+   Do **not** use *Standard Protection*: it leaves the production domain (`<project>.vercel.app`) public.
+   Password Protection is not available on Hobby (Pro: $20 per month per project); Passport and Trusted IPs are Enterprise.
+5. **Prove it:** in a private window while logged out, open the production URL and
+   `curl -I https://<project>.vercel.app/bundle/provenance.json` (the data files are static assets): expect a login
+   redirect or 401, never 200. Repeat on one per-deployment URL.
+6. **Access:** viewers need a Vercel login with access to the project (team member/viewer, or an access request you
+   approve). On Hobby only one external user per account is allowed. A Shareable Link bypasses the login for anyone who has it.
+
+Updating: merging to `main` redeploys production; pull requests get protected preview deployments. Vercel never runs
+Python, so run `build_bundle.py` and `lint.py --check-fresh` locally and commit the bundle before merging, or the site
+will show stale numbers.

@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { BundleProvider } from "@/lib/bundle";
 import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 import { AuditSheet } from "@/components/audit/audit-sheet";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Suspense fallback={null}>
               <SiteHeader />
               <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6">{children}</main>
+              <SiteFooter />
               <AuditSheet />
             </Suspense>
           </TooltipProvider>
