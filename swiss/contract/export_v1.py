@@ -414,8 +414,7 @@ def main(hours=48, start=None, full=False, out=OUT, only=None):
                               'comparisons': compare(recs, price_chf, tier_high, ci, start, n)})
     emit('comparisons_year.json', {'contract_version': CONTRACT_VERSION, 'scenario': SCENARIO, 'reference_controller': REF,
                                    'scope': {'kind': 'year', 'start_step': 0, 'n_steps': N}, 'comparisons': compare(recs, price_chf, tier_high, ci, 0, N)})
-    rel_out = os.path.relpath(out, ROOT).replace(os.sep, '/') + '/'
-    dirty = [ln for ln in git('status', '--porcelain').splitlines() if rel_out not in ln]   # the output folder itself does not make the tree dirty
+    dirty = [ln for ln in git('status', '--porcelain').splitlines() if 'web/public/bundle/' not in ln]   # generated bundle files never make the tree dirty (same rule as build_bundle.py)
     cond_scope = cond['scope']
     manifest = {
         'contract_version': CONTRACT_VERSION, 'phase': 'A', 'kind': 'full' if full else 'sample',
