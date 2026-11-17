@@ -29,16 +29,15 @@ export function BuildingCutaway({ building, state, stepSeconds }: { building: Bu
   const hpSh = building.components.hp_sh.present;
   const hpHw = building.components.hp_hw.present;
   const waterHeating = String(attr(building, "water_heating") ?? "").toLowerCase();
-  const electricWaterHeater = waterHeating.includes("electric");
+  const electricWaterHeater = waterHeating === "electric water heater (its electricity is inside household electricity)";
   const capacity = building.components.tank_sh.attributes.capacity_kwh_th?.value;
-  const hpType = attr(building, "heat_pump_type");
   const householdProvenance = building.attributes.household_electricity_source?.provenance === "synthetic" ? "Synthetic composite" : "Measured";
   const hwCapacity = building.components.tank_hw.attributes.capacity_kwh_th?.value;
-  const hpLabel = typeof hpType === "string" && hpType ? hpType : "type not specified";
   const area = attr(building, "floor_area_m2");
   const units = attr(building, "housing_units");
   const shFill = state.shSoc == null ? null : Math.max(0, Math.min(1, state.shSoc));
   const hwFill = state.hwSoc == null ? null : Math.max(0, Math.min(1, state.hwSoc));
+  const flowWidth = (value: number | null) => value == null || value <= 0.0001 ? 0 : 2 + Math.min(5, Math.sqrt(value) * 1.8);
 
   return (
     <div className="overflow-hidden rounded-xl border bg-[#f5f3ed]">
@@ -51,6 +50,8 @@ export function BuildingCutaway({ building, state, stepSeconds }: { building: Bu
           <defs>
             <linearGradient id="cut-wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fffdf7"/><stop offset="1" stopColor="#e8e0d1"/></linearGradient>
             <linearGradient id="tank-fill" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stopColor="#f59e0b"/><stop offset="1" stopColor="#dc5b36"/></linearGradient>
+            <marker id="heat-arrow" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="#d65f3d"/></marker>
+            <marker id="base-arrow" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="#4d9ab3"/></marker>
           </defs>
           <path d="M28 300H730" stroke="#9d9a8e" strokeWidth="3"/>
           {building.type === "SFH" ? (
@@ -75,19 +76,19 @@ export function BuildingCutaway({ building, state, stepSeconds }: { building: Bu
           <Tank x={555} y={85} title="Heating tank" soc={shFill} present={tankSh}/>
           <Tank x={655} y={85} title="Hot-water / base-load" soc={hwFill} present={tankHw}/>
           <g fill="none" strokeLinecap="round" strokeLinejoin="round">
-            {hpSh && <path d="M530 119H555" stroke="#d65f3d" strokeWidth="4" strokeDasharray="7 5"/>}
-            {hpSh && <path d="M480 158V300H400" stroke="#d65f3d" strokeWidth="3" strokeDasharray="6 5"/>}
-            {tankSh && <path d="M597 193V330H400" stroke="#d65f3d" strokeWidth="3" strokeDasharray="6 5"/>}
-            {hpHw && tankHw && <path d="M530 244H642V180H655" stroke="#4d9ab3" strokeWidth="3" strokeDasharray="6 5"/>}
-            {hpHw && <path d="M480 283V355H400" stroke="#4d9ab3" strokeWidth="3" strokeDasharray="6 5"/>}
-            {tankHw && <path d="M697 193V355H400" stroke="#4d9ab3" strokeWidth="3" strokeDasharray="6 5"/>}
+            {flowWidth(state.hpShToTank) > 0 && <path d="M530 119H555" stroke="#d65f3d" strokeWidth={flowWidth(state.hpShToTank)} strokeDasharray="7 5" markerEnd="url(#heat-arrow)"/>}
+            {flowWidth(state.hpShDirect) > 0 && <path d="M480 158V300H400" stroke="#d65f3d" strokeWidth={flowWidth(state.hpShDirect)} strokeDasharray="6 5" markerEnd="url(#heat-arrow)"/>}
+            {flowWidth(state.shTankToDemand) > 0 && <path d="M597 193V330H400" stroke="#d65f3d" strokeWidth={flowWidth(state.shTankToDemand)} strokeDasharray="6 5" markerEnd="url(#heat-arrow)"/>}
+            {tankHw && flowWidth(state.hpHwToTank) > 0 && <path d="M530 244H642V180H655" stroke="#4d9ab3" strokeWidth={flowWidth(state.hpHwToTank)} strokeDasharray="6 5" markerEnd="url(#base-arrow)"/>}
+            {flowWidth(state.hpHwDirect) > 0 && <path d="M480 283V355H400" stroke="#4d9ab3" strokeWidth={flowWidth(state.hpHwDirect)} strokeDasharray="6 5" markerEnd="url(#base-arrow)"/>}
+            {tankHw && flowWidth(state.hwTankToDemand) > 0 && <path d="M697 193V355H400" stroke="#4d9ab3" strokeWidth={flowWidth(state.hwTankToDemand)} strokeDasharray="6 5" markerEnd="url(#base-arrow)"/>}
           </g>
           <text x="480" y="70" textAnchor="middle" fontSize="9" fill="#526257">Electricity in</text>
           <text x="480" y="196" textAnchor="middle" fontSize="9" fill="#9b6333">Heat</text>
           <text x="480" y="322" textAnchor="middle" fontSize="9" fill="#9b6333">Direct + stored heat</text>
           {electricWaterHeater && <g transform="translate(50 8)"><rect width="340" height="34" rx="8" fill="#fff8e9" stroke="#e5c98c"/><text x="12" y="14" fontSize="10" fontWeight="700" fill="#79551e">Separate electric water heater</text><text x="12" y="26" fontSize="9" fill="#79551e">Its electricity is included in household load, not HP electricity</text></g>}
           {!electricWaterHeater && <text x="50" y="25" fontSize="10" fill="#68766c">Base-load demand may include uses other than hot water</text>}
-          <text x="445" y="375" fontSize="10" fill="#68766c">Illustrative equipment layout · flows are model outputs</text>
+          <text x="445" y="375" fontSize="10" fill="#68766c">Line width scales with modeled thermal energy this timestep (kWh_th/step)</text>
         </svg>
         <div className="space-y-2">
           <div className="rounded-lg bg-white/80 p-3">

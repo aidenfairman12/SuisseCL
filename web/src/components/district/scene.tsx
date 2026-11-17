@@ -1,6 +1,11 @@
 "use client";
 
-import type { DistrictBuilding } from "@/lib/types";
+type DistrictBuilding = {
+  role: string;
+  type: "SFH" | "MFH";
+  units: number | null;
+  area_m2: number | null;
+};
 
 export type BuildingState = {
   net: number | null;
@@ -59,14 +64,14 @@ function House({ b, name, selected, onSelect, x, y, scale, state }: {
   x: number; y: number; scale: number; state: BuildingState;
 }) {
   const sfh = b.type === "SFH";
-  const width = sfh ? 106 : 112 + Math.sqrt(b.units) * 7;
-  const height = sfh ? 72 : 66 + Math.sqrt(b.units) * 8;
+  const width = sfh ? 106 : 126;
+  const height = sfh ? 72 : 88;
   const depth = sfh ? 43 : 42;
   const wall = selected ? "#fff8e9" : "#f2eadc";
   const side = selected ? "#e8d7bc" : "#d8c9b3";
   const roof = sfh ? "#a94f40" : "#65747a";
   const soc = state.socHeat == null ? null : Math.max(0, Math.min(1, state.socHeat));
-  const floors = Math.max(2, Math.min(5, Math.round(Math.sqrt(b.units || 4))));
+  const floors = 3; // Illustrative façade detail only; apartment floor counts are unavailable.
   const detailStart = name.indexOf("(");
   const primaryLabel = detailStart > 0 ? name.slice(0, detailStart).trim() : name;
   const secondaryLabel = detailStart > 0 ? name.slice(detailStart + 1, -1) : "";
@@ -127,7 +132,7 @@ function House({ b, name, selected, onSelect, x, y, scale, state }: {
       <rect x={-width/2-8} y="27" width={width+depth+16} height="28" rx="14" fill={selected ? "#80502d" : "#3e5546"} opacity=".96" />
       <text x={depth/2} y={secondaryLabel ? "39" : "45"} textAnchor="middle" fontSize="10.5" fontWeight="700" fill="#fff">{primaryLabel}</text>
       {secondaryLabel && <text x={depth/2} y="51" textAnchor="middle" fontSize="8.5" fill="#fff">{secondaryLabel}</text>}
-      <text x={depth/2} y="73" textAnchor="middle" fontSize="10" fill="#45594a">{sfh ? `${fmt(b.area_m2, 0)} m²` : `${b.units} homes`}</text>
+      <text x={depth/2} y="73" textAnchor="middle" fontSize="10" fill="#45594a">{sfh ? (b.area_m2 == null ? "Area unavailable" : `${fmt(b.area_m2, 0)} m²`) : (b.units == null ? "Unit count unavailable" : `${b.units} homes`)}</text>
       <title>{name}. Select to inspect the building.</title>
     </g>
   );
@@ -172,7 +177,7 @@ export function Scene({ buildings, names, state, selectedBuilding, onSelect }: {
             <Tree x={255} y={300} scale={.75} tone={2}/><Tree x={570} y={250} scale={.8} tone={1}/><Tree x={1110} y={315} scale={.8} tone={0}/>
           </g>
           <g filter="url(#district-shadow)">
-            {buildings.map((b, i) => <House key={b.building} b={b} name={names[i]} selected={selectedBuilding === b.role} onSelect={() => onSelect(b.role)} {...positions[i]} state={state.buildings[i]}/>)}
+            {buildings.map((b, i) => <House key={b.role} b={b} name={names[i]} selected={selectedBuilding === b.role} onSelect={() => onSelect(b.role)} {...positions[i]} state={state.buildings[i]}/>)}
           </g>
           <g transform="translate(28 26)" filter="url(#soft-shadow)">
             <rect width="340" height="68" rx="15" fill="#fffdf8" fillOpacity=".94" stroke="#d9dfd4"/>

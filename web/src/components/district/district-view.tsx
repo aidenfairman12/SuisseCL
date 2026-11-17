@@ -2,8 +2,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Pause, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useBundleFile } from "@/lib/bundle";
-import type { Figures } from "@/lib/types";
 import { useManifest, useBuildings, useConditions, useRun } from "@/lib/contract";
 import type { BuildingInfo } from "@/lib/contract";
 import { Scene, type SceneState } from "./scene";
@@ -18,17 +16,29 @@ export function DistrictView({ controller: controllerProp, onController }: { con
   const buildingsFile = useBuildings("full");
   const conditionsFile = useConditions("full");
   const runFile = useRun("base", controllerProp || DEFAULT_CONTROLLER, "full");
-  const figures = useBundleFile<Figures>("figures").data;
   const manifest = manifestFile.data;
   const buildings = buildingsFile.data?.buildings;
   const conditions = conditionsFile.data;
   const run = runFile.data;
   const [step, setStep] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [playbackMs, setPlaybackMs] = useState(50);
+  const [eventTag, setEventTag] = useState("district_daily_peak");
   const [selectedBuilding, setSelectedBuilding] = useState("");
 
-  const districtBuildings = figures?.district.buildings ?? [];
-  const buildingIds = manifest?.buildings ?? districtBuildings.map((b) => b.role);
+  const buildingIds = manifest?.buildings ?? [];
+  const districtBuildings = buildingIds.flatMap((id) => {
+    const info = buildings?.[id];
+    if (!info) return [];
+    const area = info.attributes.floor_area_m2;
+    const units = info.attributes.housing_units;
+    return [{
+      role: id,
+      type: info.type,
+      area_m2: area?.available && typeof area.value === "number" ? area.value : null,
+      units: units?.available && typeof units.value === "number" ? units.value : null,
+    }];
+  });
   // The contract's scope is either a short sample window or the full simulated year.
   // All arrays are indexed locally within that scope; never hard-code the sample's 48 steps.
   const n = Math.min(
@@ -41,9 +51,9 @@ export function DistrictView({ controller: controllerProp, onController }: { con
   const i = Math.min(step, Math.max(0, n - 1));
   useEffect(() => {
     if (!playing || n < 1) return;
-    const timer = window.setInterval(() => setStep((current) => (current + 1) % n), 500);
+    const timer = window.setInterval(() => setStep((current) => (current + 1) % n), playbackMs);
     return () => window.clearInterval(timer);
-  }, [playing, n]);
+  }, [playing, n, playbackMs]);
 
   const buildingStates = useMemo(() => {
     if (!run) return [];
@@ -60,7 +70,7 @@ export function DistrictView({ controller: controllerProp, onController }: { con
     });
   }, [run, buildingIds, i]);
 
-  if (!manifest || !buildings || !conditions || !run || !figures) {
+  if (!manifest || !buildings || !conditions || !run) {
     return <div className="flex aspect-[16/9] items-center justify-center rounded-2xl border bg-muted/30 text-sm text-muted-foreground">Loading the district simulation…</div>;
   }
 
@@ -73,6 +83,10 @@ export function DistrictView({ controller: controllerProp, onController }: { con
   const price = conditions.series.price_chf_kwh[i] ?? null;
   const rank = conditions.series.carbon_relative_rank[i] ?? null;
   const localTime = conditions.local_time[i] ?? "Time unavailable";
+  const eventSteps = run.situations.district[eventTag] ?? [];
+  const previousEvent = [...eventSteps].reverse().find((eventStep) => eventStep < i);
+  const nextEvent = eventSteps.find((eventStep) => eventStep > i);
+  const eventLabel = manifest.situation_tags[eventTag] ?? eventTag.replaceAll("_", " ");
   const hour = conditions.local_hour[i] ?? 0;
   const night = hour < 6 || hour >= 20;
   const frac = Math.max(0, Math.min(1, (hour - 5) / 16));
@@ -139,11 +153,26 @@ export function DistrictView({ controller: controllerProp, onController }: { con
           {manifest.controllers.map((c) => <option key={c.id} value={c.id}>{c.display_name}</option>)}
         </select>
         <input type="range" min={0} max={Math.max(n - 1, 0)} value={i} onChange={(e) => { setPlaying(false); setStep(+e.target.value); }} className="min-w-48 flex-1 accent-amber-500" aria-label="simulation timestep" />
-        <Button size="sm" variant="outline" onClick={() => setStep(0)}>Window start</Button>
-        <Button size="sm" variant="outline" onClick={() => setStep(Math.max(0, n - 1))}>Window end</Button>
+        <select value={playbackMs} onChange={(e) => setPlaybackMs(Number(e.target.value))} className="h-8 rounded-lg border bg-background px-2 text-sm" aria-label="playback speed">
+          <option value={25}>Fast · 25 ms/step</option>
+          <option value={50}>1× · 50 ms/step</option>
+          <option value={100}>½× · 100 ms/step</option>
+          <option value={250}>¼× · 250 ms/step</option>
+        </select>
+        <Button size="sm" variant="outline" onClick={() => { setPlaying(false); setStep(0); }}>{run.scope.kind === "year" ? "Year start" : "Window start"}</Button>
+        <Button size="sm" variant="outline" onClick={() => { setPlaying(false); setStep(Math.max(0, n - 1)); }}>{run.scope.kind === "year" ? "Year end" : "Window end"}</Button>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+        <label htmlFor="district-event" className="text-xs font-medium">Jump to event</label>
+        <select id="district-event" value={eventTag} onChange={(e) => setEventTag(e.target.value)} className="h-8 rounded-lg border bg-background px-2 text-sm">
+          {["district_daily_peak", "cold_hour", "high_tariff", "sh_tank_charging", "sh_tank_discharging"].map((tag) => <option key={tag} value={tag}>{manifest.situation_tags[tag] ?? tag}</option>)}
+        </select>
+        <Button size="sm" variant="outline" disabled={previousEvent == null} onClick={() => { setPlaying(false); setStep(previousEvent!); }}>Previous event</Button>
+        <Button size="sm" variant="outline" disabled={nextEvent == null} onClick={() => { setPlaying(false); setStep(nextEvent!); }}>Next event</Button>
+        <span className="text-xs">{eventSteps.length.toLocaleString()} tagged steps · {eventLabel}</span>
       </div>
       <p className="text-sm text-muted-foreground"><b className="text-foreground">{localTime}</b> · {f(totalNet, 2)} kWh_el drawn from the grid by all six building models in this step · {stepSeconds / 3600} h timestep</p>
-      <p className="text-xs text-muted-foreground">{manifest.time_axis.scope.kind === "year" || manifest.kind === "full" ? "Full-year simulation" : "Sample window"} · {n.toLocaleString()} simulated steps · {conditions.local_time[0] ?? "—"} to {conditions.local_time[n - 1] ?? "—"}</p>
+      <p className="text-xs text-muted-foreground">{run.scope.kind === "year" ? "Full-year simulation" : "Sample window"} · {n.toLocaleString()} simulated steps · {conditions.local_time[0] ?? "—"} to {conditions.local_time[n - 1] ?? "—"} · {playbackMs} ms per step</p>
       <p className="text-xs text-muted-foreground">{manifest.description} {manifest.district_note}</p>
     </div>
   );
