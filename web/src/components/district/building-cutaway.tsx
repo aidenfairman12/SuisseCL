@@ -31,7 +31,6 @@ export function BuildingCutaway({ building, state, stepSeconds }: { building: Bu
   const waterHeating = String(attr(building, "water_heating") ?? "").toLowerCase();
   const electricWaterHeater = waterHeating === "electric water heater (its electricity is inside household electricity)";
   const capacity = building.components.tank_sh.attributes.capacity_kwh_th?.value;
-  const hpType = attr(building, "heat_pump_type");
   const householdProvenance = building.attributes.household_electricity_source?.provenance === "synthetic" ? "Synthetic composite" : "Measured";
   const hwCapacity = building.components.tank_hw.attributes.capacity_kwh_th?.value;
   const area = attr(building, "floor_area_m2");
