@@ -1,8 +1,7 @@
 """Build the audit-dashboard bundle (docs/dashboard/dashboard_implementation_plan.md).
 
-Reads the registries, QC reports, results and ui_map.yaml (all read-only) and writes dashboard/bundle/*.js.
-Each bundle file is JSON wrapped in one assignment so that index.html can load it with a <script> tag from file://
-(browsers block fetch() of local files). Use `bundle_io.read_bundle_file` to read one back as JSON.
+Reads the registries, QC reports, results and ui_map.yaml (all read-only) and writes web/public/bundle/*.json.
+The Next.js UI in web/ reads these files; lint.py and the tests read them with `bundle_io.read_bundle_file`.
 
 Run: PYTHONPATH=. cl/bin/python -I swiss/dashboard/build_bundle.py
 """
@@ -25,7 +24,7 @@ from swiss.dashboard import bundle_io  # noqa: E402
 from swiss.dashboard.parse_registries import (extract_ids, normalise_classification, parse_csv_registry,  # noqa: E402
                                               parse_md_registry, slug)
 
-BUNDLE = os.path.join(ROOT, 'dashboard', 'bundle')
+BUNDLE = os.path.join(ROOT, 'web', 'public', 'bundle')
 UI_MAP = os.path.join(ROOT, 'swiss', 'dashboard', 'ui_map.yaml')
 
 P = {  # every input file the build reads (paths relative to ROOT)
@@ -561,9 +560,24 @@ def manifest_check():
     return {'verified': not bad, 'files_listed': n, 'failures': bad}
 
 
+def dirty_lines(porcelain):
+    """`git status --porcelain` lines that make the tree dirty, ignoring the generated bundle itself.
+    The raw output must not be stripped: the first line may start with a space (' M path')."""
+    return [l for l in porcelain.splitlines() if l and not l[3:].startswith('web/public/bundle')]
+
+
+def repo_url():
+    """https URL of the origin repository (for links to docs on the hosted dashboard), or None."""
+    import re as _re
+    u = git('remote', 'get-url', 'origin')
+    m = _re.match(r'(?:git@github\.com:|https://github\.com/)([\w.-]+/[\w.-]+?)(?:\.git)?$', u)
+    return f'https://github.com/{m.group(1)}' if m else None
+
+
 def git_state():
     head = git('rev-parse', '--short', 'HEAD')
-    porcelain = [l for l in git('status', '--porcelain').splitlines() if l and not l[3:].startswith('dashboard/bundle')]
+    raw = subprocess.run(['git', '-C', ROOT, 'status', '--porcelain'], capture_output=True, text=True).stdout
+    porcelain = dirty_lines(raw)
     return {'commit': head, 'commit_full': git('rev-parse', 'HEAD'), 'dirty': bool(porcelain),
             'dirty_paths': [l[3:] for l in porcelain][:50]}
 
@@ -578,6 +592,7 @@ def main():
     figs = figures.build_figures(read_df)
     figs.update(figures.build_model_figures(read_df, read_json))
     figs['action_maps'] = figures.action_maps()
+    figs['district'] = figures.district(read_df, read_json)
     from swiss.experiments import run_sensitivity
     figs['sensitivity_variants'] = {'datasets': dict(run_sensitivity.VARIANTS), 'controllers': list(run_sensitivity.CTRL),
                                     'source': 'swiss/experiments/run_sensitivity.py (VARIANTS, CTRL)'}
@@ -599,6 +614,7 @@ def main():
     meta = {
         'built_utc': _dt.datetime.now(_dt.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
         'git': git_state(),
+        'repo_url': repo_url(),
         'manifest': manifest_check(),
         'inputs': {f: sha256_file(f) for f in sorted(_read_files)},
         'node_counts': dict(sorted(counts.items())),
@@ -607,17 +623,21 @@ def main():
     }
     prov = {'nodes': g.nodes, 'ui_keys': [k for k in ui if not k.startswith('_')],
             'settings': clean(ui.get('_settings', {}))}
-    bundle_io.write_bundle_file(os.path.join(BUNDLE, 'provenance.js'), 'provenance', clean(prov))
-    bundle_io.write_bundle_file(os.path.join(BUNDLE, 'series_inputs.js'), 'series_inputs', clean(series))
-    bundle_io.write_bundle_file(os.path.join(BUNDLE, 'figures.js'), 'figures', clean(figs))
-    bundle_io.write_bundle_file(os.path.join(BUNDLE, 'results.js'), 'results', clean(results))
+
+    def emit(name, obj):
+        bundle_io.write_json_file(os.path.join(BUNDLE, f'{name}.json'), obj)
+
+    emit('provenance', clean(prov))
+    emit('series_inputs', clean(series))
+    emit('figures', clean(figs))
+    emit('results', clean(results))
     for f in os.listdir(BUNDLE):
         if f.startswith('trace_'):
             os.remove(os.path.join(BUNDLE, f))
     for name, t in traces.items():
         if t['arrays'] is not None:
-            bundle_io.write_bundle_file(os.path.join(BUNDLE, f'trace_{name}.js'), f'trace_{name}', clean(t))
-    bundle_io.write_bundle_file(os.path.join(BUNDLE, 'meta.js'), 'meta', clean(meta))
+            emit(f'trace_{name}', clean(t))
+    emit('meta', clean(meta))
     print('nodes per kind:')
     for k, v in sorted(counts.items()):
         print(f'  {k:18s} {v}')

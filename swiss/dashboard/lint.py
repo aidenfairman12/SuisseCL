@@ -5,10 +5,11 @@ Checks
   dangling   every ID referenced by any node (edge or mention) exists as a node
   placeholders  every placeholder resolved at build time (meta.build_errors is empty)
   prose      hand-written prose holds no digits outside placeholders, registry IDs and allowed tokens
-  coverage   every KPI column in baselines_2023.csv and every data-ui box in dashboard/system_map.svg has a ui_map entry
+  coverage   every KPI column in baselines_2023.csv, and every audit-card key written in web/src (system-map boxes, district
+             illustration, KPI tiles), has a ui_map entry; figures named in ui_map exist in web/src/components/charts/registry.tsx
   lineage    every series / KPI / card reaches a SRC-* node or ends in a decision / assumption / lineage_end
   registry   every registry row ID (SRC DER TR M D A ISS ALG EXP V R) is a node
-  --check-fresh  every input recorded in meta.js still has the same sha256 (bundle is not stale)
+  --check-fresh  every input recorded in meta.json still has the same sha256 (bundle is not stale)
 
 Run: PYTHONPATH=. cl/bin/python -I swiss/dashboard/lint.py [--check-fresh]
 """
@@ -25,14 +26,25 @@ from swiss.dashboard import build_bundle as bb  # noqa: E402
 from swiss.dashboard.bundle_io import read_bundle_file  # noqa: E402
 from swiss.dashboard.parse_registries import ID_RE, RANGE_RE, SLASH_LETTERS_RE, extract_ids  # noqa: E402
 
-BUNDLE = os.path.join(ROOT, 'dashboard', 'bundle')
-SVG = os.path.join(ROOT, 'dashboard', 'system_map.svg')
-INDEX = os.path.join(ROOT, 'dashboard', 'index.html')
+BUNDLE = os.path.join(ROOT, 'web', 'public', 'bundle')
+WEB_SRC = os.path.join(ROOT, 'web', 'src')
+REGISTRY = os.path.join(WEB_SRC, 'components', 'charts', 'registry.tsx')
+
+
+def web_sources():
+    """(relative path, text) of every .ts/.tsx file of the Next.js UI."""
+    out = []
+    for d, _, files in os.walk(WEB_SRC):
+        for fn in files:
+            if fn.endswith(('.ts', '.tsx')):
+                p = os.path.join(d, fn)
+                out.append((os.path.relpath(p, ROOT), open(p, encoding='utf-8').read()))
+    return out
 
 
 def load():
-    prov = read_bundle_file(os.path.join(BUNDLE, 'provenance.js'))
-    meta = read_bundle_file(os.path.join(BUNDLE, 'meta.js'))
+    prov = read_bundle_file(os.path.join(BUNDLE, 'provenance.json'))
+    meta = read_bundle_file(os.path.join(BUNDLE, 'meta.json'))
     ui = yaml.safe_load(open(bb.UI_MAP, encoding='utf-8'))
     return prov, meta, ui
 
@@ -110,15 +122,16 @@ def lint(check_fresh_flag=False):
             if not bb.PH_RE.search(str(n.get('value', ''))):
                 errs.append(f'prose: {key}.numbers "{n.get("label")}" value is not a placeholder')
 
-    # figures referenced in ui_map must be implemented in dashboard/charts.js
-    charts = os.path.join(ROOT, 'dashboard', 'charts.js')
-    known_figs = set(re.findall(r'^\s{4}(\w+): \{title:', open(charts, encoding='utf-8').read(), re.M)) if os.path.exists(charts) else set()
+    # figures referenced in ui_map must be implemented in web/src/components/charts/registry.tsx
+    known_figs = set(re.findall(r'^  (\w+): \{ title:', open(REGISTRY, encoding='utf-8').read(), re.M)) if os.path.exists(REGISTRY) else set()
+    if not known_figs:
+        errs.append('figures: no figures found in web/src/components/charts/registry.tsx')
     for key, e in ui.items():
         if key.startswith('_'):
             continue
         for f in e.get('figures', []) or []:
             if f not in known_figs:
-                errs.append(f'figures: {key} uses figure "{f}", which dashboard/charts.js does not implement')
+                errs.append(f'figures: {key} uses figure "{f}", which the web UI registry does not implement')
 
     # dangling IDs: every edge target, every ID mentioned in shown text
     for nid, n in nodes.items():
@@ -134,11 +147,16 @@ def lint(check_fresh_flag=False):
             continue
         if f'kpi:{c}' not in ui:
             errs.append(f'coverage: KPI column {c} has no ui_map entry kpi:{c}')
-    for path in (SVG, INDEX):
-        if os.path.exists(path):
-            for k in re.findall(r'data-ui="([^"]+)"', open(path, encoding='utf-8').read()):
-                if k not in ui:
-                    errs.append(f'coverage: {os.path.basename(path)} data-ui="{k}" has no ui_map entry')
+    # audit-card keys written as string literals in the web UI (map boxes, district illustration, tiles, links)
+    for rel, text in web_sources():
+        for k in sorted(set(re.findall(r'["\']((?:series|card|kpi|panel|map):[a-z0-9_]+)["\']', text))):
+            if k not in ui:
+                errs.append(f'coverage: {rel} opens "{k}", which has no ui_map entry')
+        # KPI column names listed in the UI become kpi:<column> keys
+        for arr in re.findall(r'(?:HEADLINE|KPIS)\s*=\s*\[([^\]]*)\]', text):
+            for col in re.findall(r'"([a-z0-9_]+)"', arr):
+                if f'kpi:{col}' not in ui or col not in cols:
+                    errs.append(f'coverage: {rel} lists KPI column "{col}" that is not a results column with a ui_map entry')
 
     # lineage
     for nid, n in nodes.items():
