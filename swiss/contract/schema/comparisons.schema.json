@@ -1,0 +1,170 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "comparisons.json",
+ "type": "object",
+ "properties": {
+  "contract_version": {
+   "const": "1.0.0-draft"
+  },
+  "scenario": {
+   "type": "string"
+  },
+  "reference_controller": {
+   "type": "string"
+  },
+  "scope": {
+   "$ref": "common.schema.json#/$defs/scope"
+  },
+  "comparisons": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "metrics": {
+      "type": "object",
+      "additionalProperties": {
+       "type": "object",
+       "properties": {
+        "unit": {
+         "type": "string"
+        },
+        "value": {
+         "type": "number"
+        },
+        "reference": {
+         "type": "number"
+        },
+        "delta": {
+         "type": "number"
+        },
+        "delta_pct": {
+         "type": [
+          "number",
+          "null"
+         ]
+        }
+       },
+       "required": [
+        "unit",
+        "value",
+        "reference",
+        "delta",
+        "delta_pct"
+       ],
+       "additionalProperties": false
+      }
+     },
+     "mechanisms": {
+      "type": "object",
+      "properties": {
+       "import_moved_out_of_high_tariff_kwh_el": {
+        "type": "number"
+       },
+       "extra_tank_loss_kwh_th": {
+        "type": "number"
+       },
+       "extra_hp_electricity_kwh_el": {
+        "type": "number"
+       },
+       "tank_heat_in_kwh_th": {
+        "type": "number"
+       },
+       "tank_heat_out_kwh_th": {
+        "type": "number"
+       },
+       "stored_heat_change_kwh_th": {
+        "type": "number"
+       },
+       "tank_charging_electricity_kwh_el": {
+        "type": "number"
+       },
+       "electricity_avoided_at_discharge_kwh_el": {
+        "type": "number"
+       },
+       "electricity_from_tank_losses_kwh_el": {
+        "type": "number"
+       },
+       "electricity_from_stored_remainder_kwh_el": {
+        "type": "number"
+       },
+       "electricity_from_cop_timing_kwh_el": {
+        "type": "number"
+       },
+       "cost_from_tariff_timing_chf": {
+        "type": "number"
+       },
+       "cost_from_extra_electricity_chf": {
+        "type": "number"
+       },
+       "carbon_from_timing_pct": {
+        "type": [
+         "number",
+         "null"
+        ]
+       },
+       "carbon_from_extra_electricity_pct": {
+        "type": [
+         "number",
+         "null"
+        ]
+       },
+       "relative_carbon_change_pct": {
+        "type": [
+         "number",
+         "null"
+        ]
+       },
+       "peak_step_reference": {
+        "type": "integer"
+       },
+       "peak_step": {
+        "type": "integer"
+       }
+      },
+      "required": [
+       "import_moved_out_of_high_tariff_kwh_el",
+       "extra_tank_loss_kwh_th",
+       "extra_hp_electricity_kwh_el",
+       "tank_heat_in_kwh_th",
+       "tank_heat_out_kwh_th",
+       "stored_heat_change_kwh_th",
+       "tank_charging_electricity_kwh_el",
+       "electricity_avoided_at_discharge_kwh_el",
+       "electricity_from_tank_losses_kwh_el",
+       "electricity_from_stored_remainder_kwh_el",
+       "electricity_from_cop_timing_kwh_el",
+       "cost_from_tariff_timing_chf",
+       "cost_from_extra_electricity_chf",
+       "carbon_from_timing_pct",
+       "carbon_from_extra_electricity_pct",
+       "relative_carbon_change_pct",
+       "peak_step_reference",
+       "peak_step"
+      ],
+      "additionalProperties": false
+     },
+     "relative_only": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    },
+    "required": [
+     "metrics",
+     "mechanisms",
+     "relative_only"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "contract_version",
+  "scenario",
+  "reference_controller",
+  "scope",
+  "comparisons"
+ ],
+ "additionalProperties": false
+}

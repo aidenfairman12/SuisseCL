@@ -23,11 +23,15 @@ bash swiss/run_pipeline.sh          # ~10 min (EKZ profiling reads 7 GB)
 Order and transformation IDs are in the script header; outputs and hashes: `data/canonical/MANIFEST.sha256`.
 ## 4. Tests and experiments
 ```bash
-PYTHONPATH=. cl/bin/python -m pytest swiss/tests -q                       # 56 tests, ~1 min
+PYTHONPATH=. cl/bin/python -m pytest swiss/tests -q                       # 139 tests, ~3 min (incl. real rollouts)
 PYTHONPATH=. cl/bin/python -I swiss/experiments/run_baselines.py         # ~4 min  (EXP-007..012)
 PYTHONPATH=. cl/bin/python -I swiss/experiments/run_sensitivity.py       # ~8 min (needs the swiss_sens_* datasets, see below)
 PYTHONPATH=. cl/bin/python -I swiss/validation/validate_phase_a.py       # ~1 min
 cl/bin/python -I swiss/validation/audit_registries.py                    # registry traceability audit
+cl/bin/python -I swiss/contract/export_v1.py                             # ~5 min: contract v1 sample (web/public/bundle/sim/), real rollouts
+cl/bin/python -I swiss/contract/export_v1.py --full --out web/public/bundle/sim_full   # ~5 min: full-year contract bundle (about 57 MB)
+cl/bin/python -I swiss/validation/mechanism_check.py                     # mechanism-check report from comparisons_year.json
+PYTHONPATH=. cl/bin/python -I swiss/dashboard/build_bundle.py            # audit bundle (build on a clean committed tree)
 ```
 Sensitivity datasets: `build_dataset.py --tank-scale 0.5|2.0 --out-name swiss_sens_tank0.5|swiss_sens_tank2`, `--tank-eff 0.99 --out-name swiss_sens_eff0.99`, and `--thermal-subdir thermal_flatcop_T80 --out-name swiss_sens_flatcop` (the flat-COP thermal folder is produced by calling `build_thermal_demand.run(write=True, out_subdir='thermal_flatcop_T80', t_sh={'SFH': 80.0, 'MFH': 80.0})`).
 ## 5. Randomness and determinism

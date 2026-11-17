@@ -1,0 +1,91 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "buildings.json",
+ "type": "object",
+ "properties": {
+  "contract_version": {
+   "const": "1.0.0-draft"
+  },
+  "buildings": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "$ref": "common.schema.json#/$defs/buildingId"
+     },
+     "citylearn_name": {
+      "type": "string"
+     },
+     "display_name": {
+      "type": "string"
+     },
+     "type": {
+      "enum": [
+       "SFH",
+       "MFH"
+      ]
+     },
+     "source_dataset": {
+      "type": "string"
+     },
+     "attributes": {
+      "type": "object",
+      "additionalProperties": {
+       "$ref": "common.schema.json#/$defs/attribute"
+      }
+     },
+     "components": {
+      "type": "object",
+      "additionalProperties": {
+       "type": "object",
+       "properties": {
+        "present": {
+         "type": "boolean"
+        },
+        "label": {
+         "type": "string"
+        },
+        "attributes": {
+         "type": "object",
+         "additionalProperties": {
+          "$ref": "common.schema.json#/$defs/attribute"
+         }
+        }
+       },
+       "required": [
+        "present",
+        "label",
+        "attributes"
+       ],
+       "additionalProperties": false
+      }
+     },
+     "related_ids": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "pattern": "^[A-Za-z]+[-:][A-Za-z0-9._:\\-]+$"
+      }
+     }
+    },
+    "required": [
+     "id",
+     "citylearn_name",
+     "display_name",
+     "type",
+     "source_dataset",
+     "attributes",
+     "components",
+     "related_ids"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "contract_version",
+  "buildings"
+ ],
+ "additionalProperties": false
+}

@@ -16,51 +16,35 @@ npm run dev      # http://localhost:3000
 npm run build    # static site in web/out (type-check included); npm run lint
 ```
 
-- Pages: Overview, Inputs, Model, Results, Audit. The audit card opens as a side sheet; `?node=ID` deep-links to a card.
+- Pages: Story (home, with the illustrated district), Inputs, Model, Results, Audit, Glossary. The audit card opens as a side sheet; `?node=ID` deep-links to a card.
+- Two data sources: the audit bundle (`public/bundle/*.json`, built by `swiss/dashboard/build_bundle.py`) and the **data contract v1** (`public/bundle/sim/`, built by `swiss/contract/export_v1.py`; types and hooks in `src/lib/contract/`, spec in `docs/dashboard/data_contract_v1.md`).
 - Hand-written mapping of UI elements to registry nodes: `swiss/dashboard/ui_map.yaml`. `lint.py` fails if the UI opens a
   card that has no entry there, names an unknown figure or KPI column, or if the bundle is older than its inputs.
 - Bundle committing rule: build the bundle on a **clean, committed** tree and commit it in a second commit, so the header
   shows "clean tree" for that snapshot.
 
-## Hosting on Vercel (private only)
+## Hosting on Vercel (public, decision D-020)
 
-Default to private. The licence checks below are done, a few items remain open, and this is **not** about JASM: that unlicensed source (SRC-003, the
-subject of D-004) is not used anywhere. No pipeline code, transformation, model or dashboard item depends on it, and none
-of its files are tracked in git. What the dashboard does contain:
+The site is **public on purpose** (owner decision 2026-11-17): https://suisse-cl.vercel.app/ and every file under `/bundle/` can be opened and downloaded without a login.
+Write every page as if anyone may read it. This replaces the earlier private-only plan (Vercel Authentication). The unlicensed source JASM (SRC-003, D-004) is not
+used anywhere: no pipeline code, model or dashboard item depends on it, and none of its files are tracked in git.
 
-- hourly data derived from HEAPO and EKZ (CC BY 4.0), MeteoSwiss data (citation "Source: MeteoSwiss" required) and
-  Energy-Charts data (attribution "energy-charts.info" required). The footer shows each source's licence text from the registry;
+What the public bundle contains:
+- hourly data derived from HEAPO and ETH/EKZ (CC BY 4.0), MeteoSwiss data (cite "Source: MeteoSwiss") and Energy-Charts data (attribution "energy-charts.info"). The footer shows each source's licence text from the registry;
 - aggregate statistics from the EPFL carbon series (dataset CC BY 4.0, article CC BY-NC-ND);
-- unvalidated work in progress: a modeled carbon series whose level is about 61–62 % of the EPFL reference, and the open issues.
+- work in progress that is not validated: a modeled carbon series (about 61-62 % of the EPFL reference level, shown only as relative values), assumed storage tanks, and the list of open issues.
 
-Licence checks done 2026-11-17 (public documentation read; **not a legal review**):
+Licence checks done 2026-11-17 (public documentation read; **not a legal review**): MeteoSwiss open data is CC BY 4.0 (commercial use, redistribution and derived data allowed;
+cite the source and do not imply endorsement); Energy-Charts is CC BY 4.0 with attribution "energy-charts.info" for the endpoints and countries used (not the restricted day-ahead prices).
 
-- MeteoSwiss open data is **CC BY 4.0**: commercial use, redistribution and derived data are allowed; cite "Source: MeteoSwiss"
-  and do not imply MeteoSwiss endorses your use (opendatadocs.meteoswiss.ch/general/terms-of-use).
-- Energy-Charts is **CC BY 4.0 with attribution "energy-charts.info"**. The `/v2` responses for the endpoints and countries we use
-  (`public_power` for CH, DE, FR, AT, IT; `cbpf` for CH) carry that licence field; the `/v1` responses we downloaded have no
-  such field, and the API documentation states the same default. Only day-ahead prices have restricted per-zone licences, and we
-  do not use them.
+**Open compliance items now that the site is public** (none is solved by the hosting choice):
+1. CC BY expects a link to the licence and a note that the data was changed; the footer gives publisher and licence text but not yet links or the change note.
+2. The EPFL article is CC BY-NC-ND: show only aggregate statistics from the dataset (CC BY 4.0), never reproduce the article.
+3. Vercel Hobby is for non-commercial use only.
+4. Whether unvalidated work in progress should stay visible is the owner's call; the dashboard labels it as such.
 
-Still open before a public URL: CC BY also expects a link to the licence and a note that the data was changed (the footer gives
-publisher and licence text but not yet links); the EPFL article is CC BY-NC-ND (the dashboard shows only aggregate statistics
-from the dataset, which is CC BY 4.0); Vercel Hobby is for non-commercial use; and whether you want unvalidated work in
-progress visible.
+Deployment settings: Root Directory `web`; Framework Preset Next.js; build command `npm run build`; default install; Production Branch `main`; no environment variables (static export, no server code).
+Merging to `main` redeploys production; pull requests get preview deployments.
 
-1. **Team default first (recommended).** In the Vercel team's settings, set the Deployment Protection default to
-   **All Deployments** with **Vercel Authentication**, so a new project is never public, not even for its first deploy.
-2. **Import** the private GitHub repository (grant the Vercel GitHub app access to this repository only).
-3. **Project settings:** Root Directory `web`; Framework Preset Next.js; build command `npm run build`; install command
-   default; Production Branch `main`; no environment variables (static export, no server code).
-4. **Protect:** *Settings → Deployment Protection* → Vercel Authentication **on**, scope **All Deployments**.
-   Do **not** use *Standard Protection*: it leaves the production domain (`<project>.vercel.app`) public.
-   Password Protection is not available on Hobby (Pro: $20 per month per project); Passport and Trusted IPs are Enterprise.
-5. **Prove it:** in a private window while logged out, open the production URL and
-   `curl -I https://<project>.vercel.app/bundle/provenance.json` (the data files are static assets): expect a login
-   redirect or 401, never 200. Repeat on one per-deployment URL.
-6. **Access:** viewers need a Vercel login with access to the project (team member/viewer, or an access request you
-   approve). On Hobby only one external user per account is allowed. A Shareable Link bypasses the login for anyone who has it.
-
-Updating: merging to `main` redeploys production; pull requests get protected preview deployments. Vercel never runs
-Python, so run `build_bundle.py` and `lint.py --check-fresh` locally and commit the bundle before merging, or the site
-will show stale numbers.
+**Stale-bundle risk.** Vercel never runs Python, so a stale bundle deploys without warning. Before merging, regenerate the bundles on a clean committed tree and commit them
+(`build_bundle.py`, `export_v1.py`), then run `lint.py --check-fresh` and `npm run build`.

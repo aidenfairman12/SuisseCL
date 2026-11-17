@@ -119,7 +119,7 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
               'episode_time_steps': None, 'rolling_episode_split': False, 'random_episode_split': False,
               'seconds_per_time_step': 3600.0, 'observations': observations, 'actions': actions,
               'reward_function': {'type': 'citylearn.reward_function.RewardFunction', 'attributes': {}},
-              'buildings': buildings, 'root_directory': out_dir}
+              'buildings': buildings, 'root_directory': '.'}   # '.' = the schema's own folder (CityLearn 3.3.0 resolves it relative to schema.json), so the dataset is portable
     json.dump(schema, open(os.path.join(out_dir, 'schema.json'), 'w'), indent=1)
     json.dump(manifest, open(os.path.join(out_dir, 'build_manifest.json'), 'w'), indent=1)
     print(json.dumps(manifest, indent=1))

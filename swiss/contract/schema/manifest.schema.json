@@ -1,0 +1,607 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "manifest.json",
+ "type": "object",
+ "properties": {
+  "contract_version": {
+   "const": "1.0.0-draft"
+  },
+  "phase": {
+   "const": "A"
+  },
+  "kind": {
+   "enum": [
+    "sample",
+    "full"
+   ]
+  },
+  "description": {
+   "type": "string"
+  },
+  "district_note": {
+   "type": "string"
+  },
+  "year": {
+   "type": "integer"
+  },
+  "timezone": {
+   "type": "string"
+  },
+  "index_convention": {
+   "type": "string"
+  },
+  "time_axis": {
+   "type": "object",
+   "properties": {
+    "start_utc": {
+     "type": "string"
+    },
+    "step_seconds": {
+     "type": "integer",
+     "minimum": 1
+    },
+    "n_steps_inputs": {
+     "type": "integer"
+    },
+    "n_steps_simulated": {
+     "type": "integer"
+    },
+    "scope": {
+     "$ref": "common.schema.json#/$defs/scope"
+    }
+   },
+   "required": [
+    "start_utc",
+    "step_seconds",
+    "n_steps_inputs",
+    "n_steps_simulated",
+    "scope"
+   ],
+   "additionalProperties": false
+  },
+  "buildings": {
+   "type": "array",
+   "items": {
+    "$ref": "common.schema.json#/$defs/buildingId"
+   },
+   "minItems": 1
+  },
+  "controllers": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "key": {
+      "type": "string"
+     },
+     "display_name": {
+      "type": "string"
+     },
+     "short_name": {
+      "type": "string"
+     },
+     "algorithm_id": {
+      "type": "string"
+     },
+     "reference": {
+      "type": "boolean"
+     },
+     "identical_to": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "note": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "parameters": {
+      "type": "object"
+     }
+    },
+    "required": [
+     "id",
+     "key",
+     "display_name",
+     "short_name",
+     "algorithm_id",
+     "reference",
+     "identical_to",
+     "note",
+     "parameters"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "scenarios": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "label": {
+      "type": "string"
+     },
+     "dataset": {
+      "type": "string"
+     },
+     "description": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "label",
+     "dataset",
+     "description"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "runs": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "scenario": {
+      "type": "string"
+     },
+     "controller": {
+      "type": "string"
+     },
+     "file": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "scenario",
+     "controller",
+     "file"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "variables": {
+   "type": "object",
+   "properties": {
+    "building": {
+     "type": "object",
+     "additionalProperties": {
+      "$ref": "common.schema.json#/$defs/variable"
+     }
+    },
+    "district": {
+     "type": "object",
+     "additionalProperties": {
+      "$ref": "common.schema.json#/$defs/variable"
+     }
+    },
+    "conditions": {
+     "type": "object",
+     "properties": {
+      "temp_c": {
+       "type": "object",
+       "properties": {
+        "label": {
+         "type": "string"
+        },
+        "unit": {
+         "type": "string"
+        },
+        "provenance": {
+         "enum": [
+          "measured",
+          "derived",
+          "modeled",
+          "synthetic",
+          "assumed_parameter"
+         ]
+        },
+        "source_ids": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "pattern": "^[A-Za-z]+[-:][A-Za-z0-9._:\\-]+$"
+         }
+        },
+        "description": {
+         "type": "string"
+        },
+        "relative_only": {
+         "type": "boolean"
+        }
+       },
+       "required": [
+        "label",
+        "unit",
+        "provenance",
+        "source_ids",
+        "description"
+       ],
+       "additionalProperties": false
+      },
+      "ghi_wm2": {
+       "type": "object",
+       "properties": {
+        "label": {
+         "type": "string"
+        },
+        "unit": {
+         "type": "string"
+        },
+        "provenance": {
+         "enum": [
+          "measured",
+          "derived",
+          "modeled",
+          "synthetic",
+          "assumed_parameter"
+         ]
+        },
+        "source_ids": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "pattern": "^[A-Za-z]+[-:][A-Za-z0-9._:\\-]+$"
+         }
+        },
+        "description": {
+         "type": "string"
+        },
+        "relative_only": {
+         "type": "boolean"
+        }
+       },
+       "required": [
+        "label",
+        "unit",
+        "provenance",
+        "source_ids",
+        "description"
+       ],
+       "additionalProperties": false
+      },
+      "diffuse_wm2": {
+       "type": "object",
+       "properties": {
+        "label": {
+         "type": "string"
+        },
+        "unit": {
+         "type": "string"
+        },
+        "provenance": {
+         "enum": [
+          "measured",
+          "derived",
+          "modeled",
+          "synthetic",
+          "assumed_parameter"
+         ]
+        },
+        "source_ids": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "pattern": "^[A-Za-z]+[-:][A-Za-z0-9._:\\-]+$"
+         }
+        },
+        "description": {
+         "type": "string"
+        },
+        "relative_only": {
+         "type": "boolean"
+        }
+       },
+       "required": [
+        "label",
+        "unit",
+        "provenance",
+        "source_ids",
+        "description"
+       ],
+       "additionalProperties": false
+      },
+      "beam_horizontal_wm2": {
+       "type": "object",
+       "properties": {
+        "label": {
+         "type": "string"
+        },
+        "unit": {
+         "type": "string"
+        },
+        "provenance": {
+         "enum": [
+          "measured",
+          "derived",
+          "modeled",
+          "synthetic",
+          "assumed_parameter"
+         ]
+        },
+        "source_ids": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "pattern": "^[A-Za-z]+[-:][A-Za-z0-9._:\\-]+$"
+         }
+        },
+        "description": {
+         "type": "string"
+        },
+        "relative_only": {
+         "type": "boolean"
+        }
+       },
+       "required": [
+        "label",
+        "unit",
+        "provenance",
+        "source_ids",
+        "description"
+       ],
+       "additionalProperties": false
+      },
+      "price_chf_kwh": {
+       "type": "object",
+       "properties": {
+        "label": {
+         "type": "string"
+        },
+        "unit": {
+         "type": "string"
+        },
+        "provenance": {
+         "enum": [
+          "measured",
+          "derived",
+          "modeled",
+          "synthetic",
+          "assumed_parameter"
+         ]
+        },
+        "source_ids": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "pattern": "^[A-Za-z]+[-:][A-Za-z0-9._:\\-]+$"
+         }
+        },
+        "description": {
+         "type": "string"
+        },
+        "relative_only": {
+         "type": "boolean"
+        }
+       },
+       "required": [
+        "label",
+        "unit",
+        "provenance",
+        "source_ids",
+        "description"
+       ],
+       "additionalProperties": false
+      },
+      "tariff_tier": {
+       "type": "object",
+       "properties": {
+        "label": {
+         "type": "string"
+        },
+        "unit": {
+         "type": "string"
+        },
+        "provenance": {
+         "enum": [
+          "measured",
+          "derived",
+          "modeled",
+          "synthetic",
+          "assumed_parameter"
+         ]
+        },
+        "source_ids": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "pattern": "^[A-Za-z]+[-:][A-Za-z0-9._:\\-]+$"
+         }
+        },
+        "description": {
+         "type": "string"
+        },
+        "relative_only": {
+         "type": "boolean"
+        }
+       },
+       "required": [
+        "label",
+        "unit",
+        "provenance",
+        "source_ids",
+        "description"
+       ],
+       "additionalProperties": false
+      },
+      "carbon_relative_rank": {
+       "type": "object",
+       "properties": {
+        "label": {
+         "type": "string"
+        },
+        "unit": {
+         "type": "string"
+        },
+        "provenance": {
+         "enum": [
+          "measured",
+          "derived",
+          "modeled",
+          "synthetic",
+          "assumed_parameter"
+         ]
+        },
+        "source_ids": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "pattern": "^[A-Za-z]+[-:][A-Za-z0-9._:\\-]+$"
+         }
+        },
+        "description": {
+         "type": "string"
+        },
+        "relative_only": {
+         "type": "boolean"
+        }
+       },
+       "required": [
+        "label",
+        "unit",
+        "provenance",
+        "source_ids",
+        "description"
+       ],
+       "additionalProperties": false
+      }
+     },
+     "required": [
+      "temp_c",
+      "ghi_wm2",
+      "diffuse_wm2",
+      "beam_horizontal_wm2",
+      "price_chf_kwh",
+      "tariff_tier",
+      "carbon_relative_rank"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "building",
+    "district",
+    "conditions"
+   ],
+   "additionalProperties": false
+  },
+  "situation_tags": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "string"
+   }
+  },
+  "situation_thresholds": {
+   "type": "object",
+   "properties": {
+    "cold_temp_c": {
+     "type": "number"
+    },
+    "tank_full_soc": {
+     "type": "number"
+    },
+    "tank_empty_soc": {
+     "type": "number"
+    },
+    "flow_epsilon_kwh_th": {
+     "type": "number"
+    },
+    "near_capacity_fraction": {
+     "type": "number"
+    },
+    "storage_covers_demand_share": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "cold_temp_c",
+    "tank_full_soc",
+    "tank_empty_soc",
+    "flow_epsilon_kwh_th",
+    "near_capacity_fraction",
+    "storage_covers_demand_share"
+   ],
+   "additionalProperties": false
+  },
+  "units": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "string"
+   }
+  },
+  "checks": {
+   "type": "object"
+  },
+  "generated": {
+   "type": "object",
+   "properties": {
+    "git_commit": {
+     "type": "string"
+    },
+    "git_dirty": {
+     "type": "boolean"
+    },
+    "python": {
+     "type": "string"
+    },
+    "citylearn": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "git_commit",
+    "git_dirty",
+    "python",
+    "citylearn"
+   ],
+   "additionalProperties": false
+  },
+  "files": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "string",
+    "pattern": "^[0-9a-f]{64}$"
+   }
+  },
+  "inputs": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "string",
+    "pattern": "^[0-9a-f]{64}$"
+   }
+  }
+ },
+ "required": [
+  "contract_version",
+  "phase",
+  "kind",
+  "description",
+  "district_note",
+  "year",
+  "timezone",
+  "index_convention",
+  "time_axis",
+  "buildings",
+  "controllers",
+  "scenarios",
+  "runs",
+  "variables",
+  "situation_tags",
+  "situation_thresholds",
+  "units",
+  "checks",
+  "generated",
+  "files",
+  "inputs"
+ ],
+ "additionalProperties": false
+}

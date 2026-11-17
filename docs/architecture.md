@@ -7,6 +7,9 @@ Layer → location
 4. Building/energy models → `swiss/models/heat_pump.py` (M-001), `swiss/pipeline/build_carbon.py` (M-002)
 5. CityLearn integration → `swiss/citylearn_build/build_dataset.py` → `swiss/datasets/swiss_district_2023/` (stock CityLearn 3.3.0 classes only: `Building`, `HeatPump`, `StorageTank`; CityLearn itself is unmodified)
 6. Experiment layer → `swiss/experiments/` (reward R-001, baseline controllers ALG-001..004, sensitivity runs; results in `swiss/experiments/results/`)
-7. Audit and reporting → `docs/` (registries, logs, QC and validation reports, completion report); checks in `swiss/validation/` and `swiss/tests/` (56 tests)
+7. Audit and reporting → `docs/` (registries, logs, QC and validation reports, completion report); checks in `swiss/validation/` and `swiss/tests/` (139 tests when this line was updated, 2026-11-17)
 
 Design notes: original-resolution data preserved (15-min extracts, Phase B-ready); hourly datasets are derived outputs; UTC index with derived local fields (D-007); every variable carries a classification (`data/canonical/hourly/columns.json`, registry rows). Extensions beyond stock CityLearn: none (a custom COP device was considered and declined, D-016).
+8. Contract and dashboard → `swiss/contract/` (v1 data contract: recorder of real CityLearn rollouts, variable dictionary, generated JSON Schemas, exporter, registry of components and flows) writes `web/public/bundle/sim/`; `swiss/dashboard/build_bundle.py` writes the audit bundle `web/public/bundle/*.json`; `web/` (Next.js static export) only reads those files. Spec: `docs/dashboard/data_contract_v1.md`; mechanism check of the controller results: `docs/experiments/validation_reports/mechanism_check_phase_a.md`.
+
+Update 2026-11-17: CityLearn dataset schemas use `root_directory: "."` (the schema's own folder), so the datasets no longer contain machine-specific absolute paths.

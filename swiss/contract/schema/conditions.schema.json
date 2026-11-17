@@ -1,0 +1,141 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "conditions.json",
+ "type": "object",
+ "properties": {
+  "contract_version": {
+   "const": "1.0.0-draft"
+  },
+  "scope": {
+   "$ref": "common.schema.json#/$defs/scope"
+  },
+  "timestamps_utc": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "local_time": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "local_hour": {
+   "type": "array",
+   "items": {
+    "type": "integer"
+   }
+  },
+  "weekday": {
+   "type": "array",
+   "items": {
+    "type": "integer"
+   }
+  },
+  "series": {
+   "type": "object",
+   "properties": {
+    "temp_c": {
+     "type": "array",
+     "items": {
+      "type": [
+       "number",
+       "null"
+      ]
+     }
+    },
+    "ghi_wm2": {
+     "type": "array",
+     "items": {
+      "type": [
+       "number",
+       "null"
+      ]
+     }
+    },
+    "diffuse_wm2": {
+     "type": "array",
+     "items": {
+      "type": [
+       "number",
+       "null"
+      ]
+     }
+    },
+    "beam_horizontal_wm2": {
+     "type": "array",
+     "items": {
+      "type": [
+       "number",
+       "null"
+      ]
+     }
+    },
+    "price_chf_kwh": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "tariff_tier": {
+     "type": "array",
+     "items": {
+      "enum": [
+       "low",
+       "high"
+      ]
+     }
+    },
+    "carbon_relative_rank": {
+     "type": "array",
+     "items": {
+      "type": [
+       "number",
+       "null"
+      ]
+     }
+    }
+   },
+   "required": [
+    "temp_c",
+    "ghi_wm2",
+    "diffuse_wm2",
+    "beam_horizontal_wm2",
+    "price_chf_kwh",
+    "tariff_tier",
+    "carbon_relative_rank"
+   ],
+   "additionalProperties": false
+  },
+  "building_flags": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "gap_filled": {
+      "type": "array",
+      "items": {
+       "type": "integer"
+      }
+     }
+    },
+    "required": [
+     "gap_filled"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "contract_version",
+  "scope",
+  "timestamps_utc",
+  "local_time",
+  "local_hour",
+  "weekday",
+  "series",
+  "building_flags"
+ ],
+ "additionalProperties": false
+}
