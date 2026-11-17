@@ -1,0 +1,467 @@
+# ui_map.yaml - the ONLY hand-written mapping of the audit dashboard (plan §3).
+#
+# Each top-level key is one clickable UI element. Keys are "<kind>:<name>" with kind in
+#   series | card | kpi | map | panel | figure
+# Fields:
+#   label      short title shown on the card
+#   nodes      registry IDs (and other node IDs such as QC:..., PAR:...) the element is built from
+#   primary    the main node (its classification badge is shown)
+#   classification  measured | derived | modeled | synthetic | assumption | mixed  (for series/cards)
+#   summary    plain-language text. Numbers ONLY via placeholders {namespace.path:format}; lint.py rejects digits
+#              in prose that are not inside a placeholder, a registry ID or _settings.prose_allowed_tokens.
+#   numbers    key numbers: [{label, value: "{placeholder}", unit}]
+#   caveats    warnings shown prominently (same placeholder rules)
+#   code       ["path.py::function"] - cut out with ast at build time and embedded with the commit SHA
+#   qc         QC node IDs, e.g. QC:qc_carbon_2023
+#   docs       repo files to link
+#   flags      [{column, label}] hour flags drawn by the trust overlay
+#   lineage_end  for synthetic items whose lineage ends in a decision/assumption instead of a source
+#   nodes_open_issues  true = link every currently open ISS-* (computed at build time, not hand-listed)
+# Placeholder namespaces (filled by build_bundle.load_data): qc_carbon, qc_weather, qc_tariff, qc_thermal,
+#   qc_buildings, backtest, epfl, validation, thermal_params, build_manifest, reward_scales, baselines_meta,
+#   columns, results[<controller>], sensitivity[<variant>|<controller>].
+# Load with yaml.safe_load only.
+
+_settings:
+  # tokens with digits that may appear in prose without a placeholder (years, version strings, unit names)
+  prose_allowed_tokens: ['2023', '2016', '2017', '2016-17', '3.3.0', 'CO2', 'CO2eq', 'kWh_th', 'kW²', 'ALG-001..004',
+                         '24-hour', 'AR5', 'A.III.2', 'Building_1', 'Building_6', 'SPF_SH']
+  classification_colours:
+    measured: '#2b6cb0'
+    derived: '#2f855a'
+    modeled: '#b7791f'
+    synthetic: '#c53030'
+    assumption: '#6b46c1'
+    mixed: '#4a5568'
+
+# ---------------------------------------------------------------- inputs (plan §4.1)
+
+series:outdoor_temperature:
+  label: Outdoor temperature (Zurich/Kloten)
+  figures: [ts_temp, klo_vs_heapo]
+  classification: measured
+  primary: DER-007
+  nodes: [DER-007, TR-005, SRC-004, D-009, D-010, A-001, QC:qc_weather_klo_2023]
+  qc: [QC:qc_weather_klo_2023]
+  summary: >
+    Hourly air temperature measured by MeteoSwiss at Zurich/Kloten, used for all six buildings (D-010).
+    Annual mean {qc_weather.annual_mean_temp_c:.1f} °C, range {qc_weather.min.temp_c:.1f} to {qc_weather.max.temp_c:.1f} °C,
+    {qc_weather.missing.temp_c} missing hours. MeteoSwiss labels each hour by its END; the series is shifted so that each
+    value belongs to the hour that STARTS at the timestamp (D-009).
+  numbers:
+    - {label: Annual mean, value: '{qc_weather.annual_mean_temp_c:.2f}', unit: °C}
+    - {label: Minimum, value: '{qc_weather.min.temp_c:.1f}', unit: °C}
+    - {label: Maximum, value: '{qc_weather.max.temp_c:.1f}', unit: °C}
+    - {label: Missing hours, value: '{qc_weather.missing.temp_c}', unit: h}
+  code: [swiss/pipeline/build_weather.py]
+
+series:ghi:
+  label: Global horizontal irradiance
+  figures: [ts_irradiance, ghi_vs_diffuse]
+  classification: measured
+  primary: DER-007
+  nodes: [DER-007, TR-005, SRC-004, D-009, QC:qc_weather_klo_2023]
+  qc: [QC:qc_weather_klo_2023]
+  summary: >
+    Global solar irradiance on a horizontal surface, measured at Zurich/Kloten. Annual total
+    {qc_weather.annual_ghi_kwh_m2:.0f} kWh/m², {qc_weather.missing.ghi_wm2} missing hours.
+  numbers:
+    - {label: Annual GHI, value: '{qc_weather.annual_ghi_kwh_m2:.1f}', unit: kWh/m²}
+    - {label: Night hours with GHI between 0 and 5 W/m², value: '{qc_weather.hours_night_ghi_positive_le_5}', unit: h}
+
+series:diffuse:
+  label: Diffuse horizontal irradiance
+  figures: [ghi_vs_diffuse]
+  classification: measured
+  primary: DER-007
+  nodes: [DER-007, TR-005, SRC-004, QC:qc_weather_klo_2023]
+  qc: [QC:qc_weather_klo_2023]
+  summary: >
+    Diffuse solar irradiance measured at Zurich/Kloten. {qc_weather.missing.diffuse_wm2} missing hour;
+    {qc_weather.ghi_gt_diffuse_violations_gt_10} hour where diffuse exceeds global by more than the tolerance.
+
+series:beam:
+  label: Beam (direct) horizontal irradiance
+  figures: [ts_irradiance, ghi_vs_diffuse]
+  classification: derived
+  primary: DER-007
+  nodes: [DER-007, TR-005, TR-009, SRC-004, QC:qc_weather_klo_2023]
+  qc: [QC:qc_weather_klo_2023]
+  summary: >
+    Not measured: computed as global minus diffuse. {qc_weather.hours_beam_negative} hour is negative
+    (minimum {qc_weather.min.beam_horizontal_wm2:.0f} W/m²) and is clipped to zero when the CityLearn dataset is built (TR-009).
+
+series:price:
+  label: Electricity price (EKZ standard tariff)
+  figures: [price_heatmap]
+  classification: measured
+  primary: DER-008
+  nodes: [DER-008, TR-007, SRC-002, D-012, QC:qc_tariff_2023]
+  qc: [QC:qc_tariff_2023]
+  summary: >
+    Published EKZ standard tariff for 2023 (energy plus grid), with exactly two levels:
+    {qc_tariff.distinct_total_rp[0]} and {qc_tariff.distinct_total_rp[1]} Rp/kWh. Excludes VAT and levies.
+    High tariff applies on weekdays during the day (D-012); holidays are not exempt.
+  numbers:
+    - {label: Low tariff, value: '{qc_tariff.distinct_total_rp[0]}', unit: Rp/kWh}
+    - {label: High tariff, value: '{qc_tariff.distinct_total_rp[1]}', unit: Rp/kWh}
+    - {label: Annual mean, value: '{qc_tariff.mean_total_rp:.2f}', unit: Rp/kWh}
+    - {label: Missing hours, value: '{qc_tariff.missing_hours}', unit: h}
+  caveats: ['Excludes VAT, levies and surcharges.']
+  code: [swiss/pipeline/build_tariff.py]
+
+series:carbon_intensity:
+  label: Grid carbon intensity (modeled)
+  figures: [carbon_cons_vs_dom, carbon_import_stack, epfl_monthly, epfl_diurnal, epfl_table]
+  classification: modeled
+  primary: DER-011
+  nodes: [DER-011, M-002, TR-010, SRC-011, SRC-009, D-013, D-013a, D-013b, A-006, A-007, A-008, A-009, A-010, ISS-033,
+          QC:qc_carbon_2023, QC:carbon_epfl_comparison]
+  qc: [QC:qc_carbon_2023, QC:carbon_epfl_comparison]
+  summary: >
+    MODELED, not measured. Hourly lifecycle CO2 intensity of the electricity used in Switzerland, rebuilt from
+    Energy-Charts generation and cross-border flow data (M-002). Mean {qc_carbon.mean_consumption_g_kwh:.1f} g/kWh.
+    A method check against the EPFL 2016-17 series agrees in shape (hourly r
+    {epfl[2016].hourly_consumption_vs_epfl.pearson:.2f}) but not in level (ratio of means
+    {epfl[2016].hourly_consumption_vs_epfl.ratio_mean:.2f} in 2016, {epfl[2017].hourly_consumption_vs_epfl.ratio_mean:.2f} in 2017).
+    Use it for relative signals only (D-013b).
+  numbers:
+    - {label: Mean (consumption-based), value: '{qc_carbon.mean_consumption_g_kwh:.1f}', unit: gCO2eq/kWh}
+    - {label: Mean (domestic generation only), value: '{qc_carbon.mean_domestic_g_kwh:.1f}', unit: gCO2eq/kWh}
+    - {label: 'Proxy factors x0.5 / x1.5', value: '{qc_carbon.proxy_sensitivity_mean_g_kwh[proxies_x0.5]:.1f} / {qc_carbon.proxy_sensitivity_mean_g_kwh[proxies_x1.5]:.1f}', unit: gCO2eq/kWh}
+    - {label: Neighbour-fallback hours, value: '{qc_carbon.fallback_flagged_hours}', unit: h}
+    - {label: Missing (interpolated) hours, value: '{qc_carbon.missing_consumption_hours}', unit: h}
+  caveats:
+    - 'Level is about {epfl[2016].hourly_consumption_vs_epfl.ratio_mean:.0%}-{epfl[2017].hourly_consumption_vs_epfl.ratio_mean:.0%} of the EPFL reference: do not quote it as a Swiss grid intensity.'
+  flags:
+    - {column: neighbour_intensity_fallback_flag, label: neighbour fallback}
+    - {column: gap_interpolated_flag, label: interpolated}
+  code: [swiss/pipeline/build_carbon.py::intensity, swiss/pipeline/build_carbon.py, swiss/validation/compare_epfl_carbon.py::stats]
+  docs: [docs/data/data_quality_reports/carbon_epfl_comparison.md]
+
+series:building_electricity:
+  label: Building electricity (per building)
+  figures: [building_daily, backtest]
+  classification: mixed
+  primary: DER-005
+  nodes: [DER-005, DER-004, TR-004, TR-006, SRC-001, SRC-002, D-006, D-007, D-008, D-011, D-015, QC:qc_2023_buildings, QC:backtest_gap_fill]
+  qc: [QC:qc_2023_buildings, QC:backtest_gap_fill]
+  summary: >
+    Measured heat-pump and other electricity of three single-family houses (HEAPO) and three apartment buildings (EKZ).
+    For the apartment buildings, the non-heat-pump load is SYNTHETIC: apartment meters drawn at random from other EKZ
+    buildings (D-006, D-015). One day of single-family data ({qc_buildings[SFH-low].gap_filled_hours} hours) is gap-filled
+    and therefore synthetic (D-011).
+  flags:
+    - {column: gap_filled_flag, label: gap-filled (synthetic)}
+  docs: [docs/data/data_quality_reports/qc_2023_buildings.md, docs/data/building_selection_design.md]
+
+card:building_selection:
+  label: Building selection
+  figures: [selection_pools]
+  classification: derived
+  primary: DER-003
+  nodes: [DER-003, DER-001, DER-002, TR-001, TR-002, TR-003, D-006]
+  summary: >
+    How the six buildings were chosen from the HEAPO and EKZ candidate pools (D-006): rules fixed before looking at
+    IDs, pools split into strata, and the building nearest each stratum median taken.
+  numbers:
+    - {label: HEAPO single-family pool, value: '{fig.building_selection.pool_sizes.sfh}', unit: households}
+    - {label: EKZ multi-family pool, value: '{fig.building_selection.pool_sizes.mfh}', unit: HP meters}
+  docs: [docs/data/building_selection_design.md]
+  code: [swiss/pipeline/select_buildings.py::nearest_to_median, swiss/pipeline/select_buildings.py::single_family, swiss/pipeline/select_buildings.py::multi_family]
+
+# ---------------------------------------------------------------- models and environment (plan §4.2)
+
+card:cop_model:
+  label: Heat-pump COP and thermal demand
+  figures: [cop_curves, spf_check, hp_split_monthly]
+  classification: derived
+  primary: DER-009
+  nodes: [M-001, DER-009, TR-008, D-003, D-014, D-014a, D-014b, D-014c, D-014d, D-014e, D-016, A-002, A-003, A-004, A-005,
+          QC:qc_thermal_2023]
+  qc: [QC:qc_thermal_2023]
+  formula: 'COP = η · (T_sup + 273.15) / (T_sup − T_out);  Q_thermal = E_HP · COP'
+  summary: >
+    Heat delivered is not measured. It is derived from measured heat-pump electricity times a modeled COP whose Carnot
+    fraction η is calibrated per building so the annual SPF matches Swiss field data (Arpagaus et al. 2023).
+    The non-space-heating baseline of heat-pump electricity (warm-day mean, A-005) becomes the hot-water demand.
+  caveats:
+    - 'The planned linearity diagnostic (derived heat vs heating degree-days) was found NOT to be a valid test of the COP model; see the addendum in qc_thermal_2023.md.'
+    - 'The COP curve is capped at twenty when the outdoor temperature approaches the supply temperature: {fig.cop_curves.buildings[SFH-low].hours_cop_sh_capped_at_20} h (SFH-low), {fig.cop_curves.buildings[SFH-mid].hours_cop_sh_capped_at_20} h (SFH-mid), {fig.cop_curves.buildings[SFH-high].hours_cop_sh_capped_at_20} h (SFH-high) in 2023.'
+    - 'Single supply temperature per mode, no defrost and no part-load behaviour (model registry limitations).'
+  numbers:
+    - {label: 'η space heating, SFH-low', value: '{thermal_params[SFH-low].eta_sh:.4f}', unit: '-'}
+    - {label: 'η space heating, SFH-mid', value: '{thermal_params[SFH-mid].eta_sh:.4f}', unit: '-'}
+    - {label: 'η space heating, SFH-high', value: '{thermal_params[SFH-high].eta_sh:.4f}', unit: '-'}
+    - {label: 'η space heating, MFH-small', value: '{thermal_params[MFH-small].eta_sh:.4f}', unit: '-'}
+    - {label: 'η space heating, MFH-medium', value: '{thermal_params[MFH-medium].eta_sh:.4f}', unit: '-'}
+    - {label: 'η space heating, MFH-large', value: '{thermal_params[MFH-large].eta_sh:.4f}', unit: '-'}
+    - {label: 'SPF target SFH (space heating)', value: '{thermal_params[SFH-low].spf_target}', unit: '-'}
+    - {label: 'SPF target MFH (combined)', value: '{thermal_params[MFH-small].spf_target}', unit: '-'}
+  code: [swiss/models/heat_pump.py::cop, swiss/models/heat_pump.py::calibrate_eta, swiss/models/heat_pump.py::split_baseline, swiss/pipeline/build_thermal_demand.py]
+  docs: [docs/models/heating_dhw_model_design.md, docs/data/data_quality_reports/qc_thermal_2023.md]
+
+card:tanks:
+  label: Thermal storage tanks (synthetic)
+  figures: [tank_sizes]
+  classification: synthetic
+  primary: D-017a
+  nodes: [D-017, D-017a, ISS-029, TR-009, DER-010]
+  lineage_end: D-017a
+  summary: >
+    SYNTHETIC. No building has documented storage; tank sizes come from the sizing rule in D-017a
+    (heating buffer for all six; hot-water tank only where the heat pump serves a hot-water load).
+    Sensitivity runs halve and double the sizes.
+  numbers:
+    - {label: Building_1 heating tank, value: '{build_manifest.Building_1.heating_tank_kwh_th}', unit: kWh_th}
+    - {label: Building_6 DHW tank, value: '{build_manifest.Building_6.dhw_tank_kwh_th}', unit: kWh_th}
+  code: [swiss/citylearn_build/build_dataset.py::buffer_kwh, swiss/citylearn_build/build_dataset.py::main]
+
+card:hp_nominal_power:
+  label: Heat-pump nominal power
+  figures: [hp_sizing]
+  classification: assumption
+  primary: TR-009
+  nodes: [TR-009, DER-010]
+  lineage_end: TR-009
+  summary: >
+    Nominal heat-pump power is not known. Each device is sized at a fixed multiple of the peak hourly electricity of its
+    mode (space heating or baseline), see the code below (TR-009).
+  numbers:
+    - {label: 'Building_6 heating device', value: '{fig.hp_sizing.rows[5].nominal_sh_kw}', unit: kW}
+    - {label: 'Building_6 peak space-heating electricity', value: '{fig.hp_sizing.rows[5].peak_sh_elec_kwh:.3f}', unit: kWh/h}
+  code: [swiss/citylearn_build/build_dataset.py]
+
+card:environment:
+  label: CityLearn environment
+  figures: [env_interface]
+  primary: DER-010
+  nodes: [DER-010, TR-009, D-018, V1, V2]
+  summary: >
+    Stock CityLearn 3.3.0 classes only. No thermal dynamics: indoor temperature is a constant placeholder, so comfort
+    cannot be assessed (D-018). Closure check V1: simulated building electricity equals the inputs to within
+    {fig.env_interface.v1_max_abs_err_kwh:.1e} kWh per step (largest error over {fig.env_interface.v1_cases} controller-building cases).
+  code: [swiss/citylearn_build/build_dataset.py::main]
+  docs: [swiss/datasets/swiss_district_2023/schema.json]
+
+# ---------------------------------------------------------------- control, reward, results (plan §4.3)
+
+card:reward:
+  label: Reward R-001
+  figures: [reward_year]
+  primary: R-001
+  nodes: [R-001, D-019, D-018]
+  summary: >
+    Penalty-only reward: cost, squared peak and ramping, each divided by its mean under the uncontrolled run. Carbon has
+    weight zero. No comfort term because comfort cannot be measured in this dataset (D-018, D-019).
+  numbers:
+    - {label: Cost scale, value: '{reward_scales.cost:.4f}', unit: CHF/step}
+    - {label: Peak scale, value: '{reward_scales.peak:.1f}', unit: kW²}
+    - {label: Ramp scale, value: '{reward_scales.ramp:.4f}', unit: kW}
+    - {label: Carbon scale, value: '{reward_scales.carbon:.4f}', unit: '-'}
+  code: [swiss/experiments/rewards.py::SwissDistrictReward.terms]
+
+card:controller_tariff_map:
+  label: ALG-004 tariff action map
+  figures: [action_map]
+  primary: ALG-004
+  nodes: [ALG-004, D-012, D-019]
+  lineage_end: D-019
+  summary: >
+    HourRBC with an hour-of-day action map: charge in low-tariff hours, discharge in high-tariff hours. The map keys on
+    the hour only, so weekends are treated like weekdays.
+  code: [swiss/experiments/run_baselines.py::tariff_map]
+
+panel:sensitivity:
+  label: Sensitivity variants
+  figures: [sensitivity_bars]
+  nodes: [D-017a, D-016, D-014d, EXP-001]
+  primary: EXP-001
+  summary: >
+    The same controllers rerun with half and double tank sizes, near-lossless tanks, and a flat COP. Values are
+    changes against the uncontrolled run of the same variant. Only aggregates exist for the variants (no run traces).
+  docs: [docs/experiments/validation_reports/validation_phase_a.md]
+  code: [swiss/experiments/run_sensitivity.py]
+
+panel:validation:
+  label: Validation checks
+  nodes: [V1, V2, V3, V4, V5, V6, V7, V8, V9]
+  summary: >
+    Internal-consistency and plausibility checks, not calibration against observations.
+  docs: [docs/experiments/validation_reports/validation_phase_a.md]
+
+# ---------------------------------------------------------------- KPI tiles: one per results column (plan §4.3)
+# own = computed by run_baselines.py from CityLearn building series; citylearn = env.evaluate() district KPI,
+# normalised to CityLearn's conventional counterfactual (1.0 = counterfactual, lower is better; HANDOFF §4.1).
+
+kpi:reward_return:
+  label: Reward return (R-001)
+  primary: EXP-001
+  nodes: [R-001, EXP-001]
+  fields: {origin: own}
+  summary: Sum of the R-001 reward over the year. Higher (less negative) is better.
+  code: [swiss/experiments/run_baselines.py::rollout]
+kpi:district_import_kwh:
+  label: District grid import
+  nodes: [EXP-001, DER-010]
+  fields: {origin: own, unit: kWh}
+  summary: Sum over hours of the positive part of each building's net electricity.
+  code: [swiss/experiments/run_baselines.py::rollout]
+kpi:district_peak_kw:
+  label: District peak
+  nodes: [EXP-001, DER-010]
+  fields: {origin: own, unit: kW}
+  summary: Largest hourly district net electricity of the year.
+  code: [swiss/experiments/run_baselines.py::rollout]
+kpi:cost_chf_excl_vat:
+  label: Electricity cost
+  nodes: [EXP-001, DER-008, D-012]
+  fields: {origin: own, unit: CHF excl. VAT}
+  summary: Hourly import times the EKZ tariff, summed over the year. Excludes VAT and levies.
+  code: [swiss/experiments/run_baselines.py::rollout]
+kpi:mean_daily_peak_kw:
+  label: Mean daily peak
+  nodes: [EXP-001]
+  fields: {origin: own, unit: kW}
+  summary: Mean over days of the daily maximum district net electricity (days are consecutive blocks of hours).
+  code: [swiss/experiments/run_baselines.py::rollout]
+kpi:ramping_sum_kw:
+  label: Ramping
+  nodes: [EXP-001]
+  fields: {origin: own, unit: kW}
+  summary: Sum of absolute hour-to-hour changes of district net electricity.
+  code: [swiss/experiments/run_baselines.py::rollout]
+kpi:high_tariff_import_share:
+  label: High-tariff import share
+  nodes: [EXP-001, DER-008]
+  fields: {origin: own, unit: '-'}
+  summary: Share of annual import that falls in high-tariff hours.
+  code: [swiss/experiments/run_baselines.py::rollout]
+kpi:term_cost_sum:
+  label: Reward term cost (sum)
+  primary: EXP-001
+  nodes: [R-001, EXP-001]
+  fields: {origin: own}
+  summary: Unscaled cost term of R-001 summed over the year.
+  code: [swiss/experiments/rewards.py::SwissDistrictReward.terms]
+kpi:term_peak_sum:
+  label: Reward term peak (sum)
+  primary: EXP-001
+  nodes: [R-001, EXP-001]
+  fields: {origin: own}
+  summary: Unscaled squared-peak term of R-001 summed over the year.
+  code: [swiss/experiments/rewards.py::SwissDistrictReward.terms]
+kpi:term_ramp_sum:
+  label: Reward term ramp (sum)
+  primary: EXP-001
+  nodes: [R-001, EXP-001]
+  fields: {origin: own}
+  summary: Unscaled ramp term of R-001 summed over the year.
+  code: [swiss/experiments/rewards.py::SwissDistrictReward.terms]
+kpi:term_carbon_sum:
+  label: Reward term carbon (sum)
+  primary: EXP-001
+  nodes: [R-001, DER-011]
+  fields: {origin: own}
+  summary: Unscaled carbon term of R-001 summed over the year (weight zero in the reward).
+  code: [swiss/experiments/rewards.py::SwissDistrictReward.terms]
+kpi:kpi_all_time_peak_average:
+  label: All-time peak (CityLearn KPI)
+  nodes: [EXP-001]
+  fields: {origin: citylearn}
+  summary: CityLearn district KPI, normalised to the conventional counterfactual (lower is better).
+kpi:kpi_annual_normalized_unserved_energy_total:
+  label: Unserved energy (CityLearn KPI)
+  nodes: [EXP-001, D-018]
+  fields: {origin: citylearn}
+  summary: CityLearn district KPI. Demand is always served in this dataset (D-018), so values are zero up to rounding.
+kpi:kpi_carbon_emissions_total:
+  label: Carbon emissions (CityLearn KPI)
+  nodes: [EXP-007, DER-011, V8]
+  fields: {origin: citylearn}
+  summary: CityLearn district KPI on the MODELED carbon series, normalised to the conventional counterfactual.
+kpi:kpi_cost_total:
+  label: Cost (CityLearn KPI)
+  nodes: [EXP-001, DER-008]
+  fields: {origin: citylearn}
+  summary: CityLearn district KPI, normalised to the conventional counterfactual (lower is better).
+kpi:kpi_daily_one_minus_load_factor_average:
+  label: Daily one minus load factor (CityLearn KPI)
+  nodes: [EXP-001]
+  fields: {origin: citylearn}
+  summary: CityLearn district KPI, normalised to the conventional counterfactual (lower is better).
+kpi:kpi_daily_peak_average:
+  label: Daily peak (CityLearn KPI)
+  nodes: [EXP-001]
+  fields: {origin: citylearn}
+  summary: CityLearn district KPI, normalised to the conventional counterfactual (lower is better).
+kpi:kpi_discomfort_cold_delta_average: &comfort
+  label: Discomfort, cold delta average (CityLearn KPI)
+  nodes: [D-018, D-019]
+  fields: {origin: citylearn, not_applicable: true}
+  summary: Not applicable. The dataset has no thermal dynamics and a constant indoor-temperature placeholder, so CityLearn comfort KPIs are empty by design (D-018).
+kpi:kpi_discomfort_cold_delta_maximum: {<<: *comfort, label: 'Discomfort, cold delta maximum (CityLearn KPI)'}
+kpi:kpi_discomfort_cold_delta_minimum: {<<: *comfort, label: 'Discomfort, cold delta minimum (CityLearn KPI)'}
+kpi:kpi_discomfort_cold_proportion: {<<: *comfort, label: 'Discomfort, cold proportion (CityLearn KPI)'}
+kpi:kpi_discomfort_hot_delta_average: {<<: *comfort, label: 'Discomfort, hot delta average (CityLearn KPI)'}
+kpi:kpi_discomfort_hot_delta_maximum: {<<: *comfort, label: 'Discomfort, hot delta maximum (CityLearn KPI)'}
+kpi:kpi_discomfort_hot_delta_minimum: {<<: *comfort, label: 'Discomfort, hot delta minimum (CityLearn KPI)'}
+kpi:kpi_discomfort_hot_proportion: {<<: *comfort, label: 'Discomfort, hot proportion (CityLearn KPI)'}
+kpi:kpi_discomfort_proportion: {<<: *comfort, label: 'Discomfort proportion (CityLearn KPI)'}
+kpi:kpi_one_minus_thermal_resilience_proportion: {<<: *comfort, label: 'One minus thermal resilience (CityLearn KPI)'}
+kpi:kpi_electricity_consumption_total:
+  label: Electricity consumption (CityLearn KPI)
+  nodes: [EXP-001]
+  fields: {origin: citylearn}
+  summary: CityLearn district KPI, normalised to the conventional counterfactual (lower is better).
+kpi:kpi_monthly_one_minus_load_factor_average:
+  label: Monthly one minus load factor (CityLearn KPI)
+  nodes: [EXP-001]
+  fields: {origin: citylearn}
+  summary: CityLearn district KPI, normalised to the conventional counterfactual (lower is better).
+kpi:kpi_power_outage_normalized_unserved_energy_total:
+  label: Power-outage unserved energy (CityLearn KPI)
+  nodes: [EXP-001, D-018]
+  fields: {origin: citylearn}
+  summary: CityLearn district KPI (unserved energy during power outages), normalised to the conventional counterfactual.
+kpi:kpi_ramping_average:
+  label: Ramping (CityLearn KPI)
+  nodes: [EXP-001]
+  fields: {origin: citylearn}
+  summary: CityLearn district KPI, normalised to the conventional counterfactual (lower is better).
+kpi:kpi_zero_net_energy:
+  label: Zero net energy (CityLearn KPI)
+  nodes: [EXP-001]
+  fields: {origin: citylearn}
+  summary: CityLearn district KPI, normalised to the conventional counterfactual. There is no on-site generation in this dataset (D-018).
+
+# ---------------------------------------------------------------- system map and panels (milestone 6)
+
+card:controllers:
+  label: Controllers (baselines)
+  primary: ALG-001
+  nodes: [ALG-001, ALG-002, ALG-003, ALG-004, D-019, EXP-007, EXP-008, EXP-009, EXP-010, EXP-011, EXP-012]
+  lineage_end: D-019
+  summary: >
+    Stock CityLearn rule-based controllers only, no learning in Phase A (D-019). The uncontrolled reference never uses
+    the tanks; the business-as-usual agent behaves identically here; the clock rule charges at night; the tariff rule
+    charges in low-tariff hours at three rates. Pick one in the header to see its results and hour-by-hour behaviour.
+  code: [swiss/experiments/run_baselines.py::tariff_map, swiss/experiments/run_baselines.py::rollout]
+  docs: [docs/algorithms/algorithm_registry.md, docs/algorithms/controller_documentation.md]
+
+panel:kpis:
+  label: Results (KPIs)
+  primary: EXP-007
+  nodes: [EXP-007, EXP-008, EXP-009, EXP-010, EXP-011, EXP-012, R-001]
+  summary: >
+    Full-year results of each controller: our own computations (import, peak, cost, ramping, reward) and CityLearn KPIs
+    normalised to CityLearn's conventional counterfactual. Every tile opens its card with the formula, the values for
+    all controllers, the experiment row and the run-trace check.
+  docs: [swiss/experiments/results/baselines_2023.csv]
+
+panel:open_issues:
+  label: Open issues
+  nodes_open_issues: true    # filled at build time with every issue whose current status is open
+  summary: >
+    Issues whose current status is open, from the issues and risks log. Each one also appears on the cards it affects.
+  docs: [docs/decisions/issues_and_risks.md]

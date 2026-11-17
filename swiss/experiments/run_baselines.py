@@ -6,8 +6,11 @@ Controllers (all stock CityLearn 3.3.0 classes, no learning):
   ALG-003 BasicRBC                       stock: charge thermal storage 22:00-08:00, discharge otherwise
   ALG-004 HourRBC tariff-aware (rate r)  HourRBC with action_map: charge at local hours when EKZ tariff is low, discharge when high
 Metrics: raw district series (kWh, kW, CHF), CityLearn KPIs from env.evaluate(), reward R-001 totals.
-Run: PYTHONPATH=. cl/bin/python -I swiss/experiments/run_baselines.py
+Run: PYTHONPATH=. cl/bin/python -I swiss/experiments/run_baselines.py [--traces]
+--traces additionally writes one per-step trace per controller to results/traces/<controller>.csv.gz (read-only
+observation of the rollout: the aggregate results are unchanged; see swiss/tests/test_dashboard.py).
 """
+import argparse
 import json
 import os
 import subprocess
@@ -49,7 +52,40 @@ CONTROLLERS = {
 }
 
 
-def rollout(name, make_agent, scales=None):
+TRACES = os.path.join(RES, 'traces')
+TIMESTAMPS = os.path.join(ROOT, 'data', 'canonical', 'weather_klo_2023_hourly.csv')
+
+
+def build_trace(env, step_rows):
+    """Per-step trace from the finished episode. Building series are CityLearn 3.3.0 properties read after the run
+    (net_electricity_consumption, heating/dhw_electricity_consumption, heating/dhw_storage.soc, heating/dhw_demand);
+    actions, reward and terms were recorded during the run without changing anything."""
+    n = len(step_rows)
+    ts = pd.read_csv(TIMESTAMPS, usecols=['timestamp_utc']).timestamp_utc.to_numpy()[:n]
+    b0 = env.buildings[0]
+    t = {'step': np.arange(n), 'timestamp_utc': ts, 'price': PRICE[:n],
+         'carbon_intensity': np.asarray(b0.carbon_intensity.carbon_intensity, dtype=float)[:n]}
+    acts = np.array([r['actions'] for r in step_rows], dtype=float)
+    k = 0
+    for i, b in enumerate(env.buildings, start=1):
+        t[f'b{i}_net_kwh'] = np.asarray(b.net_electricity_consumption, dtype=float)[:n]
+        t[f'b{i}_heating_device_kwh_el'] = np.asarray(b.heating_electricity_consumption, dtype=float)[:n]
+        t[f'b{i}_dhw_device_kwh_el'] = np.asarray(b.dhw_electricity_consumption, dtype=float)[:n]
+        t[f'b{i}_heating_storage_soc'] = np.asarray(b.heating_storage.soc, dtype=float)[:n]
+        t[f'b{i}_dhw_storage_soc'] = np.asarray(b.dhw_storage.soc, dtype=float)[:n]
+        for a in b.active_actions:
+            t[f'b{i}_action_{a}'] = acts[:, k]
+            k += 1
+        t[f'b{i}_heating_demand_kwh'] = np.asarray(b.heating_demand, dtype=float)[:n]
+        t[f'b{i}_dhw_demand_kwh'] = np.asarray(b.dhw_demand, dtype=float)[:n]
+    t['district_net_kwh'] = np.sum([t[f'b{i}_net_kwh'] for i in range(1, len(env.buildings) + 1)], axis=0)
+    t['reward'] = [r['reward'] for r in step_rows]
+    for term in TERMS:
+        t[f'term_{term}'] = [r['terms'][term] for r in step_rows]
+    return pd.DataFrame(t)
+
+
+def rollout(name, make_agent, scales=None, trace=False):
     env = CityLearnEnv(SCHEMA, central_agent=True, reward_function=SwissDistrictReward)
     if scales is not None:
         env.unwrapped.reward_function.scales = scales if hasattr(env, 'unwrapped') else None
@@ -59,12 +95,18 @@ def rollout(name, make_agent, scales=None):
     rf = env.unwrapped.reward_function if hasattr(env, 'unwrapped') else env.reward_function
     if scales is not None:
         rf.scales = dict(scales)
+    step_rows = []
     while not env.terminated:
         actions = agent.predict(obs)
+        if trace:
+            step_rows.append({'actions': [float(x) for x in np.ravel(actions)]})
         obs, reward, terminated, truncated, _ = env.step(actions)
         ret += float(np.sum(reward))
         for k in TERMS:
             tot[k] += rf.last_terms[k] if rf.last_terms else 0.0
+        if trace:
+            step_rows[-1]['reward'] = float(np.sum(reward))
+            step_rows[-1]['terms'] = {k: (rf.last_terms[k] if rf.last_terms else 0.0) for k in TERMS}
         if terminated or truncated:
             break
     net = np.sum([np.asarray(b.net_electricity_consumption, dtype=float) for b in env.buildings], axis=0)
@@ -82,10 +124,15 @@ def rollout(name, make_agent, scales=None):
         out[f'term_{k}_sum'] = tot[k]
     for k, v in d.items():
         out[f'kpi_{k}'] = float(v) if pd.notna(v) else np.nan
+    if trace:
+        return out, tot, build_trace(env, step_rows)
     return out, tot
 
 
 if __name__ == '__main__':
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--traces', action='store_true', help='also write per-step traces to results/traces/')
+    args = ap.parse_args()
     os.makedirs(RES, exist_ok=True)
     # reference scales = mean per-step term under the zero-action rollout
     _, tot0 = rollout('scale_reference', CONTROLLERS['ALG-001_zero_action'])
@@ -93,8 +140,15 @@ if __name__ == '__main__':
     scales = {k: (tot0[k] / steps if tot0[k] > 0 else 1.0) for k in TERMS}
     json.dump(scales, open(SCALES, 'w'), indent=1)
     rows = []
+    if args.traces:
+        os.makedirs(TRACES, exist_ok=True)
     for name, mk in CONTROLLERS.items():
-        r, _ = rollout(name, mk, scales)
+        if args.traces:
+            r, _, tr = rollout(name, mk, scales, trace=True)
+            tr.to_csv(os.path.join(TRACES, f'{name}.csv.gz'), index=False, float_format='%.10g',
+                      compression={'method': 'gzip', 'mtime': 0})
+        else:
+            r, _ = rollout(name, mk, scales)
         rows.append(r)
         print(name, {k: (round(v, 3) if isinstance(v, float) else v) for k, v in r.items() if k in ('district_import_kwh', 'district_peak_kw', 'cost_chf_excl_vat', 'mean_daily_peak_kw', 'reward_return', 'high_tariff_import_share')}, flush=True)
     df = pd.DataFrame(rows)
