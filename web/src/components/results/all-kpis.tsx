@@ -34,7 +34,7 @@ export function AllKpis({ res, controller }: { res: ResultsFull; controller: str
                   return (
                     <tr key={c} className="border-t">
                       <td className="py-1 pr-3"><NodeLink id={`kpi:${c}`} label={names.kpi(c) === c ? (n?.title ?? c).replace(" (CityLearn KPI)", "") : names.kpi(c)} className="font-sans text-sm" /></td>
-                      <td className="py-1 pr-3 text-right tabular-nums">{g === "na" ? <span className="text-muted-foreground">n/a</span> : <>{fmtKpi(r[c], c)} <span className="text-xs text-muted-foreground">{String(n?.fields.unit ?? "")}</span></>}</td>
+                      <td className="py-1 pr-3 text-right tabular-nums">{g === "na" ? <span className="text-muted-foreground">n/a</span> : n?.fields.relative_only ? <span className="text-xs text-muted-foreground">{controller === REF ? "reference" : "change vs no control"}</span> : <>{fmtKpi(r[c], c)} <span className="text-xs text-muted-foreground">{String(n?.fields.unit ?? "")}</span></>}</td>
                       <td className={cn("w-32 py-1 text-right text-xs", good || "text-muted-foreground")}>{d == null ? "" : `${d >= 0 ? "+" : ""}${d.toFixed(2)} %`}</td>
                     </tr>
                   );

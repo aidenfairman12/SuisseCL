@@ -26,7 +26,7 @@ const TABS: TabDef[] = [
   { id: "price", label: "Price", node: "series:price", more: ["price_heatmap"],
     panels: (si) => [{ title: "Electricity price — EKZ standard tariff, excl. VAT", unit: "Rp/kWh", series: [{ ...S(si, "price"), step: true }] }] },
   { id: "carbon", label: "Carbon", node: "series:carbon_intensity", more: ["carbon_import_stack", "epfl_monthly", "epfl_diurnal", "epfl_table"],
-    panels: (si) => [{ title: "Grid carbon intensity — MODELED", unit: "gCO2eq/kWh", series: [S(si, "carbon"), { ...S(si, "carbon_domestic"), dash: true }], flags: [flag(si, "neighbour_intensity_fallback_flag", 0), flag(si, "gap_interpolated_flag", 1)] }] },
+    panels: (si) => [{ title: "Grid carbon intensity — MODELED: read the shape, not the level (see the notes above)", unit: "gCO2eq/kWh", series: [S(si, "carbon"), { ...S(si, "carbon_domestic"), dash: true }], flags: [flag(si, "neighbour_intensity_fallback_flag", 0), flag(si, "gap_interpolated_flag", 1)] }] },
   { id: "buildings", label: "Buildings", node: "series:building_electricity", more: ["building_daily", "selection_pools", "backtest"],
     panels: (si, role, nm) => {
       const b = si.buildings[role];
@@ -54,7 +54,8 @@ function InputTab({ def, si }: { def: TabDef; si: SeriesInputs }) {
   const { colours } = useBundle();
   const names = useNames();
   const [overlay, setOverlay] = useState(true);
-  const [role, setRole] = useState("SFH-low");
+  const [picked, setRole] = useState<string | null>(null);
+  const role = picked ?? Object.keys(si.buildings)[0];
   const [hour, setHour] = useState<number | null>(null);
   const ts = useMemo(() => timestamps(si), [si]);
   const panels = useMemo(() => def.panels(si, role, names.building), [def, si, role, names]);

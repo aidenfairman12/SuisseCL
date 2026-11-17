@@ -203,7 +203,7 @@ function Building({ b, name, i, st, maxNet, maxHp, open }: { b: DistrictBuilding
       <Flow d={`M${mx},${BUS_Y} V${GROUND + 6}`} color={C.elec} v={net} vmax={maxNet} wmin={2} wmax={7} />
       <g className="dclick" onClick={() => open(UI.meter)}>
         <rect x={mx - 11} y={GROUND - 4} width="22" height="16" rx="3" fill="#212529" /><rect x={mx - 8} y={GROUND - 1} width="16" height="7" rx="1" fill={net > 0.01 ? "#69db7c" : "#2b8a3e"} />
-        <title>{`${b.role} net electricity this hour: ${f(st.net, 3)} kWh`}</title>
+        <title>{`${name}: net electricity this hour: ${f(st.net, 3)} kWh`}</title>
       </g>
       <g className="dclick" onClick={() => open(UI.selection)}>
         <text x={x + w / 2} y={nameY - 17} textAnchor="middle" fontSize="15" fontWeight="800" fill="#212529" stroke="#fff" strokeWidth="4" paintOrder="stroke">{line1}</text>

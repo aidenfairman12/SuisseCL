@@ -4,6 +4,7 @@ import { Pause, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useBundle, useBundleFile } from "@/lib/bundle";
 import { useNodeParam } from "@/lib/deeplink";
+import { carbonRelative } from "@/components/charts/util";
 import { useNames } from "@/lib/names";
 import type { Figures, Results, SeriesInputs, Trace } from "@/lib/types";
 import { Scene, type SceneState } from "./scene";
@@ -24,7 +25,7 @@ export const DEFAULT_CONTROLLER = "ALG-003_basic_rbc";
 export function DistrictView({ controller, onController }: { controller: string; onController: (c: string) => void }) {
   const { open } = useNodeParam();
   const names = useNames();
-  const { nodes } = useBundle();
+  const { nodes, story } = useBundle();
   const fig = useBundleFile<Figures>("figures").data;
   const si = useBundleFile<SeriesInputs>("series_inputs").data;
   const res = useBundleFile<Results>("results").data;
@@ -58,12 +59,13 @@ export function DistrictView({ controller, onController }: { controller: string;
   const lh = si.local_hour[i] + 0.5, frac = Math.max(0, Math.min(1, (lh - 5) / 16));
   const at = (name: string) => (T && i < n ? T[name]?.[i] ?? null : null);
   const bs = fig.district.buildings;
+  const rel = carbonRelative(si, story, i);
   const bstate = bs.map((_, j) => ({ net: at(`b${j + 1}_net_kwh`), hp: at(`b${j + 1}_hp_kwh_el`), socHeat: at(`b${j + 1}_heating_storage_soc`), socDhw: at(`b${j + 1}_dhw_storage_soc`), actionHeat: at(`b${j + 1}_action_heating_storage`) }));
   const dnet = bstate.reduce((a, b) => a + (b.net ?? 0), 0);
   const state: SceneState = {
     night, ghiK: k, sunX: 200 + frac * 900, sunY: 330 - Math.sin(frac * Math.PI) * 220,
     tariff: `${f(S.price.values[i], 2)} Rp/kWh · ${si.tier_high[i] ? "expensive" : "cheap"} hour`, tariffSub: "",
-    carbon: `${f(S.carbon.values[i], 0)} g CO₂ per kWh`, carbonSub: "estimated",
+    carbon: rel?.line ?? "–", carbonSub: rel?.sub ?? "",
     weather: `${f(S.temp_c.values[i], 1)} °C`, weatherSub: ghi >= 5 ? "daylight" : "night",
     controller: names.ctrl(controller),
     maxNet: maxima.net, maxHp: maxima.hp, busFlow: Math.max(dnet, 0), buildings: bstate,

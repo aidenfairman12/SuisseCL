@@ -20,6 +20,16 @@ def flags(s):
     return [int(x) for x in np.asarray(s).astype(int)]
 
 
+def carbon_rank(values):
+    """Percentile rank of every hour inside the year's own series: the share (0-100, integer) of valid hours with a LOWER
+    intensity, mid-rank for ties (pandas average rank minus one half). NaN hours stay None. Clamped to 1..99 so the
+    wording never claims "100 % of hours". The absolute level of the modeled series is not reliable (about 62 % of the
+    EPFL reference, and it moves with the proxy emission factors); the ordering of the hours is (hourly r about 0.98)."""
+    v = pd.Series(np.asarray(values, dtype=float))
+    r = (v.rank(method='average') - 0.5) / v.notna().sum() * 100.0
+    return [None if np.isnan(x) else int(min(99, max(1, round(x)))) for x in r]
+
+
 def build_inputs(rd):
     w = rd('data/canonical/weather_klo_2023_hourly.csv')
     t = rd('data/canonical/tariff_ekz_standard_2023_hourly.csv')
@@ -57,6 +67,12 @@ def build_inputs(rd):
         ['neighbour_intensity_fallback_flag', 'gap_interpolated_flag'])
     put('carbon_domestic', c.ci_domestic_generation_lifecycle_g_per_kwh, 2, 'Carbon intensity (domestic generation only)',
         'gCO2eq/kWh', cf, 'ci_domestic_generation_lifecycle_g_per_kwh', 'modeled', 'series:carbon_intensity')
+    for k in ('carbon', 'carbon_domestic'):
+        S['series'][k]['relative_only'] = True   # outside the carbon audit card the level is shown only as a rank
+    S['carbon_rank'] = {
+        'values': carbon_rank(c.ci_consumption_lifecycle_g_per_kwh), 'year': int(loc.dt.year.mode().iloc[0]),
+        'file': cf, 'column': 'ci_consumption_lifecycle_g_per_kwh', 'ui': 'series:carbon_intensity',
+        'definition': 'percent of the year\'s valid hours with a lower modeled intensity (mid-rank for ties, clamped to 1..99)'}
     S['flags'] = {
         'neighbour_intensity_fallback_flag': {'label': 'carbon: neighbour fallback', 'values': flags(c.neighbour_intensity_fallback_flag),
                                               'file': cf, 'ui': 'series:carbon_intensity'},

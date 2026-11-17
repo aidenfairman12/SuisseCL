@@ -452,3 +452,65 @@ def test_story_prose_has_no_registry_ids(story):
         for text in walk(story[key]):
             assert not ID_PATTERN.search(text), text
     assert not any(ID_PATTERN.search(c['display_name']) for c in story['controllers'].values())
+
+
+# ---------------------------------------------------------------- plain building names and relative carbon (outside the carbon card)
+
+def test_carbon_rank_matches_independent_recomputation(series):
+    """Percent of valid hours with a lower intensity (mid-rank for ties, clamped 1..99), recomputed from the canonical CSV
+    with sorted arrays and searchsorted instead of the pandas rank used by the builder."""
+    import numpy as np
+    import pandas as pd
+    v = pd.read_csv(p('data/canonical/carbon_ch_2023_hourly.csv')).ci_consumption_lifecycle_g_per_kwh.to_numpy(float)
+    ok = ~np.isnan(v)
+    srt = np.sort(v[ok])
+    less, upto = np.searchsorted(srt, v[ok], side='left'), np.searchsorted(srt, v[ok], side='right')
+    expect = np.clip(np.rint((less + (upto - less) / 2.0) / ok.sum() * 100.0), 1, 99).astype(int)
+    got = series['carbon_rank']['values']
+    assert len(got) == 8760 == len(v)
+    assert [i for i, x in enumerate(got) if x is None] == list(np.flatnonzero(~ok))        # the 4 missing hours get no rank
+    assert np.array_equal(np.array([x for x in got if x is not None]), expect)
+    assert series['carbon_rank']['year'] == 2023
+    # the ranking is monotone in the intensity and spans the whole scale
+    order = np.argsort(v[ok], kind='stable')
+    ranked = np.array([x for x in got if x is not None])[order]
+    assert (np.diff(ranked) >= 0).all() and ranked[0] == 1 and ranked[-1] == 99
+    assert series['series']['carbon']['relative_only'] and series['series']['carbon_domestic']['relative_only']
+
+
+def test_carbon_card_shows_the_proxy_range_and_epfl_level_from_the_qc_files(prov):
+    qc = json.load(open(p('docs/data/data_quality_reports/qc_carbon_2023.json')))
+    lo, hi = qc['proxy_sensitivity_mean_g_kwh']['proxies_x0.5'], qc['proxy_sensitivity_mean_g_kwh']['proxies_x1.5']
+    n = prov['series:carbon_intensity']
+    assert f'{lo:.0f}' in n['summary'] and f'{hi:.0f}' in n['summary']
+    assert any(f'{lo:.0f}' in c and f'{hi:.0f}' in c for c in n['caveats'])
+    assert any('EPFL' in c and '%' in c for c in n['caveats'])
+    for k in ('kpi:term_carbon_sum', 'kpi:kpi_carbon_emissions_total'):
+        assert prov[k]['fields']['relative_only'] is True
+
+
+def test_carbon_and_role_guards_catch_violations():
+    bad = 'const a = `${role} space heating`; <b>{role}</b>; { text: q.role }; data: roles, x'
+    assert len(lint.ui_source_violations('web/src/components/charts/x.tsx', bad)) >= 4
+    assert lint.ui_source_violations('web/src/components/charts/x.tsx', 'name: "SFH-low"')
+    assert lint.ui_source_violations('web/src/components/charts/util.ts', 'ROLE_COL = { "SFH-low": 1 }') == []
+    assert lint.ui_source_violations('web/src/components/charts/x.tsx', 'key={role} data: roles.map(label) label(role)') == []
+    assert lint.ui_source_violations('web/src/components/district/district-view.tsx', '`${S.carbon.values[i]} g CO₂ per kWh`')
+    assert lint.ui_source_violations('web/src/components/results/x.tsx', 'unit: "gCO2eq/kWh"')
+    assert lint.ui_source_violations('web/src/components/charts/figures-inputs.tsx', 'name: "g/kWh", S.carbon.values') == []
+    ui = {'kpi:kpi_carbon_emissions_total': {'summary': 'ok', 'fields': {}}, 'kpi:cost': {'summary': 'Costs 5 g/kWh'}}
+    prov_ = {'nodes': {'series:carbon_intensity': {'summary': 'Mean 58 g/kWh', 'caveats': []}}}
+    qc = {'proxy_sensitivity_mean_g_kwh': {'proxies_x0.5': 46.8, 'proxies_x1.5': 69.4}}
+    errs = lint.carbon_text_violations(ui, prov_, {'x': 'about 60 g/kWh'}, qc)
+    assert any('relative_only' in e for e in errs) and any('kpi:cost' in e for e in errs) and any('story.json' in e for e in errs)
+    assert any('proxy range' in e for e in errs) and any('EPFL' in e for e in errs)
+
+
+def test_every_role_in_the_bundle_has_a_plain_name_and_group(story, series):
+    assert set(series['buildings']) <= set(story['buildings'])
+    assert {r.split('-')[0] for r in series['buildings']} <= set(story['building_groups'])
+    lo, hi = story['carbon_relative']['typical_band_pct']
+    assert 0 < lo < hi < 100
+    for k in ('cleaner', 'dirtier', 'typical', 'missing', 'sub'):
+        assert story['carbon_relative'][k]
+    assert '{pct}' in story['carbon_relative']['cleaner'] and '{pct}' in story['carbon_relative']['dirtier']

@@ -56,6 +56,20 @@ _buildings:       # key = role as named in the bundle
   MFH-medium: Apartment building (medium)
   MFH-large: Apartment building (large)
 
+_building_groups: # plain names for the two kinds of building (chart axes and legends)
+  SFH: Single-family houses
+  MFH: Apartment buildings
+
+_carbon_relative: # how the modeled CO2 of the grid is shown outside its audit card: as a rank within the year, never in g/kWh
+  # {pct} and {year} are filled by the UI from series_inputs.carbon_rank (percent of hours below this hour, and the year).
+  # `line` is shown in the district feed card with `sub` under it; the Inputs hour panel shows both on one line.
+  cleaner: "Cleaner than {pct} % of hours"
+  dirtier: "Dirtier than {pct} % of hours"
+  typical: "A typical hour for CO₂"
+  missing: "No CO₂ estimate for this hour"
+  sub: "in {year}, modeled"
+  typical_band_pct: [40, 60]   # ranks inside this band count as typical
+
 _pages:           # the question each Explore page answers
   inputs: What data drives the simulation, and how far can each series be trusted?
   model: How do the measured inputs become heat demand, storage and electricity use?
@@ -253,19 +267,23 @@ series:carbon_intensity:
   qc: [QC:qc_carbon_2023, QC:carbon_epfl_comparison]
   summary: >
     MODELED, not measured. Hourly lifecycle CO2 intensity of the electricity used in Switzerland, rebuilt from
-    Energy-Charts generation and cross-border flow data (M-002). Mean {qc_carbon.mean_consumption_g_kwh:.1f} g/kWh.
+    Energy-Charts generation and cross-border flow data (M-002). The yearly mean is {qc_carbon.mean_consumption_g_kwh:.1f} g/kWh,
+    but do not read the level: the proxy emission factors alone move that mean between
+    {qc_carbon.proxy_sensitivity_mean_g_kwh[proxies_x0.5]:.0f} and {qc_carbon.proxy_sensitivity_mean_g_kwh[proxies_x1.5]:.0f} g/kWh,
+    and the level is only about {epfl[2016].hourly_consumption_vs_epfl.ratio_mean:.0%} to {epfl[2017].hourly_consumption_vs_epfl.ratio_mean:.0%} of the EPFL reference.
     A method check against the EPFL 2016-17 series agrees in shape (hourly r
     {epfl[2016].hourly_consumption_vs_epfl.pearson:.2f}) but not in level (ratio of means
     {epfl[2016].hourly_consumption_vs_epfl.ratio_mean:.2f} in 2016, {epfl[2017].hourly_consumption_vs_epfl.ratio_mean:.2f} in 2017).
     Use it for relative signals only (D-013b).
   numbers:
-    - {label: Mean (consumption-based), value: '{qc_carbon.mean_consumption_g_kwh:.1f}', unit: gCO2eq/kWh}
+    - {label: Mean (consumption-based), value: '{qc_carbon.mean_consumption_g_kwh:.1f}', unit: gCO2eq/kWh, note: level not reliable, see the caveats}
+    - {label: 'Mean with proxy factors halved / raised by half', value: '{qc_carbon.proxy_sensitivity_mean_g_kwh[proxies_x0.5]:.1f} / {qc_carbon.proxy_sensitivity_mean_g_kwh[proxies_x1.5]:.1f}', unit: gCO2eq/kWh}
     - {label: Mean (domestic generation only), value: '{qc_carbon.mean_domestic_g_kwh:.1f}', unit: gCO2eq/kWh}
-    - {label: 'Proxy factors x0.5 / x1.5', value: '{qc_carbon.proxy_sensitivity_mean_g_kwh[proxies_x0.5]:.1f} / {qc_carbon.proxy_sensitivity_mean_g_kwh[proxies_x1.5]:.1f}', unit: gCO2eq/kWh}
     - {label: Neighbour-fallback hours, value: '{qc_carbon.fallback_flagged_hours}', unit: h}
     - {label: Missing (interpolated) hours, value: '{qc_carbon.missing_consumption_hours}', unit: h}
   caveats:
     - 'Level is about {epfl[2016].hourly_consumption_vs_epfl.ratio_mean:.0%}-{epfl[2017].hourly_consumption_vs_epfl.ratio_mean:.0%} of the EPFL reference: do not quote it as a Swiss grid intensity.'
+    - 'The yearly mean swings between {qc_carbon.proxy_sensitivity_mean_g_kwh[proxies_x0.5]:.0f} and {qc_carbon.proxy_sensitivity_mean_g_kwh[proxies_x1.5]:.0f} g/kWh depending on the proxy emission factors (halved or raised by half). The shape is reliable, the level is not.'
   flags:
     - {column: neighbour_intensity_fallback_flag, label: neighbour fallback}
     - {column: gap_interpolated_flag, label: interpolated}
@@ -513,8 +531,8 @@ kpi:term_carbon_sum:
   display_name: CO₂ (estimated)
   primary: EXP-001
   nodes: [R-001, DER-011]
-  fields: {origin: own}
-  summary: Unscaled carbon term of R-001 summed over the year (weight zero in the reward).
+  fields: {origin: own, relative_only: true}
+  summary: Unscaled carbon term of R-001 summed over the year (weight zero in the reward). Shown only as a change against no control, because the level of the modeled carbon series is not reliable.
   code: [swiss/experiments/rewards.py::SwissDistrictReward.terms]
 kpi:kpi_all_time_peak_average:
   label: All-time peak (CityLearn KPI)
@@ -529,8 +547,8 @@ kpi:kpi_annual_normalized_unserved_energy_total:
 kpi:kpi_carbon_emissions_total:
   label: Carbon emissions (CityLearn KPI)
   nodes: [EXP-007, DER-011, V8]
-  fields: {origin: citylearn}
-  summary: CityLearn district KPI on the MODELED carbon series, normalised to the conventional counterfactual.
+  fields: {origin: citylearn, relative_only: true}
+  summary: CityLearn district KPI on the MODELED carbon series, normalised to the conventional counterfactual. Shown only as a change against no control, because the level of the carbon series is not reliable.
 kpi:kpi_cost_total:
   label: Cost (CityLearn KPI)
   nodes: [EXP-001, DER-008]

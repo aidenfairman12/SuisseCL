@@ -4,7 +4,7 @@ import type { EChartsOption } from "echarts";
 import { useBundle, useBundleFile } from "@/lib/bundle";
 import type { Json, SeriesInputs } from "@/lib/types";
 import { Chart } from "./echarts";
-import { FLAG_COLOURS, NEUTRAL, ROLE_COL, WD, fmt, idxWhere, pairs, timestamps } from "./util";
+import { FLAG_COLOURS, NEUTRAL, ROLE_COL, WD, buildingGroupLabel, fmt, idxWhere, pairs, roleTip, timestamps, useBuildingLabel } from "./util";
 
 const Loading = () => <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">Loading…</div>;
 const AX = { axisLabel: { fontSize: 10 }, nameTextStyle: { fontSize: 10 } };
@@ -181,6 +181,7 @@ export function EpflTable() {
 
 export function BuildingDaily() {
   const si = useSi();
+  const label = useBuildingLabel();
   if (!si) return <Loading />;
   const roles = Object.keys(si.buildings), days = Math.floor(si.n / 24);
   const ts = timestamps(si), dayLab = Array.from({ length: days }, (_, d) => new Date(ts[d * 24]).toISOString().slice(0, 10));
@@ -190,7 +191,7 @@ export function BuildingDaily() {
     (grids as object[]).push({ left: 52, right: 14, top, height: rowH });
     (xs as object[]).push({ type: "category", gridIndex: r, data: dayLab, axisLabel: { show: r === roles.length - 1, fontSize: 9 }, axisTick: { show: false } });
     (ys as object[]).push({ type: "value", gridIndex: r, name: "kWh/d", ...AX });
-    (titles as object[]).push({ text: role, left: 56, top: top - 4, textStyle: { fontSize: 11 } });
+    (titles as object[]).push({ text: label(role), left: 56, top: top - 4, textStyle: { fontSize: 11 } });
     const gap = new Set(idxWhere(b.gap_filled_flag).map((i) => dayLab[Math.floor(i / 24)]));
     b.components.forEach((c, k) => {
       const y = Array.from({ length: days }, (_, d) => { let s = 0; for (let h = 0; h < 24; h++) { const v = c.values[d * 24 + h]; if (v == null) return null; s += v; } return +s.toFixed(2); });
@@ -205,19 +206,22 @@ export function BuildingDaily() {
 type Sel = { sfh: { kwh_hp_2023: number[]; ids: number[] }; mfh: { kwh_per_unit_2023: number[]; units: number[]; ids: number[] }; picks: { role: string; id: number; units: number }[]; pool_sizes: { sfh: number; mfh: number } };
 export function SelectionPools() {
   const s = useBundleFile<{ building_selection: Sel }>("figures").data?.building_selection;
+  const { story } = useBundle();
+  const label = useBuildingLabel();
   if (!s) return <Loading />;
+  const sfhG = buildingGroupLabel(story, "SFH"), mfhG = buildingGroupLabel(story, "MFH");
   const sp = s.picks.filter((p) => p.role.startsWith("SFH")).map((p) => ({ p, v: s.sfh.kwh_hp_2023[s.sfh.ids.indexOf(p.id)] }));
   const mp = s.picks.filter((p) => p.role.startsWith("MFH")).map((p) => ({ p, v: s.mfh.kwh_per_unit_2023[s.mfh.ids.indexOf(p.id)] }));
   const band = (u: number) => (u < 7 ? "4–6 units" : u <= 14 ? "7–14 units" : u >= 24 ? "≥24 units" : "15–23 (no stratum)");
   const option: EChartsOption = {
-    grid: [{ left: 150, right: 20, top: 16, height: 70 }, { left: 150, right: 20, top: 130, height: 150 }], tooltip: { trigger: "item" }, legend: { bottom: 0, textStyle: { fontSize: 10 } },
+    grid: [{ left: 150, right: 20, top: 16, height: 70 }, { left: 150, right: 20, top: 130, height: 150 }], tooltip: { trigger: "item", formatter: (p: unknown) => { const q = p as { marker?: string; seriesName: string; value: (number | string)[] }; return `${q.marker ?? ""} ${q.seriesName}: <b>${q.value[0]}</b>${q.value[2] ? `<div style="opacity:.65;font-size:11px">${roleTip(String(q.value[2]))}</div>` : ""}`; } }, legend: { bottom: 0, textStyle: { fontSize: 10 } },
     xAxis: [{ type: "value", gridIndex: 0, name: "HP electricity 2023 (kWh)", nameLocation: "middle", nameGap: 24, ...AX }, { type: "value", gridIndex: 1, name: "HP electricity 2023 per housing unit (kWh)", nameLocation: "middle", nameGap: 24, ...AX }],
-    yAxis: [{ type: "category", gridIndex: 0, data: ["SFH pool"], ...AX }, { type: "category", gridIndex: 1, data: ["4–6 units", "7–14 units", "15–23 (no stratum)", "≥24 units"], ...AX }],
+    yAxis: [{ type: "category", gridIndex: 0, data: [`${sfhG} (pool)`], ...AX }, { type: "category", gridIndex: 1, data: ["4–6 units", "7–14 units", "15–23 (no stratum)", "≥24 units"], ...AX }],
     series: [
-      { type: "scatter", name: `HEAPO SFH pool (${s.pool_sizes.sfh})`, xAxisIndex: 0, yAxisIndex: 0, symbolSize: 8, itemStyle: { color: "#a0aec0" }, data: s.sfh.kwh_hp_2023.map((v) => [v, "SFH pool"]) },
-      { type: "scatter", name: "SFH picks", xAxisIndex: 0, yAxisIndex: 0, symbol: "diamond", symbolSize: 14, itemStyle: { color: "#2b6cb0" }, label: { show: true, formatter: (p: unknown) => (p as { data: [number, string, string] }).data[2], position: "top", fontSize: 10 }, data: sp.map((q) => [q.v, "SFH pool", q.p.role]) },
-      { type: "scatter", name: `EKZ MFH pool (${s.pool_sizes.mfh})`, xAxisIndex: 1, yAxisIndex: 1, symbolSize: 8, itemStyle: { color: "#a0aec0" }, data: s.mfh.kwh_per_unit_2023.map((v, i) => [v, band(s.mfh.units[i])]) },
-      { type: "scatter", name: "MFH picks", xAxisIndex: 1, yAxisIndex: 1, symbol: "diamond", symbolSize: 14, itemStyle: { color: "#2f855a" }, label: { show: true, formatter: (p: unknown) => (p as { data: [number, string, string] }).data[2], position: "top", fontSize: 10 }, data: mp.map((q) => [q.v, band(q.p.units), q.p.role]) },
+      { type: "scatter", name: `HEAPO pool of ${sfhG.toLowerCase()} (${s.pool_sizes.sfh})`, xAxisIndex: 0, yAxisIndex: 0, symbolSize: 8, itemStyle: { color: "#a0aec0" }, data: s.sfh.kwh_hp_2023.map((v) => [v, `${sfhG} (pool)`]) },
+      { type: "scatter", name: `Selected ${sfhG.toLowerCase()}`, xAxisIndex: 0, yAxisIndex: 0, symbol: "diamond", symbolSize: 14, itemStyle: { color: "#2b6cb0" }, label: { show: true, formatter: (p: unknown) => label((p as { value: [number, string, string] }).value[2]), fontSize: 10 }, data: sp.map((q, k) => ({ value: [q.v, `${sfhG} (pool)`, q.p.role], label: { position: k % 2 ? "bottom" : "top" } })) },
+      { type: "scatter", name: `EKZ pool of ${mfhG.toLowerCase()} (${s.pool_sizes.mfh})`, xAxisIndex: 1, yAxisIndex: 1, symbolSize: 8, itemStyle: { color: "#a0aec0" }, data: s.mfh.kwh_per_unit_2023.map((v, i) => [v, band(s.mfh.units[i])]) },
+      { type: "scatter", name: `Selected ${mfhG.toLowerCase()}`, xAxisIndex: 1, yAxisIndex: 1, symbol: "diamond", symbolSize: 14, itemStyle: { color: "#2f855a" }, label: { show: true, formatter: (p: unknown) => label((p as { value: [number, string, string] }).value[2]), fontSize: 10 }, data: mp.map((q, k) => ({ value: [q.v, band(q.p.units), q.p.role], label: { position: k % 2 ? "bottom" : "top" } })) },
     ],
   };
   return <Chart option={option} height={340} />;

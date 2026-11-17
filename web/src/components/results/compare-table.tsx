@@ -31,7 +31,7 @@ export function CompareTable({ res, controller, onController }: { res: ResultsFu
                   {HEADLINE.map((c) => {
                     const d = r.controller === REF ? null : pctVs(r, ref, c);
                     const good = d == null || d === 0 ? "" : (lowerBetter(c) ? d < 0 : d > 0) ? "text-emerald-700" : "text-red-600";
-                    return <td key={c} className="p-2 text-right tabular-nums"><div>{fmtKpi(r[c], c)}</div><div className={cn("text-xs", good || "text-muted-foreground")}>{r.controller === REF ? "reference" : d == null ? "" : `${d >= 0 ? "+" : ""}${d.toFixed(2)} %`}</div></td>;
+                    return <td key={c} className="p-2 text-right tabular-nums">{nodes[`kpi:${c}`]?.fields.relative_only ? null : <div>{fmtKpi(r[c], c)}</div>}<div className={cn("text-xs", good || "text-muted-foreground")}>{r.controller === REF ? "reference" : d == null ? "" : `${d >= 0 ? "+" : ""}${d.toFixed(2)} %`}</div></td>;
                   })}
                   <td className="p-2 text-xs">{(res.experiment_of[r.controller] ?? []).map((e) => <NodeLink key={e} id={e} />)}</td>
                 </tr>

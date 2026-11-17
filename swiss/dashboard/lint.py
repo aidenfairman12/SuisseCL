@@ -9,6 +9,11 @@ Checks
              illustration, KPI tiles), has a ui_map entry; figures named in ui_map exist in web/src/components/charts/registry.tsx
   story      plain-language layer: no digits outside placeholders, no registry IDs, glossary terms exist, display names present,
              no registry ID in the story page sources (IDs belong in audit cards and Explore pages)
+  roles      no bare building role code (SFH-low, MFH-large, ...) in any UI source except the colour table in charts/util.ts,
+             and no visible-label sink (title/legend/axis/JSX text) fed a bare `role` variable (source-level check)
+  carbon     no g/kWh (or gCO2) text, and no read of the modeled carbon series, outside the carbon audit card, its Inputs tab and
+             its figures; carbon KPI columns are marked relative_only; the card shows the proxy range and the EPFL level
+             caveat, taken from the QC files (placeholders), beside the absolute mean
   lineage    every series / KPI / card reaches a SRC-* node or ends in a decision / assumption / lineage_end
   registry   every registry row ID (SRC DER TR M D A ISS ALG EXP V R) is a node
   --check-fresh  every input recorded in meta.json still has the same sha256 (bundle is not stale)
@@ -43,6 +48,76 @@ def web_sources():
                 p = os.path.join(d, fn)
                 out.append((os.path.relpath(p, ROOT), open(p, encoding='utf-8').read()))
     return out
+
+
+ROLE_CODE_RE = re.compile(r'\b(?:SFH|MFH)-(?:low|mid|high|small|medium|large)\b')
+# visible-label sinks fed a bare role variable: `${role}`, JSX text {role}, `text: role`, `name: q.role`, `data: roles`
+ROLE_SINK_RES = [re.compile(p) for p in (
+    r'\$\{\s*[\w.?]*\brole\s*\}', r'>\s*\{\s*[\w.?]*\brole\s*\}', r'\b(?:text|name|label|title)\s*:\s*[\w.?]*\brole\b(?!\w)',
+    r'\bdata\s*:\s*roles\s*[,}\]]', r'\bdata\s*:\s*\[?\s*[\w.]*\brole\b')]
+LABEL_DIRS = ('/components/charts/', '/components/results/', '/components/inputs/', '/components/district/', '/components/story/')
+CARBON_TEXT_RE = re.compile(r'g\s?/\s?kWh|gCO2|\bg\s?CO[₂2]')
+CARBON_SERIES_RE = re.compile(r'\b(?:S|series|si\.series)\.carbon(?:_domestic)?\b|series\[\s*["\']carbon')
+# the only UI sources that may show the absolute modeled carbon intensity (always under the carbon card's own caveats)
+CARBON_ALLOWED_SRC = ('web/src/components/charts/figures-inputs.tsx', 'web/src/components/inputs/inputs-page.tsx')
+
+
+def ui_source_violations(rel, text):
+    """Source-level guards on one UI file (relative path, text). Returns error strings."""
+    rel = rel.replace(os.sep, '/')
+    errs = []
+    if not rel.endswith('components/charts/util.ts'):
+        for m in ROLE_CODE_RE.finditer(text):
+            errs.append(f'roles: {rel} contains the bare role code "{m.group(0)}" (use useBuildingLabel / the _buildings names)')
+    if any(d in '/' + rel for d in LABEL_DIRS):
+        for rx in ROLE_SINK_RES:
+            for m in rx.finditer(text):
+                errs.append(f'roles: {rel} feeds a bare role variable into a visible label: "{m.group(0).strip()}"')
+    if rel not in CARBON_ALLOWED_SRC:
+        for m in CARBON_TEXT_RE.finditer(text):
+            errs.append(f'carbon: {rel} shows an absolute carbon unit ("{m.group(0)}") outside the carbon card and its Inputs tab')
+        for m in CARBON_SERIES_RE.finditer(text):
+            errs.append(f'carbon: {rel} reads the modeled carbon series ("{m.group(0)}"); use the rank wording (carbonRelative)')
+    return errs
+
+
+def _strings(o, where=''):
+    if isinstance(o, str):
+        yield where, o
+    elif isinstance(o, list):
+        for i, x in enumerate(o):
+            yield from _strings(x, f'{where}[{i}]')
+    elif isinstance(o, dict):
+        for k, v in o.items():
+            yield from _strings(v, f'{where}.{k}')
+
+
+def carbon_text_violations(ui, prov, story, qc):
+    """Carbon guards on the hand-written layer and the built bundle. `qc` is qc_carbon_2023.json."""
+    errs = []
+    card = 'series:carbon_intensity'
+    for key, e in ui.items():
+        if key == card or key.startswith('_'):
+            continue
+        for where, t in _strings({k: v for k, v in e.items() if k not in ('code', 'docs', 'nodes', 'qc', 'figures', 'flags')}, key):
+            if CARBON_TEXT_RE.search(t):
+                errs.append(f'carbon: {where} shows an absolute carbon unit outside the carbon card: "{t[:60]}"')
+        if key.startswith('kpi:') and 'carbon' in key and not (e.get('fields') or {}).get('relative_only'):
+            errs.append(f'carbon: {key} must set fields.relative_only (a carbon KPI is shown only as a change vs no control)')
+    for where, t in _strings(story, 'story.json'):
+        if CARBON_TEXT_RE.search(t):
+            errs.append(f'carbon: {where} shows an absolute carbon unit: "{t[:60]}"')
+    n = prov['nodes'].get(card)
+    if not n:
+        return errs + [f'carbon: {card} is missing from the bundle']
+    lo, hi = (qc['proxy_sensitivity_mean_g_kwh'][k] for k in ('proxies_x0.5', 'proxies_x1.5'))
+    text = ' '.join([n.get('summary') or '', *n.get('caveats', [])])
+    for what, v in (('proxy range low', f'{lo:.0f}'), ('proxy range high', f'{hi:.0f}')):
+        if v not in n.get('summary', '') or not any(v in c for c in n.get('caveats', [])):
+            errs.append(f'carbon: the card summary and a caveat must both show the {what} ({v} g/kWh) from {os.path.basename("qc_carbon_2023.json")}')
+    if not re.search(r'EPFL', text) or not re.search(r'\d+ ?%', text):
+        errs.append('carbon: the card must state the level against the EPFL reference (percent)')
+    return errs
 
 
 def load():
@@ -186,6 +261,15 @@ def lint(check_fresh_flag=False):
             for lit in re.findall(r'"([^"\n]{3,})"', text) + re.findall(r'>([^<>{}\n]{3,})<', text):
                 if story_mod.ID_PATTERN.search(lit):
                     errs.append(f'story prose: {rel} shows a registry ID in "{lit[:40]}" (IDs belong in audit cards only)')
+
+    # building role codes and absolute carbon values in the UI sources and the bundle
+    for rel, text in web_sources():
+        errs += ui_source_violations(rel, text)
+    import json
+    qc = json.load(open(os.path.join(ROOT, 'docs', 'data', 'data_quality_reports', 'qc_carbon_2023.json'), encoding='utf-8'))
+    errs += carbon_text_violations(ui, prov, read_bundle_file(os.path.join(BUNDLE, 'story.json')), qc)
+    if not re.search(r'node:\s*"series:carbon_intensity"', open(os.path.join(WEB_SRC, 'components', 'inputs', 'inputs-page.tsx'), encoding='utf-8').read()):
+        errs.append('carbon: the Inputs carbon tab must open with the carbon card header (its caveats sit above the chart)')
 
     # lineage
     for nid, n in nodes.items():

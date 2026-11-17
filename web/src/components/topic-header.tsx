@@ -26,6 +26,7 @@ export function TopicHeader({ nodeId, maxNumbers = 4 }: { nodeId: string; maxNum
             <div key={i} className="rounded-lg border px-3 py-2">
               <div className="text-lg font-semibold tabular-nums">{x.value} {x.unit && x.unit !== "-" && <span className="text-xs font-normal text-muted-foreground">{x.unit}</span>}</div>
               <div className="text-xs text-muted-foreground">{x.label}</div>
+              {x.note && <div className="text-xs text-amber-800">{x.note}</div>}
             </div>
           ))}
         </div>

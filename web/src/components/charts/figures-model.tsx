@@ -5,7 +5,7 @@ import { useBundle, useBundleFile } from "@/lib/bundle";
 import type { Results, Trace } from "@/lib/types";
 import { Chart } from "./echarts";
 import { useQc, useSi } from "./figures-inputs";
-import { ROLE_COL, timestamps } from "./util";
+import { ROLE_COL, axisTip, roleTip, timestamps, useBuildingLabel } from "./util";
 
 const Loading = () => <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">Loading…</div>;
 const AX = { axisLabel: { fontSize: 10 }, nameTextStyle: { fontSize: 10 } };
@@ -24,36 +24,40 @@ const useFigs = () => useBundleFile<Figs>("figures").data;
 
 export function CopCurves() {
   const c = useFigs()?.cop_curves;
+  const label = useBuildingLabel();
   if (!c) return <Loading />;
   const series: EChartsOption["series"] = [];
-  const sel: Record<string, boolean> = {};
+  const sel: Record<string, boolean> = {}, tip: Record<string, string> = {};
   for (const [role, b] of Object.entries(c.buildings)) {
-    const nSh = `${role} space heating (η ${b.eta_sh.toFixed(3)}, ${b.T_sup_sh_c} °C)`, nDhw = `${role} DHW (η ${b.eta_dhw.toFixed(3)}, ${b.T_sup_dhw_c} °C)`;
+    const nSh = `${label(role)}, space heating`, nDhw = `${label(role)}, hot water`;
+    tip[nSh] = roleTip(role, `η ${b.eta_sh.toFixed(3)}`, `${b.T_sup_sh_c} °C supply`);
+    tip[nDhw] = roleTip(role, `η ${b.eta_dhw.toFixed(3)}`, `${b.T_sup_dhw_c} °C supply`);
     series.push({ type: "line", name: nSh, showSymbol: false, lineStyle: { width: 2 }, itemStyle: { color: ROLE_COL[role] }, data: c.t_out_c.map((t, i) => [t, b.cop_sh[i]]) });
     series.push({ type: "line", name: nDhw, showSymbol: false, lineStyle: { width: 1, type: "dotted" }, itemStyle: { color: ROLE_COL[role] }, data: c.t_out_c.map((t, i) => [t, b.cop_dhw[i]]) });
     sel[nDhw] = false;
   }
   const option: EChartsOption = {
-    grid: { left: 46, right: 14, top: 14, bottom: 100 }, tooltip: { trigger: "axis" },
+    grid: { left: 46, right: 14, top: 14, bottom: 100 }, tooltip: { trigger: "axis", formatter: axisTip({ series: tip }) },
     legend: { bottom: 0, type: "scroll", textStyle: { fontSize: 9 }, selected: sel },
     xAxis: { type: "value", name: "outdoor temperature (°C), range of the 2023 KLO series", nameLocation: "middle", nameGap: 26, axisLine: { onZero: false }, ...AX }, yAxis: { type: "value", name: "COP", min: 0, max: 21, axisLine: { onZero: false }, ...AX }, series,
   };
-  const cap = Object.entries(c.buildings).map(([r, b]) => `${r}: ${b.hours_cop_sh_capped_at_20} h`).join(" · ");
+  const cap = Object.entries(c.buildings).map(([r, b]) => `${label(r)}: ${b.hours_cop_sh_capped_at_20} h`).join(" · ");
   return (
     <div>
       <Chart option={option} height={400} />
-      <p className="text-xs text-muted-foreground">Hours in 2023 where the space-heating COP hits the CityLearn cap of 20 (outdoor temperature close to supply temperature): {cap}. Click the dotted DHW entries in the legend to show them.</p>
+      <p className="text-xs text-muted-foreground">Hours in 2023 where the space-heating COP hits the CityLearn cap of 20 (outdoor temperature close to supply temperature): {cap}. Click the dotted hot-water entries in the legend to show them.</p>
     </div>
   );
 }
 
 export function SpfCheck() {
   const q = useQc("QC:qc_thermal_2023");
+  const label = useBuildingLabel();
   if (!q) return <Loading />;
   const roles = Object.keys(q).filter((k) => /^(SFH|MFH)-/.test(k)), g = (k: string, f: string) => (q[k] as Record<string, number>)[f];
   const option: EChartsOption = {
-    grid: { left: 40, right: 14, top: 20, bottom: 50 }, tooltip: { trigger: "axis" }, legend: LEG,
-    xAxis: { type: "category", data: roles, ...AX }, yAxis: { type: "value", name: "SPF", ...AX },
+    grid: { left: 40, right: 14, top: 20, bottom: 50 }, tooltip: { trigger: "axis", formatter: axisTip({ head: Object.fromEntries(roles.map((r) => [label(r), r])) }) }, legend: LEG,
+    xAxis: { type: "category", data: roles.map(label), axisLabel: { fontSize: 9, interval: 0, width: 80, overflow: "break" } }, yAxis: { type: "value", name: "SPF", ...AX },
     series: [
       { type: "bar", name: "target SPF (literature, D-014d)", itemStyle: { color: "#a0aec0" }, data: roles.map((r) => g(r, "spf_target")) },
       { type: "bar", name: "implied SPF space heating", itemStyle: { color: "#2b6cb0" }, data: roles.map((r) => +g(r, "implied_spf_sh").toFixed(3)) },
@@ -65,6 +69,7 @@ export function SpfCheck() {
 
 export function HpSplitMonthly() {
   const s = useFigs()?.hp_split_monthly;
+  const label = useBuildingLabel();
   if (!s) return <Loading />;
   const roles = Object.keys(s.buildings), rowH = 92;
   const grids: object[] = [], xs: object[] = [], ys: object[] = [], series: EChartsOption["series"] = [], titles: object[] = [];
@@ -73,7 +78,7 @@ export function HpSplitMonthly() {
     grids.push({ left: 52, right: 14, top, height: rowH });
     xs.push({ type: "category", gridIndex: k, data: s.months, axisLabel: { show: k === roles.length - 1, fontSize: 9 } });
     ys.push({ type: "value", gridIndex: k, name: "kWh", ...AX });
-    titles.push({ text: r, left: 56, top: top - 8, textStyle: { fontSize: 11 } });
+    titles.push({ text: label(r), left: 56, top: top - 8, textStyle: { fontSize: 11 } });
     series.push({ type: "bar", name: "baseline (modeled as DHW demand)", stack: r, xAxisIndex: k, yAxisIndex: k, itemStyle: { color: "#dd6b20" }, data: s.buildings[r].e_hp_baseline_kwh });
     series.push({ type: "bar", name: "space heating", stack: r, xAxisIndex: k, yAxisIndex: k, itemStyle: { color: "#2b6cb0" }, data: s.buildings[r].e_hp_space_heating_kwh });
   });
@@ -83,10 +88,11 @@ export function HpSplitMonthly() {
 
 export function HpSizing() {
   const r = useFigs()?.hp_sizing.rows;
+  const label = useBuildingLabel();
   if (!r) return <Loading />;
-  const x = r.map((q) => `${q.building} ${q.role}`);
+  const x = r.map((q) => label(q.role));
   const option: EChartsOption = {
-    grid: { left: 46, right: 14, top: 20, bottom: 90 }, tooltip: { trigger: "axis" }, legend: { bottom: 0, type: "scroll", textStyle: { fontSize: 10 } },
+    grid: { left: 46, right: 14, top: 20, bottom: 90 }, tooltip: { trigger: "axis", formatter: axisTip({ head: Object.fromEntries(r.map((q) => [label(q.role), roleTip(q.role, q.building)])) }) }, legend: { bottom: 0, type: "scroll", textStyle: { fontSize: 10 } },
     xAxis: { type: "category", data: x, axisLabel: { fontSize: 9, rotate: 20 } }, yAxis: { type: "value", name: "kW (= kWh per hour)", ...AX },
     series: [
       { type: "bar", name: "peak measured HP electricity (kWh/h)", itemStyle: { color: "#a0aec0" }, data: r.map((q) => q.peak_measured_hp_kwh) },
@@ -101,8 +107,10 @@ export function HpSizing() {
 
 export function TankSizes() {
   const V = useFigs()?.tanks.variants;
+  const label = useBuildingLabel();
   if (!V) return <Loading />;
-  const names = Object.keys(V), roles = V[names[0]].map((q) => q.role);
+  const names = Object.keys(V), plain = V[names[0]].map((q) => label(q.role));
+  const heads = Object.fromEntries(V[names[0]].map((q) => [label(q.role), q.role]));
   const heat = ["#2b6cb0", "#90cdf4", "#1a365d", "#a0aec0", "#cbd5e0"], dhw = ["#c53030", "#feb2b2", "#742a2a", "#e2a0a0", "#fed7d7"];
   const series: EChartsOption["series"] = [];
   names.forEach((v, k) => {
@@ -110,8 +118,8 @@ export function TankSizes() {
     series.push({ type: "bar", name: `${v}: DHW tank`, xAxisIndex: 1, yAxisIndex: 1, itemStyle: { color: dhw[k % 5] }, data: V[v].map((q) => q.dhw_tank_kwh_th) });
   });
   const option: EChartsOption = {
-    grid: [{ left: 52, right: 14, top: 14, height: 120 }, { left: 52, right: 14, top: 180, height: 120 }], tooltip: { trigger: "axis" }, legend: { bottom: 0, type: "scroll", textStyle: { fontSize: 9 } },
-    xAxis: [{ type: "category", gridIndex: 0, data: roles, axisLabel: { show: false } }, { type: "category", gridIndex: 1, data: roles, axisLabel: { fontSize: 10 } }],
+    grid: [{ left: 52, right: 14, top: 14, height: 120 }, { left: 52, right: 14, top: 180, height: 120 }], tooltip: { trigger: "axis", formatter: axisTip({ head: heads }) }, legend: { bottom: 0, type: "scroll", textStyle: { fontSize: 9 } },
+    xAxis: [{ type: "category", gridIndex: 0, data: plain, axisLabel: { show: false } }, { type: "category", gridIndex: 1, data: plain, axisLabel: { fontSize: 9, interval: 0, width: 70, overflow: "break" } }],
     yAxis: [{ type: "value", gridIndex: 0, name: "heating kWh_th", ...AX }, { type: "value", gridIndex: 1, name: "DHW kWh_th", ...AX }], series,
   };
   return (

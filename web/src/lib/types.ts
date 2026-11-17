@@ -116,7 +116,7 @@ export const REL_LABEL: Record<string, string> = {
 };
 
 // ---- other bundle files (series_inputs.json, figures.json, results.json, trace_<controller>.json)
-export type Series = { label: string; unit: string; values: (number | null)[]; classification: string; ui: string };
+export type Series = { label: string; unit: string; values: (number | null)[]; classification: string; ui: string; relative_only?: boolean };
 export type SeriesInputs = {
   start_utc: string;
   step_s: number;
@@ -126,6 +126,8 @@ export type SeriesInputs = {
   weekday: number[];
   tier_high: number[];
   series: Record<string, Series>;
+  /** Percent of the year's hours with a lower modeled carbon intensity (null = no estimate); the only carbon figure shown outside the carbon audit card. */
+  carbon_rank: { values: (number | null)[]; year: number; definition: string };
   flags: Record<string, { label: string; values: number[]; ui: string }>;
   buildings: Record<string, { gap_filled_flag: number[]; components: { key: string; label: string; classification: string; values: (number | null)[] }[] }>;
 };
@@ -172,6 +174,8 @@ export type StoryDay = { index: number; date: string; label: string; mean_temp_c
 export type StoryData = {
   controllers: Record<string, { key: string; display_name: string; short_name: string; node: string; note?: string }>;
   buildings: Record<string, string>;
+  building_groups: Record<string, string>;
+  carbon_relative: { cleaner: string; dirtier: string; typical: string; missing: string; sub: string; typical_band_pct: [number, number] };
   pages: Record<string, string>;
   glossary: { id: string; term: string; definition: string; node?: string }[];
   phases: Phase[];

@@ -113,7 +113,8 @@ def build_story(ui, data, derived, graph_nodes, phases, fill, errors):
         if g.get('node') and g['node'] not in graph_nodes:
             errors.append(f"glossary: term {g['id']} points at unknown node {g['node']}")
     return {
-        'controllers': controllers, 'buildings': ui['_buildings'], 'pages': ui['_pages'],
+        'controllers': controllers, 'buildings': ui['_buildings'], 'building_groups': ui['_building_groups'],
+        'carbon_relative': ui['_carbon_relative'], 'pages': ui['_pages'],
         'glossary': glossary, 'story': story, 'phases': phases, 'derived': {'day': derived['day']},
     }
 
@@ -133,7 +134,7 @@ def check_prose(ui, prose_digits):
             for k, v in o.items():
                 yield from walk(v, f'{where}.{k}')
 
-    for sec in ('_story', '_glossary', '_pages', '_buildings'):
+    for sec in ('_story', '_glossary', '_pages', '_buildings', '_building_groups', '_carbon_relative'):
         for where, text in walk(ui.get(sec, {}), sec):
             if where.endswith(('.node', '.id', '.key')):
                 continue
