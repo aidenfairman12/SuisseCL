@@ -24,7 +24,7 @@ npm run build    # static site in web/out (type-check included); npm run lint
 
 ## Hosting on Vercel (private only)
 
-Default to private until the checks below are done. This is **not** about JASM: that unlicensed source (SRC-003, the
+Default to private. The licence checks below are done, a few items remain open, and this is **not** about JASM: that unlicensed source (SRC-003, the
 subject of D-004) is not used anywhere. No pipeline code, transformation, model or dashboard item depends on it, and none
 of its files are tracked in git. What the dashboard does contain:
 
@@ -33,8 +33,19 @@ of its files are tracked in git. What the dashboard does contain:
 - aggregate statistics from the EPFL carbon series (dataset CC BY 4.0, article CC BY-NC-ND);
 - unvalidated work in progress: a modeled carbon series whose level is about 61–62 % of the EPFL reference, and the open issues.
 
-Before a public URL, still to check (all recorded in the registry as unverified): the MeteoSwiss terms-of-use page was not
-read, and the Energy-Charts per-response licence field has not been checked. This is not a legal review.
+Licence checks done 2026-11-17 (public documentation read; **not a legal review**):
+
+- MeteoSwiss open data is **CC BY 4.0**: commercial use, redistribution and derived data are allowed; cite "Source: MeteoSwiss"
+  and do not imply MeteoSwiss endorses your use (opendatadocs.meteoswiss.ch/general/terms-of-use).
+- Energy-Charts is **CC BY 4.0 with attribution "energy-charts.info"**. The `/v2` responses for the endpoints and countries we use
+  (`public_power` for CH, DE, FR, AT, IT; `cbpf` for CH) carry that licence field; the `/v1` responses we downloaded have no
+  such field, and the API documentation states the same default. Only day-ahead prices have restricted per-zone licences, and we
+  do not use them.
+
+Still open before a public URL: CC BY also expects a link to the licence and a note that the data was changed (the footer gives
+publisher and licence text but not yet links); the EPFL article is CC BY-NC-ND (the dashboard shows only aggregate statistics
+from the dataset, which is CC BY 4.0); Vercel Hobby is for non-commercial use; and whether you want unvalidated work in
+progress visible.
 
 1. **Team default first (recommended).** In the Vercel team's settings, set the Deployment Protection default to
    **All Deployments** with **Vercel Authentication**, so a new project is never public, not even for its first deploy.
