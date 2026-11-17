@@ -14,10 +14,10 @@ const maxOf = (a: number[]) => a.reduce((m, v) => Math.max(m, v), 0);
 export const DEFAULT_CONTROLLER = "ALG-003_basic_rbc";
 
 export function DistrictView({ controller: controllerProp, onController }: { controller: string; onController: (c: string) => void }) {
-  const manifestFile = useManifest();
-  const buildingsFile = useBuildings();
-  const conditionsFile = useConditions();
-  const runFile = useRun("base", controllerProp || DEFAULT_CONTROLLER);
+  const manifestFile = useManifest("full");
+  const buildingsFile = useBuildings("full");
+  const conditionsFile = useConditions("full");
+  const runFile = useRun("base", controllerProp || DEFAULT_CONTROLLER, "full");
   const figures = useBundleFile<Figures>("figures").data;
   const manifest = manifestFile.data;
   const buildings = buildingsFile.data?.buildings;
