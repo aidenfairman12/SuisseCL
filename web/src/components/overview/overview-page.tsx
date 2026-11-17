@@ -1,0 +1,13 @@
+"use client";
+import { SystemFlowDiagram } from "@/components/overview/system-flow-diagram";
+import { useManifest } from "@/lib/contract";
+export function OverviewPage(){
+ const file=useManifest("full"),m=file.data;
+ return <div className="space-y-8">
+  <header className="max-w-4xl space-y-3"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Swiss residential district · Phase A</p><h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">A district energy system, made inspectable.</h1><p className="max-w-3xl text-base leading-relaxed text-muted-foreground">Explore how weather, electricity prices, heat pumps, thermal storage and household demand combine in a six-building CityLearn simulation. Every modeled connection below is read from the simulation data contract.</p></header>
+  <div className="grid gap-3 sm:grid-cols-3"><div className="rounded-xl border bg-card p-4"><p className="text-xs text-muted-foreground">Simulation period</p><p className="mt-1 text-xl font-semibold">{m?.year??"—"}</p><p className="text-xs text-muted-foreground">Hourly Phase A model</p></div><div className="rounded-xl border bg-card p-4"><p className="text-xs text-muted-foreground">Representative buildings</p><p className="mt-1 text-xl font-semibold">{m?.buildings.length??"—"}</p><p className="text-xs text-muted-foreground">Three SFH and three MFH archetypes</p></div><div className="rounded-xl border bg-card p-4"><p className="text-xs text-muted-foreground">Data classes</p><p className="mt-1 text-xl font-semibold">5 classes</p><p className="text-xs text-muted-foreground">Measured · derived · modeled · synthetic · assumed</p></div></div>
+  <section className="space-y-3"><div><h2 className="text-xl font-semibold tracking-tight">How the modeled system fits together</h2><p className="text-sm text-muted-foreground">Arrows are generated from the component and flow definitions in the v1 contract. Select a component to inspect its scope, description and provenance.</p></div><SystemFlowDiagram/></section>
+  <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4 text-sm text-amber-950"><p className="font-semibold">Important scope boundary</p><p className="mt-1">The six buildings form a representative composite, not a physically adjacent neighborhood. They do not share a grid connection or exchange energy. Phase A models grid electricity, heat pumps, thermal buffers and demand; PV, batteries, EV charging, local energy communities and cooling are not modeled.</p></div>
+  <p className="text-xs text-muted-foreground">Measured values are not interchangeable with derived, modeled, synthetic or assumed values. Unavailable attributes remain unavailable, not zero.</p>
+ </div>;
+}
