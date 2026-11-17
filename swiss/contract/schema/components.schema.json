@@ -1,0 +1,169 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "components.json",
+ "type": "object",
+ "properties": {
+  "contract_version": {
+   "const": "1.0.0-draft"
+  },
+  "components": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "label": {
+      "type": "string"
+     },
+     "category": {
+      "enum": [
+       "grid",
+       "conversion",
+       "storage",
+       "demand",
+       "input",
+       "control",
+       "outcome",
+       "future"
+      ]
+     },
+     "description": {
+      "type": "string"
+     },
+     "phase_available": {
+      "enum": [
+       "A",
+       "B",
+       "C"
+      ]
+     },
+     "status": {
+      "enum": [
+       "modeled",
+       "not_modeled"
+      ]
+     },
+     "inputs": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "outputs": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "variables": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "provenance": {
+      "$ref": "common.schema.json#/$defs/provenanceOrByType"
+     },
+     "source_ids": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "pattern": "^[A-Za-z]+[-:][A-Za-z0-9._:\\-]+$"
+      }
+     },
+     "present_in": {
+      "type": "string"
+     },
+     "docs": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "pattern": "^[A-Za-z]+[-:][A-Za-z0-9._:\\-]+$"
+      }
+     }
+    },
+    "required": [
+     "id",
+     "label",
+     "category",
+     "description",
+     "phase_available",
+     "status",
+     "inputs",
+     "outputs",
+     "variables",
+     "provenance",
+     "source_ids",
+     "present_in",
+     "docs"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "flows": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "from": {
+      "type": "string"
+     },
+     "to": {
+      "type": "string"
+     },
+     "carrier": {
+      "enum": [
+       "electricity",
+       "heat",
+       "signal",
+       "control"
+      ]
+     },
+     "variable": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "unit": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "description": {
+      "type": "string"
+     },
+     "status": {
+      "enum": [
+       "modeled",
+       "not_modeled"
+      ]
+     }
+    },
+    "required": [
+     "id",
+     "from",
+     "to",
+     "carrier",
+     "variable",
+     "unit",
+     "description",
+     "status"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "contract_version",
+  "components",
+  "flows"
+ ],
+ "additionalProperties": false
+}

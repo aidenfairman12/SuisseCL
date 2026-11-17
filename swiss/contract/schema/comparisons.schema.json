@@ -1,0 +1,116 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "comparisons.json",
+ "type": "object",
+ "properties": {
+  "contract_version": {
+   "const": "1.0.0-draft"
+  },
+  "scenario": {
+   "type": "string"
+  },
+  "reference_controller": {
+   "type": "string"
+  },
+  "scope": {
+   "$ref": "common.schema.json#/$defs/scope"
+  },
+  "comparisons": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "metrics": {
+      "type": "object",
+      "additionalProperties": {
+       "type": "object",
+       "properties": {
+        "unit": {
+         "type": "string"
+        },
+        "value": {
+         "type": "number"
+        },
+        "reference": {
+         "type": "number"
+        },
+        "delta": {
+         "type": "number"
+        },
+        "delta_pct": {
+         "type": [
+          "number",
+          "null"
+         ]
+        }
+       },
+       "required": [
+        "unit",
+        "value",
+        "reference",
+        "delta",
+        "delta_pct"
+       ],
+       "additionalProperties": false
+      }
+     },
+     "mechanisms": {
+      "type": "object",
+      "properties": {
+       "import_moved_out_of_high_tariff_kwh_el": {
+        "type": "number"
+       },
+       "extra_tank_loss_kwh_th": {
+        "type": "number"
+       },
+       "extra_hp_electricity_kwh_el": {
+        "type": "number"
+       },
+       "relative_carbon_change_pct": {
+        "type": [
+         "number",
+         "null"
+        ]
+       },
+       "peak_step_reference": {
+        "type": "integer"
+       },
+       "peak_step": {
+        "type": "integer"
+       }
+      },
+      "required": [
+       "import_moved_out_of_high_tariff_kwh_el",
+       "extra_tank_loss_kwh_th",
+       "extra_hp_electricity_kwh_el",
+       "relative_carbon_change_pct",
+       "peak_step_reference",
+       "peak_step"
+      ],
+      "additionalProperties": false
+     },
+     "relative_only": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    },
+    "required": [
+     "metrics",
+     "mechanisms",
+     "relative_only"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "contract_version",
+  "scenario",
+  "reference_controller",
+  "scope",
+  "comparisons"
+ ],
+ "additionalProperties": false
+}

@@ -1,0 +1,201 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "SuisseCL contract v1: shared definitions",
+ "$defs": {
+  "provenance": {
+   "enum": [
+    "measured",
+    "derived",
+    "modeled",
+    "synthetic",
+    "assumed_parameter"
+   ]
+  },
+  "provenanceOrByType": {
+   "oneOf": [
+    {
+     "enum": [
+      "measured",
+      "derived",
+      "modeled",
+      "synthetic",
+      "assumed_parameter"
+     ]
+    },
+    {
+     "type": "object",
+     "properties": {
+      "SFH": {
+       "enum": [
+        "measured",
+        "derived",
+        "modeled",
+        "synthetic",
+        "assumed_parameter"
+       ]
+      },
+      "MFH": {
+       "enum": [
+        "measured",
+        "derived",
+        "modeled",
+        "synthetic",
+        "assumed_parameter"
+       ]
+      }
+     },
+     "required": [
+      "SFH",
+      "MFH"
+     ],
+     "additionalProperties": false
+    }
+   ]
+  },
+  "buildingId": {
+   "type": "string",
+   "pattern": "^(SFH|MFH)-[a-z]+$"
+  },
+  "ids": {
+   "type": "array",
+   "items": {
+    "type": "string",
+    "pattern": "^[A-Za-z]+[-:][A-Za-z0-9._:\\-]+$"
+   }
+  },
+  "attribute": {
+   "type": "object",
+   "properties": {
+    "value": {
+     "type": [
+      "number",
+      "string",
+      "boolean",
+      "null"
+     ]
+    },
+    "unit": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "provenance": {
+     "enum": [
+      "measured",
+      "derived",
+      "modeled",
+      "synthetic",
+      "assumed_parameter",
+      null
+     ]
+    },
+    "source_ids": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "pattern": "^[A-Za-z]+[-:][A-Za-z0-9._:\\-]+$"
+     }
+    },
+    "available": {
+     "type": "boolean"
+    },
+    "unavailable_reason": {
+     "type": [
+      "string",
+      "null"
+     ]
+    }
+   },
+   "required": [
+    "value",
+    "unit",
+    "provenance",
+    "source_ids",
+    "available",
+    "unavailable_reason"
+   ],
+   "additionalProperties": false
+  },
+  "variable": {
+   "type": "object",
+   "properties": {
+    "label": {
+     "type": "string"
+    },
+    "unit": {
+     "type": "string"
+    },
+    "quantity": {
+     "enum": [
+      "energy_per_step",
+      "state",
+      "ratio",
+      "money",
+      "control"
+     ]
+    },
+    "carrier": {
+     "enum": [
+      "electricity",
+      "heat",
+      null
+     ]
+    },
+    "provenance": {
+     "$ref": "common.schema.json#/$defs/provenanceOrByType"
+    },
+    "description": {
+     "type": "string"
+    },
+    "source_ids": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "pattern": "^[A-Za-z]+[-:][A-Za-z0-9._:\\-]+$"
+     }
+    },
+    "absent_when": {
+     "type": [
+      "string",
+      "null"
+     ]
+    }
+   },
+   "required": [
+    "label",
+    "unit",
+    "quantity",
+    "carrier",
+    "provenance",
+    "description",
+    "source_ids",
+    "absent_when"
+   ],
+   "additionalProperties": false
+  },
+  "scope": {
+   "type": "object",
+   "properties": {
+    "kind": {
+     "enum": [
+      "window",
+      "year"
+     ]
+    },
+    "start_step": {
+     "type": "integer"
+    },
+    "n_steps": {
+     "type": "integer"
+    }
+   },
+   "required": [
+    "kind",
+    "start_step",
+    "n_steps"
+   ],
+   "additionalProperties": false
+  }
+ }
+}

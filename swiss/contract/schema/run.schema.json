@@ -1,0 +1,427 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "runs/<scenario>/<controller>.json",
+ "type": "object",
+ "properties": {
+  "contract_version": {
+   "const": "1.0.0-draft"
+  },
+  "scenario": {
+   "type": "string"
+  },
+  "controller": {
+   "type": "string"
+  },
+  "algorithm_id": {
+   "type": "string"
+  },
+  "identical_to": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "experiment_ids": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "seed": {
+   "type": "integer"
+  },
+  "reward": {
+   "type": "object",
+   "properties": {
+    "id": {
+     "type": "string"
+    },
+    "weights": {
+     "type": "object"
+    },
+    "scales": {
+     "type": "object"
+    }
+   },
+   "required": [
+    "id",
+    "weights",
+    "scales"
+   ],
+   "additionalProperties": false
+  },
+  "scope": {
+   "$ref": "common.schema.json#/$defs/scope"
+  },
+  "buildings": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "hp_sh_kwh_el": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "hp_hw_kwh_el": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "household_kwh_el": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "net_kwh_el": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "cost_chf": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "sh_demand_kwh_th": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "hw_demand_kwh_th": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "hp_sh_direct_kwh_th": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "hp_sh_to_tank_kwh_th": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "sh_tank_to_demand_kwh_th": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "sh_tank_loss_kwh_th": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "sh_tank_soc": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "sh_tank_action": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "sh_tank_mode": {
+      "type": [
+       "array",
+       "null"
+      ],
+      "items": {
+       "enum": [
+        "charging",
+        "discharging",
+        "idle"
+       ]
+      }
+     },
+     "cop_sh": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "hp_hw_direct_kwh_th": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "hp_hw_to_tank_kwh_th": {
+      "type": [
+       "array",
+       "null"
+      ],
+      "items": {
+       "type": "number"
+      }
+     },
+     "hw_tank_to_demand_kwh_th": {
+      "type": [
+       "array",
+       "null"
+      ],
+      "items": {
+       "type": "number"
+      }
+     },
+     "hw_tank_loss_kwh_th": {
+      "type": [
+       "array",
+       "null"
+      ],
+      "items": {
+       "type": "number"
+      }
+     },
+     "hw_tank_soc": {
+      "type": [
+       "array",
+       "null"
+      ],
+      "items": {
+       "type": "number"
+      }
+     },
+     "hw_tank_action": {
+      "type": [
+       "array",
+       "null"
+      ],
+      "items": {
+       "type": "number"
+      }
+     },
+     "hw_tank_mode": {
+      "type": [
+       "array",
+       "null"
+      ],
+      "items": {
+       "enum": [
+        "charging",
+        "discharging",
+        "idle"
+       ]
+      }
+     },
+     "cop_hw": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     }
+    },
+    "required": [
+     "hp_sh_kwh_el",
+     "hp_hw_kwh_el",
+     "household_kwh_el",
+     "net_kwh_el",
+     "cost_chf",
+     "sh_demand_kwh_th",
+     "hw_demand_kwh_th",
+     "hp_sh_direct_kwh_th",
+     "hp_sh_to_tank_kwh_th",
+     "sh_tank_to_demand_kwh_th",
+     "sh_tank_loss_kwh_th",
+     "sh_tank_soc",
+     "sh_tank_action",
+     "sh_tank_mode",
+     "cop_sh",
+     "hp_hw_direct_kwh_th",
+     "hp_hw_to_tank_kwh_th",
+     "hw_tank_to_demand_kwh_th",
+     "hw_tank_loss_kwh_th",
+     "hw_tank_soc",
+     "hw_tank_action",
+     "hw_tank_mode",
+     "cop_hw"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "district": {
+   "type": "object",
+   "properties": {
+    "net_kwh_el": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "hp_kwh_el": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "household_kwh_el": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "sh_demand_kwh_th": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "hw_demand_kwh_th": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "cost_chf": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "reward": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "reward_cost": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "reward_peak": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "reward_ramp": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    }
+   },
+   "required": [
+    "net_kwh_el",
+    "hp_kwh_el",
+    "household_kwh_el",
+    "sh_demand_kwh_th",
+    "hw_demand_kwh_th",
+    "cost_chf",
+    "reward",
+    "reward_cost",
+    "reward_peak",
+    "reward_ramp"
+   ],
+   "additionalProperties": false
+  },
+  "situations": {
+   "type": "object",
+   "properties": {
+    "district": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "array",
+      "items": {
+       "type": "integer"
+      }
+     }
+    },
+    "buildings": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "object",
+      "additionalProperties": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       }
+      }
+     }
+    }
+   },
+   "required": [
+    "district",
+    "buildings"
+   ],
+   "additionalProperties": false
+  },
+  "summary": {
+   "type": "object",
+   "properties": {
+    "import_kwh_el": {
+     "type": "number"
+    },
+    "peak_kw_el": {
+     "type": "number"
+    },
+    "peak_step": {
+     "type": "integer"
+    },
+    "cost_chf": {
+     "type": "number"
+    },
+    "high_tariff_import_share": {
+     "type": "number"
+    },
+    "hp_kwh_el": {
+     "type": "number"
+    },
+    "tank_loss_kwh_th": {
+     "type": "number"
+    },
+    "heat_from_tanks_kwh_th": {
+     "type": "number"
+    },
+    "reward_sum": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "import_kwh_el",
+    "peak_kw_el",
+    "peak_step",
+    "cost_chf",
+    "high_tariff_import_share",
+    "hp_kwh_el",
+    "tank_loss_kwh_th",
+    "heat_from_tanks_kwh_th",
+    "reward_sum"
+   ],
+   "additionalProperties": false
+  }
+ },
+ "required": [
+  "contract_version",
+  "scenario",
+  "controller",
+  "algorithm_id",
+  "identical_to",
+  "experiment_ids",
+  "seed",
+  "reward",
+  "scope",
+  "buildings",
+  "district",
+  "situations",
+  "summary"
+ ],
+ "additionalProperties": false
+}
