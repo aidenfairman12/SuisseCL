@@ -2,103 +2,150 @@
 import { useEffect, useMemo, useState } from "react";
 import { Pause, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useBundle, useBundleFile } from "@/lib/bundle";
-import { useNodeParam } from "@/lib/deeplink";
-import { carbonRelative } from "@/components/charts/util";
-import { useNames } from "@/lib/names";
-import type { Figures, Results, SeriesInputs, Trace } from "@/lib/types";
+import { useBundleFile } from "@/lib/bundle";
+import type { Figures } from "@/lib/types";
+import { useManifest, useBuildings, useConditions, useRun } from "@/lib/contract";
+import type { BuildingInfo } from "@/lib/contract";
 import { Scene, type SceneState } from "./scene";
+import { BuildingCutaway } from "./building-cutaway";
 
-const WD = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const f = (v: number | null | undefined, d: number) => (v == null || Number.isNaN(v) ? "–" : (+v).toFixed(d));
-const argmax = (a: (number | null)[], sign: 1 | -1) => {
-  let b = -1;
-  for (let i = 0; i < a.length; i++) if (a[i] != null && (b < 0 || sign * (a[i] as number) > sign * (a[b] as number))) b = i;
-  return Math.max(b, 0);
-};
-const maxOf = (a: (number | null)[]) => a.reduce<number>((m, v) => (v != null && v > m ? v : m), 0);
-const STEP_HOURS = 3;
-
+const f = (v: number | null | undefined, d = 1) => v == null || !Number.isFinite(v) ? "—" : v.toFixed(d);
+const maxOf = (a: number[]) => a.reduce((m, v) => Math.max(m, v), 0);
 export const DEFAULT_CONTROLLER = "ALG-003_basic_rbc";
 
-/** Illustrated district for one control rule and one hour. The rule is controlled from outside so other panels can share it. */
-export function DistrictView({ controller, onController }: { controller: string; onController: (c: string) => void }) {
-  const { open } = useNodeParam();
-  const names = useNames();
-  const { nodes, story } = useBundle();
-  const fig = useBundleFile<Figures>("figures").data;
-  const si = useBundleFile<SeriesInputs>("series_inputs").data;
-  const res = useBundleFile<Results>("results").data;
-  const src = res?.traces[controller] ? (res.traces[controller].same_as ?? controller) : null;
-  const tr = useBundleFile<Trace>(src ? `trace_${src}` : null).data;
-  const [hour, setHour] = useState<number | null>(null);
+export function DistrictView({ controller: controllerProp, onController }: { controller: string; onController: (c: string) => void }) {
+  const manifestFile = useManifest();
+  const buildingsFile = useBuildings();
+  const conditionsFile = useConditions();
+  const runFile = useRun("base", controllerProp || DEFAULT_CONTROLLER);
+  const figures = useBundleFile<Figures>("figures").data;
+  const manifest = manifestFile.data;
+  const buildings = buildingsFile.data?.buildings;
+  const conditions = conditionsFile.data;
+  const run = runFile.data;
+  const [step, setStep] = useState(0);
   const [playing, setPlaying] = useState(false);
-  const T = tr?.arrays ?? null;
-  const n = T ? T.district_net_kwh.length : 0;
+  const [selectedBuilding, setSelectedBuilding] = useState("");
 
-  // until the user picks an hour, show the highest grid draw of the selected rule
-  const peak = useMemo(() => (T ? argmax(T.district_net_kwh, 1) : 0), [T]);
+  const districtBuildings = figures?.district.buildings ?? [];
+  const buildingIds = manifest?.buildings ?? districtBuildings.map((b) => b.role);
+  // The contract's scope is either a short sample window or the full simulated year.
+  // All arrays are indexed locally within that scope; never hard-code the sample's 48 steps.
+  const n = Math.min(
+    run?.scope.n_steps ?? 0,
+    conditions?.scope.n_steps ?? 0,
+    run?.district.net_kwh_el.length ?? 0,
+    conditions?.local_time.length ?? 0,
+    conditions?.series.temp_c.length ?? 0,
+  );
+  const i = Math.min(step, Math.max(0, n - 1));
   useEffect(() => {
-    if (!playing || !n) return;
-    const id = setInterval(() => setHour((h) => ((h ?? peak) + STEP_HOURS) % n), 140);
-    return () => clearInterval(id);
-  }, [playing, n, peak]);
+    if (!playing || n < 1) return;
+    const timer = window.setInterval(() => setStep((current) => (current + 1) % n), 500);
+    return () => window.clearInterval(timer);
+  }, [playing, n]);
 
-  const maxima = useMemo(() => {
-    if (!T) return { net: 1, hp: 1 };
-    let net = 1, hp = 1;
-    for (let b = 1; b <= 6; b++) { net = Math.max(net, maxOf(T[`b${b}_net_kwh`])); hp = Math.max(hp, maxOf(T[`b${b}_hp_kwh_el`])); }
-    return { net, hp };
-  }, [T]);
+  const buildingStates = useMemo(() => {
+    if (!run) return [];
+    return buildingIds.map((id) => {
+      const series = run.buildings[id];
+      if (!series) return { net: null, hp: null, socHeat: null, socDhw: null, actionHeat: null };
+      return {
+        net: series.net_kwh_el[i] ?? null,
+        hp: (series.hp_sh_kwh_el[i] ?? 0) + (series.hp_hw_kwh_el[i] ?? 0),
+        socHeat: series.sh_tank_soc[i] ?? null,
+        socDhw: series.hw_tank_soc?.[i] ?? null,
+        actionHeat: series.sh_tank_action[i] ?? null,
+      };
+    });
+  }, [run, buildingIds, i]);
 
-  if (!fig || !si || !res) return <div className="flex aspect-[16/9] items-center justify-center rounded-2xl border bg-muted/30 text-sm text-muted-foreground">Loading the district…</div>;
+  if (!manifest || !buildings || !conditions || !run || !figures) {
+    return <div className="flex aspect-[16/9] items-center justify-center rounded-2xl border bg-muted/30 text-sm text-muted-foreground">Loading the district simulation…</div>;
+  }
 
-  const i = Math.min(hour ?? peak, si.n - 1);
-  const S = si.series;
-  const ghi = S.ghi.values[i] ?? 0, night = ghi < 5, k = Math.min(1, ghi / 700);
-  const lh = si.local_hour[i] + 0.5, frac = Math.max(0, Math.min(1, (lh - 5) / 16));
-  const at = (name: string) => (T && i < n ? T[name]?.[i] ?? null : null);
-  const bs = fig.district.buildings;
-  const rel = carbonRelative(si, story, i);
-  const bstate = bs.map((_, j) => ({ net: at(`b${j + 1}_net_kwh`), hp: at(`b${j + 1}_hp_kwh_el`), socHeat: at(`b${j + 1}_heating_storage_soc`), socDhw: at(`b${j + 1}_dhw_storage_soc`), actionHeat: at(`b${j + 1}_action_heating_storage`) }));
-  const dnet = bstate.reduce((a, b) => a + (b.net ?? 0), 0);
-  const state: SceneState = {
-    night, ghiK: k, sunX: 200 + frac * 900, sunY: 330 - Math.sin(frac * Math.PI) * 220,
-    tariff: `${f(S.price.values[i], 2)} Rp/kWh · ${si.tier_high[i] ? "expensive" : "cheap"} hour`, tariffSub: "",
-    carbon: rel?.line ?? "–", carbonSub: rel?.sub ?? "",
-    weather: `${f(S.temp_c.values[i], 1)} °C`, weatherSub: ghi >= 5 ? "daylight" : "night",
-    controller: names.ctrl(controller),
-    maxNet: maxima.net, maxHp: maxima.hp, busFlow: Math.max(dnet, 0), buildings: bstate,
+  const stepSeconds = manifest.time_axis.step_seconds;
+  const totalNet = run.district.net_kwh_el[i] ?? null;
+  const maxNet = Math.max(1, ...buildingIds.map((id) => maxOf(run.buildings[id]?.net_kwh_el ?? [])));
+  const maxHp = Math.max(1, ...buildingIds.map((id) => maxOf((run.buildings[id]?.hp_sh_kwh_el ?? []).map((v, j) => v + (run.buildings[id]?.hp_hw_kwh_el[j] ?? 0)))));
+  const temp = conditions.series.temp_c[i] ?? null;
+  const ghi = conditions.series.ghi_wm2[i] ?? 0;
+  const price = conditions.series.price_chf_kwh[i] ?? null;
+  const rank = conditions.series.carbon_relative_rank[i] ?? null;
+  const localTime = conditions.local_time[i] ?? "Time unavailable";
+  const hour = conditions.local_hour[i] ?? 0;
+  const night = hour < 6 || hour >= 20;
+  const frac = Math.max(0, Math.min(1, (hour - 5) / 16));
+  const statesById = new Map<string, (typeof buildingStates)[number]>();
+  buildingIds.forEach((id, j) => statesById.set(id, buildingStates[j]));
+  const sceneStates = districtBuildings.map((b) => statesById.get(b.role) ?? { net: null, hp: null, socHeat: null, socDhw: null, actionHeat: null });
+  const sceneState: SceneState = {
+    night, ghiK: Math.min(1, ghi / 700), sunX: 200 + frac * 900, sunY: 330 - Math.sin(frac * Math.PI) * 220,
+    tariff: price == null ? "—" : `CHF ${f(price, 3)}/kWh`,
+    tariffSub: conditions.series.tariff_tier[i] === "high" ? "High-price period" : "Low-price period",
+    carbon: rank == null ? "—" : `Relative rank ${f(rank, 0)}`,
+    carbonSub: "Modeled relative ranking only; no absolute emissions",
+    weather: temp == null ? "—" : `${f(temp, 1)} °C`,
+    weatherSub: "MeteoSwiss · measured",
+    controller: manifest.controllers.find((c) => c.id === controllerProp)?.display_name ?? controllerProp,
+    maxNet, maxHp, busFlow: totalNet ?? 0, buildings: sceneStates,
   };
-  const local = new Date(Date.parse(si.start_utc) + (i * si.step_s + si.utc_offset_h[i] * 3600) * 1000).toISOString().slice(0, 16).replace("T", " ");
-  const observed = new Set(fig.env_interface.observations_active);
-  const jump = (what: "peak" | "cold" | "night") => {
-    if (what === "peak" && T) setHour(argmax(T.district_net_kwh, 1));
-    if (what === "cold") setHour(argmax(S.temp_c.values, -1));
-    if (what === "night") { const c = argmax(S.temp_c.values, -1); const h = c - si.local_hour[c] + 2; setHour(h > 0 ? h : c); }
-  };
-  const titles = {
-    tariff: nodes["series:price"]?.display_name ?? "Electricity price", carbon: nodes["series:carbon_intensity"]?.display_name ?? "CO₂ of the grid",
-    weather: nodes["series:outdoor_temperature"]?.display_name ?? "Outdoor temperature", controller: "Control rule",
-  };
+  const selectedId = buildings[selectedBuilding] ? selectedBuilding : (manifest.buildings[0] ?? "");
+  const selectedInfo: BuildingInfo | undefined = buildings[selectedId];
+  const selectedSeries = run.buildings[selectedId];
+  const selectedStep = selectedSeries ? {
+    net: selectedSeries.net_kwh_el[i] ?? null,
+    hpSh: selectedSeries.hp_sh_kwh_el[i] ?? null,
+    hpHw: selectedSeries.hp_hw_kwh_el[i] ?? null,
+    household: selectedSeries.household_kwh_el[i] ?? null,
+    shDemand: selectedSeries.sh_demand_kwh_th[i] ?? null,
+    hwDemand: selectedSeries.hw_demand_kwh_th[i] ?? null,
+    hpShDirect: selectedSeries.hp_sh_direct_kwh_th[i] ?? null,
+    hpShToTank: selectedSeries.hp_sh_to_tank_kwh_th[i] ?? null,
+    shTankToDemand: selectedSeries.sh_tank_to_demand_kwh_th[i] ?? null,
+    shTankLoss: selectedSeries.sh_tank_loss_kwh_th[i] ?? null,
+    shSoc: selectedSeries.sh_tank_soc[i] ?? null,
+    hpHwDirect: selectedSeries.hp_hw_direct_kwh_th[i] ?? null,
+    hpHwToTank: selectedSeries.hp_hw_to_tank_kwh_th?.[i] ?? null,
+    hwTankToDemand: selectedSeries.hw_tank_to_demand_kwh_th?.[i] ?? null,
+    hwTankLoss: selectedSeries.hw_tank_loss_kwh_th?.[i] ?? null,
+    hwSoc: selectedSeries.hw_tank_soc?.[i] ?? null,
+  } : null;
+
   return (
-    <div className="space-y-2">
-      <Scene buildings={bs} names={bs.map((b) => names.building(b.role))} titles={titles} state={state} observed={observed} open={open} />
+    <div className="space-y-3">
+      <Scene buildings={districtBuildings} names={districtBuildings.map((b) => buildings[b.role]?.display_name ?? "Building")} state={sceneState} selectedBuilding={selectedId} onSelect={setSelectedBuilding} />
+      {selectedInfo && selectedStep && (
+        <section aria-label="Selected building details" className="space-y-4 rounded-2xl border bg-card p-4">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Selected building</p>
+              <h3 className="text-xl font-semibold">{selectedInfo.display_name}</h3>
+              <p className="text-sm text-muted-foreground">{selectedInfo.type === "SFH" ? "Single-family house" : "Apartment building"} · representative model</p>
+            </div>
+            <span className="rounded-full border px-2.5 py-1 text-xs text-muted-foreground">Phase A · modeled system</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="rounded-xl bg-muted/50 p-3"><p className="text-xs text-muted-foreground">Grid electricity</p><p className="text-lg font-semibold tabular-nums">{f(selectedStep.net, 2)} <span className="text-xs font-normal text-muted-foreground">kWh_el/step</span></p></div>
+            <div className="rounded-xl bg-muted/50 p-3"><p className="text-xs text-muted-foreground">Heat-pump electricity</p><p className="text-lg font-semibold tabular-nums">{f((selectedStep.hpSh ?? 0) + (selectedStep.hpHw ?? 0), 2)} <span className="text-xs font-normal text-muted-foreground">kWh_el/step</span></p></div>
+            <div className="rounded-xl bg-muted/50 p-3"><p className="text-xs text-muted-foreground">Heating tank</p><p className="text-lg font-semibold tabular-nums">{selectedStep.shSoc == null ? "—" : `${f(selectedStep.shSoc * 100, 0)}%`}</p><p className="text-xs text-muted-foreground">Synthetic tank · assumed parameters</p></div>
+          </div>
+          <BuildingCutaway building={selectedInfo} state={selectedStep} stepSeconds={stepSeconds} />
+        </section>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <Button size="icon" variant="outline" onClick={() => setPlaying((p) => !p)} aria-label={playing ? "pause" : "play"}>{playing ? <Pause className="size-4" /> : <Play className="size-4" />}</Button>
-        <select value={controller} onChange={(e) => onController(e.target.value)} className="h-8 rounded-lg border bg-background px-2 text-sm" aria-label="control rule">
-          {res.rows.map((r) => <option key={r.controller} value={r.controller}>{names.ctrl(r.controller)}</option>)}
+        <select value={controllerProp} onChange={(e) => onController(e.target.value)} className="h-8 rounded-lg border bg-background px-2 text-sm" aria-label="control rule">
+          {manifest.controllers.map((c) => <option key={c.id} value={c.id}>{c.display_name}</option>)}
         </select>
-        <input type="range" min={0} max={Math.max(n - 1, 0)} value={i} onChange={(e) => setHour(+e.target.value)} className="min-w-48 flex-1 accent-amber-500" aria-label="hour of the year" />
-        <div className="flex flex-wrap gap-1">
-          {([["cold", "coldest hour"], ["peak", "highest grid draw"], ["night", "a winter night"]] as const).map(([k2, label]) => (
-            <Button key={k2} size="sm" variant="outline" onClick={() => jump(k2)}>{label}</Button>
-          ))}
-        </div>
+        <input type="range" min={0} max={Math.max(n - 1, 0)} value={i} onChange={(e) => { setPlaying(false); setStep(+e.target.value); }} className="min-w-48 flex-1 accent-amber-500" aria-label="simulation timestep" />
+        <Button size="sm" variant="outline" onClick={() => setStep(0)}>Window start</Button>
+        <Button size="sm" variant="outline" onClick={() => setStep(Math.max(0, n - 1))}>Window end</Button>
       </div>
-      <p className="text-sm text-muted-foreground">
-        <b className="text-foreground">{local}</b> · {WD[si.weekday[i]]} · all buildings together draw <b className="text-foreground">{T ? `${f(dnet, 1)} kWh` : "–"}</b> from the grid in this hour
-      </p>
+      <p className="text-sm text-muted-foreground"><b className="text-foreground">{localTime}</b> · {f(totalNet, 2)} kWh_el drawn from the grid by all six building models in this step · {stepSeconds / 3600} h timestep</p>
+      <p className="text-xs text-muted-foreground">{manifest.time_axis.scope.kind === "year" || manifest.kind === "full" ? "Full-year simulation" : "Sample window"} · {n.toLocaleString()} simulated steps · {conditions.local_time[0] ?? "—"} to {conditions.local_time[n - 1] ?? "—"}</p>
+      <p className="text-xs text-muted-foreground">{manifest.description} {manifest.district_note}</p>
     </div>
   );
 }
+
