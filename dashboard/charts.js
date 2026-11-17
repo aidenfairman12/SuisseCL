@@ -640,6 +640,7 @@
   }
 
   window.SCLcharts = {
+    traceOf, loadTrace,
     init() {
       if (!SI || !window.Plotly) return;
       const sel = document.getElementById('bsel');

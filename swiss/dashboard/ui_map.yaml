@@ -465,3 +465,20 @@ panel:open_issues:
   summary: >
     Issues whose current status is open, from the issues and risks log. Each one also appears on the cards it affects.
   docs: [docs/decisions/issues_and_risks.md]
+
+card:district:
+  label: The simulated district
+  classification: mixed
+  primary: DER-010
+  nodes: [DER-010, DER-003, D-006, D-017a, D-018, TR-009, D-010]
+  summary: >
+    Six real buildings that are not neighbours: three single-family houses from HEAPO and three apartment buildings
+    from EKZ, combined into one district (D-006) under one weather station (D-010). Heat pumps and their electricity are
+    measured; heat demand is derived; tanks and the apartment loads are synthetic. The illustration shows one hour at a
+    time for the controller selected in the header: cable and pipe animation speed and width follow that hour's
+    electricity, tank fill shows state of charge, and the controller lines show whether it charges or discharges.
+    Building height only reflects the number of housing units; the geometry is otherwise illustrative.
+  numbers:
+    - {label: Building_1 heating tank, value: '{fig.district.buildings[0].heating_tank_kwh_th}', unit: kWh_th}
+    - {label: MFH-large housing units, value: '{fig.district.buildings[5].units}', unit: units}
+  docs: [docs/data/building_selection_design.md]

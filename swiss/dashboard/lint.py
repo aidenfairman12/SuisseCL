@@ -140,6 +140,14 @@ def lint(check_fresh_flag=False):
                 if k not in ui:
                     errs.append(f'coverage: {os.path.basename(path)} data-ui="{k}" has no ui_map entry')
 
+    # ui keys referenced as string literals in the page scripts (cards opened from JS-drawn elements)
+    for js in ('app.js', 'charts.js', 'district.js'):
+        f = os.path.join(ROOT, 'dashboard', js)
+        if os.path.exists(f):
+            for k in set(re.findall(r"'((?:series|card|kpi|panel|map):[a-z_]+)'", open(f, encoding='utf-8').read())):
+                if k not in ui:
+                    errs.append(f'coverage: dashboard/{js} opens "{k}", which has no ui_map entry')
+
     # lineage
     for nid, n in nodes.items():
         if n['kind'] not in ('series', 'kpi', 'card'):

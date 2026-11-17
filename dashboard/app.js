@@ -310,6 +310,7 @@
   window.SCLui = {N, COLOURS, esc, badge, idLink, section, fmt, KIND_LABEL};
   snapshot();
   if (window.SCLcharts && prov) window.SCLcharts.init();
+  if (window.SCLdistrict && prov) window.SCLdistrict.init();
   if (prov) {
     setupSearch();
     setupBrowser();

@@ -323,3 +323,16 @@ def test_system_map_boxes_have_cards(prov):
     assert 'epfl_table' in carbon['figures'] and any(c['symbol'] == 'intensity' for c in carbon['code'])
     assert 'cop_curves' in prov['card:cop_model']['figures']
     assert prov['card:tanks']['lineage'][-1] == 'D-017a' and 'tank_sizes' in prov['card:tanks']['figures']
+
+
+def test_district_view_data_matches_sources():
+    f = read_bundle_file(os.path.join(BUNDLE, 'figures.js'))['district']
+    man = json.load(open(p('swiss/datasets/swiss_district_2023/build_manifest.json')))
+    assert [b['building'] for b in f['buildings']] == list(man)
+    for b in f['buildings']:
+        m = man[b['building']]
+        assert (b['role'], b['heating_tank_kwh_th'], b['dhw_tank_kwh_th'], b['hp_sh_nominal_kw']) == \
+               (m['role'], m['heating_tank_kwh_th'], m['dhw_tank_kwh_th'], m['hp_sh_nominal_kw'])
+    assert [b['units'] for b in f['buildings'] if b['type'] == 'MFH'] == [5, 14, 24]
+    t = read_bundle_file(os.path.join(BUNDLE, 'trace_ALG-003_basic_rbc.js'))['arrays']
+    assert all(f'b{i}_hp_kwh_el' in t for i in range(1, 7))

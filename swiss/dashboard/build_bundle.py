@@ -578,6 +578,7 @@ def main():
     figs = figures.build_figures(read_df)
     figs.update(figures.build_model_figures(read_df, read_json))
     figs['action_maps'] = figures.action_maps()
+    figs['district'] = figures.district(read_df, read_json)
     from swiss.experiments import run_sensitivity
     figs['sensitivity_variants'] = {'datasets': dict(run_sensitivity.VARIANTS), 'controllers': list(run_sensitivity.CTRL),
                                     'source': 'swiss/experiments/run_sensitivity.py (VARIANTS, CTRL)'}

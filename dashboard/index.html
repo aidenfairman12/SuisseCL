@@ -16,6 +16,11 @@
 </header>
 <div id="legendbar"><span class="muted small">Classification:</span> <span id="legend"></span></div>
 <main>
+  <section id="district">
+    <div class="dhead"><h2>The simulated district</h2><span class="small muted">Six real buildings (three HEAPO single-family houses, three EKZ apartment buildings) with their heat pumps, synthetic storage tanks, meters and the grid. Pipes and cables carry the selected controller's hour-by-hour values; click anything for its audit card.</span></div>
+    <div class="dstage"></div>
+    <div class="dctl"></div>
+  </section>
   <section id="map">
     <h2>How the simulation fits together <span class="muted small">(hand-drawn system map — click any box for its audit card; colours = classification)</span></h2>
     <svg id="sysmap" viewBox="0 0 1080 330" role="img" aria-label="system map">
@@ -112,6 +117,7 @@
 <script src="bundle/figures.js"></script>
 <script src="bundle/results.js"></script>
 <script src="charts.js"></script>
+<script src="district.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

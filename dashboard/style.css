@@ -100,3 +100,32 @@ section { margin-bottom:18px; } section h2 { font-size:18px; margin:12px 0 6px; 
 table.vt td, table.vt th { font-size:12.5px; vertical-align:top; } .vpass { color:#2f855a; font-weight:600; } .vwarn { color:#c05621; font-weight:600; }
 .scenbox { border:1px solid #fbd38d; background:#fffaf0; padding:6px 10px; border-radius:6px; margin:6px 0; font-size:13px; }
 @media print { #sysmap { max-width:100%; } }
+
+/* ---------- district illustration ---------- */
+#district { margin:-12px -16px 10px; padding:10px 16px 8px; background:linear-gradient(#f8fbff, #fff); border-bottom:1px solid var(--line); }
+.dhead { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; } .dhead h2 { margin:4px 0; }
+.dstage { width:100%; max-width:1400px; margin:0 auto; }
+#dsvg { width:100%; height:auto; display:block; border-radius:14px; box-shadow:0 6px 24px rgba(30,50,90,.12); font-family:-apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
+#dsvg .dclick { cursor:pointer; } #dsvg .dclick:hover { filter:brightness(1.06) drop-shadow(0 0 3px rgba(51,154,240,.7)); }
+#dsvg .dt1 { font-size:12.5px; font-weight:700; fill:#212529; } #dsvg .dt2 { font-size:12px; fill:#343a40; font-variant-numeric:tabular-nums; } #dsvg .dt3 { font-size:9.5px; fill:#868e96; }
+#dsvg .dname { font-size:14px; font-weight:800; fill:#212529; paint-order:stroke; stroke:#fff; stroke-width:3px; }
+#dsvg .dsub { font-size:9.5px; fill:#495057; paint-order:stroke; stroke:#fff; stroke-width:3px; }
+#dsvg .dsmall { font-size:9.5px; font-weight:700; fill:#495057; } #dsvg .dlbl { font-size:10.5px; font-weight:700; fill:#343a40; text-anchor:middle; }
+#dsvg .dnet { font-size:10.5px; font-weight:700; fill:#5c3d00; font-variant-numeric:tabular-nums; }
+#dsvg .dleg { font-size:11px; fill:#f8f9fa; } #dsvg .dtitle { font-size:13px; font-weight:700; fill:#f1f3f5; letter-spacing:.04em; }
+#dsvg .dfeedlbl { font-size:10px; fill:#495057; font-style:italic; paint-order:stroke; stroke:rgba(255,255,255,.8); stroke-width:3px; }
+#dsvg.dnight .dfeedlbl { fill:#dee2e6; stroke:rgba(16,28,58,.8); }
+#dsvg .dfeed { fill:none; stroke-width:1.4; stroke-dasharray:2 4; opacity:.75; } #dsvg .dobs { stroke-dasharray:5 4; opacity:.6; }
+#dsvg .dwin rect { fill:#a5d8ff; stroke:#74c0fc; transition:fill .4s; } #dsvg.dnight .dwin rect { fill:#ffe066; stroke:#fcc419; filter:url(#dglow); }
+#dsvg .dflow { stroke-dasharray:7 7; animation:dflow 1.2s linear infinite; stroke-linecap:round; }
+#dsvg .dflow.drev { animation-direction:reverse; }
+#dsvg .dflow.dstill { animation:none; opacity:.28; }
+#dsvg .dfan { animation:dspin 1s linear infinite; } #dsvg .dfan.dstill { animation:none; }
+@keyframes dflow { to { stroke-dashoffset:-28; } }
+@keyframes dspin { to { transform:rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { #dsvg .dflow, #dsvg .dfan { animation:none !important; } }
+.dctl { display:flex; flex-wrap:wrap; gap:8px; align-items:center; max-width:1400px; margin:8px auto 0; }
+.dctl #dhour { flex:1 1 320px; accent-color:#f59f00; }
+.dctl button, .dctl select { border:1px solid #ced4da; background:#fff; border-radius:6px; padding:3px 9px; cursor:pointer; font-size:12.5px; }
+.dctl #dplay { width:38px; font-size:14px; } .djump { display:flex; gap:4px; flex-wrap:wrap; } #dread { flex-basis:100%; color:#343a40; }
+@media print { #district .dctl { display:none; } #dsvg .dflow { animation:none; } }

@@ -267,6 +267,7 @@ def build_results(rd, rj, exp_rows):
             arrs[f'b{i}_net_kwh'] = arr(t[f'b{i}_net_kwh'], 3)
             arrs[f'b{i}_heating_storage_soc'] = arr(t[f'b{i}_heating_storage_soc'], 3)
             arrs[f'b{i}_dhw_storage_soc'] = arr(t[f'b{i}_dhw_storage_soc'], 3)
+            arrs[f'b{i}_hp_kwh_el'] = arr(t[f'b{i}_heating_device_kwh_el'] + t[f'b{i}_dhw_device_kwh_el'], 3)
             for a in ('heating_storage', 'dhw_storage'):
                 if f'b{i}_action_{a}' in t:
                     arrs[f'b{i}_action_{a}'] = arr(t[f'b{i}_action_{a}'], 4)
@@ -297,3 +298,26 @@ def action_maps():
             out[name] = {'citylearn_hour': list(range(1, 25)), 'local_hour': [h - 1 for h in range(1, 25)],
                          'action': [m[h] for h in range(1, 25)], 'rate': r}
     return out
+
+
+def district(rd, rj):
+    """Per-building facts for the district illustration (all read from repo files)."""
+    man = rj('swiss/datasets/swiss_district_2023/build_manifest.json')
+    sel = rd('data/interim/selected_buildings.csv').set_index('role')
+    qb = rj('docs/data/data_quality_reports/qc_2023_buildings.json')
+    tp = rj('data/canonical/thermal/thermal_params.json')
+    out = []
+    for i, (name, m) in enumerate(man.items(), start=1):
+        role = m['role']
+        s = sel.loc[role]
+        q = qb[role]
+        out.append({'index': i, 'building': name, 'role': role, 'type': 'SFH' if role.startswith('SFH') else 'MFH',
+                    'source': q['source'], 'source_id': q['id'], 'units': int(s.units),
+                    'area_m2': None if pd.isna(s.area_m2) else float(s.area_m2),
+                    'residents': None if pd.isna(s.residents) else float(s.residents),
+                    'heating_tank_kwh_th': m['heating_tank_kwh_th'], 'dhw_tank_kwh_th': m['dhw_tank_kwh_th'],
+                    'hp_sh_nominal_kw': m['hp_sh_nominal_kw'], 'hp_dhw_nominal_kw': m['hp_dhw_nominal_kw'],
+                    'T_sup_sh_c': tp[role]['T_sup_sh_c'], 'eta_sh': tp[role]['eta_sh'],
+                    'apartments_synthetic': role.startswith('MFH'), 'gap_filled_hours': q.get('gap_filled_hours', 0)})
+    return {'buildings': out, 'files': ['swiss/datasets/swiss_district_2023/build_manifest.json', 'data/interim/selected_buildings.csv',
+                                        'docs/data/data_quality_reports/qc_2023_buildings.json', 'data/canonical/thermal/thermal_params.json']}
