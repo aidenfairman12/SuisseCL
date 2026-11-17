@@ -12,8 +12,8 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "SuisseCL Phase A — audit dashboard",
-  description: "Where every number in the Swiss Phase A simulation comes from.",
+  title: "SuisseCL — Swiss district energy simulation",
+  description: "Explore and inspect a Swiss residential district energy simulation built with CityLearn.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
