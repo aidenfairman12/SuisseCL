@@ -1,5 +1,2 @@
-import { StoryPage } from "@/components/story/story-page";
-
-export default function Page() {
-  return <StoryPage />;
-}
+import { OverviewPage } from "@/components/overview/overview-page";
+export default function Page(){return <OverviewPage/>;}
