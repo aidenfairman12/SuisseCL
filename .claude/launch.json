@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dashboard",
+      "runtimeExecutable": "cl/bin/python",
+      "runtimeArgs": ["-I", "swiss/dashboard/serve.py", "8000"],
+      "port": 8000
+    }
+  ]
+}
