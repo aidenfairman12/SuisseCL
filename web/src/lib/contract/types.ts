@@ -108,7 +108,7 @@ export type DistrictSeries = {
 /** Sparse tags: tag -> steps (relative to scope.start_step) where it holds. A missing tag never holds. Definitions: manifest.situation_tags. */
 export type Tags = Record<string, number[]>;
 export type RunSummary = {
-  import_kwh_el: number; peak_kw_el: number; peak_step: number; cost_chf: number; high_tariff_import_share: number;
+  import_kwh_el: number; peak_kw_el: number; peak_step: number; mean_daily_peak_kw_el: number; cost_chf: number; high_tariff_import_share: number;
   hp_kwh_el: number; tank_loss_kwh_th: number; heat_from_tanks_kwh_th: number; reward_sum: number;
 };
 export type RunFile = {
@@ -120,10 +120,22 @@ export type RunFile = {
 
 export type Comparison = {
   metrics: Record<string, { unit: string; value: number; reference: number; delta: number; delta_pct: number | null }>;
+  /**
+   * Exact decomposition of what the controller changes relative to the reference (docs/dashboard/data_contract_v1.md section 8):
+   *  extra_hp_electricity = electricity_from_tank_losses + electricity_from_stored_remainder + electricity_from_cop_timing
+   *  cost delta           = cost_from_tariff_timing + cost_from_extra_electricity
+   *  relative_carbon_change = carbon_from_timing + carbon_from_extra_electricity (percent of the reference, relative only)
+   *  tank_heat_in - tank_heat_out - stored_heat_change = heat lost in the tanks
+   */
   mechanisms: {
     import_moved_out_of_high_tariff_kwh_el: number; extra_tank_loss_kwh_th: number; extra_hp_electricity_kwh_el: number;
-    /** Change of carbon-weighted import vs the reference, in percent. RELATIVE ONLY: never show absolute emissions. */
-    relative_carbon_change_pct: number | null; peak_step_reference: number; peak_step: number;
+    tank_heat_in_kwh_th: number; tank_heat_out_kwh_th: number; stored_heat_change_kwh_th: number;
+    tank_charging_electricity_kwh_el: number; electricity_avoided_at_discharge_kwh_el: number;
+    electricity_from_tank_losses_kwh_el: number; electricity_from_stored_remainder_kwh_el: number; electricity_from_cop_timing_kwh_el: number;
+    cost_from_tariff_timing_chf: number; cost_from_extra_electricity_chf: number;
+    /** Percent of the reference's carbon-weighted import. RELATIVE ONLY: never show absolute emissions. */
+    carbon_from_timing_pct: number | null; carbon_from_extra_electricity_pct: number | null; relative_carbon_change_pct: number | null;
+    peak_step_reference: number; peak_step: number;
   };
   relative_only: string[];
 };

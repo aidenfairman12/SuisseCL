@@ -67,7 +67,8 @@ def test_validator_catches_violations_and_unknown_keywords():
 
 def test_every_exported_file_validates(manifest):
     assert validate.validate_file(os.path.join(SIM, 'manifest.json'), 'manifest') == []
-    for f, name in (('buildings.json', 'buildings'), ('components.json', 'components'), ('conditions.json', 'conditions'), ('comparisons.json', 'comparisons')):
+    for f, name in (('buildings.json', 'buildings'), ('components.json', 'components'), ('conditions.json', 'conditions'), ('comparisons.json', 'comparisons'),
+                    ('comparisons_year.json', 'comparisons')):
         assert validate.validate_file(os.path.join(SIM, f), name) == [], f
     for r in manifest['runs']:
         assert validate.validate_file(os.path.join(SIM, r['file']), 'run') == [], r['file']
@@ -196,6 +197,8 @@ def test_summary_and_peak_power_conversion(runs, manifest):
         net = arr(r['district']['net_kwh_el'])
         assert abs(r['summary']['peak_kw_el'] - net.max() / h) < 1e-5 and r['summary']['peak_step'] == int(net.argmax())
         assert abs(r['summary']['import_kwh_el'] - sum(np.maximum(arr(b['net_kwh_el']), 0) for b in r['buildings'].values()).sum()) < 1e-4
+        blocks = [net[i:i + 24].max() for i in range(0, len(net), 24)]     # window starts on a 24-step boundary (local midnight)
+        assert abs(r['summary']['mean_daily_peak_kw_el'] - np.mean(blocks) / h) < 1e-5
 
 
 def test_tank_modes_and_tags_agree_with_flows(runs, manifest, cond):
@@ -340,11 +343,13 @@ def test_no_absolute_carbon_in_any_exported_file(manifest):
             d = {k: v for k, v in d.items() if k != 'inputs'}   # `inputs` lists input FILE PATHS (the dataset's carbon CSV is one); it is not exported data
         parts.append(json.dumps(d))
     txt = ''.join(parts)
-    for bad in ('carbon_intensity', 'g_kwh', 'gco2', 'g/kWh', 'co2_g'):
+    import re
+    for bad in ('carbon_intensity', 'gco2', 'g/kWh', 'co2_g'):
         assert bad.lower() not in txt.lower(), bad
+    assert not re.search(r'(?<![a-z])g_kwh', txt.lower()), 'a standalone g_kwh token (grams per kWh) must not appear; "timing_kwh" is fine'
     assert manifest['variables']['conditions']['carbon_relative_rank']['relative_only'] is True
-    for c in load('comparisons.json')['comparisons'].values():
-        assert c['relative_only'] == ['relative_carbon_change_pct']
+    for c in [*load('comparisons.json')['comparisons'].values(), *load('comparisons_year.json')['comparisons'].values()]:
+        assert c['relative_only'] == ['carbon_from_timing_pct', 'carbon_from_extra_electricity_pct', 'relative_carbon_change_pct']
 
 
 def test_future_phase_components_are_not_modeled():
@@ -358,3 +363,85 @@ def test_future_phase_components_are_not_modeled():
     # every flow variable is an exported variable
     names = set(BUILDING_VARIABLES) | {f'district.{k}' for k in DISTRICT_VARIABLES} | set(CONDITION_VARIABLES)
     assert all(f['variable'] in names for f in flows if f['variable'])
+
+
+# ------------------------------------------------------------------------------------------------ annual comparisons and mechanisms
+YEAR_TOL = {'import_kwh_el': ('district_import_kwh', 1e-9), 'peak_kw_el': ('district_peak_kw', 1e-9), 'mean_daily_peak_kw_el': ('mean_daily_peak_kw', 1e-9),
+            'cost_chf': ('cost_chf_excl_vat', 1e-9), 'high_tariff_import_share': ('high_tariff_import_share', 1e-9)}
+
+
+def test_year_comparisons_equal_the_independent_results_table():
+    """comparisons_year.json (computed from the recorder) vs baselines_2023.csv (written by run_baselines.py, a different code path)."""
+    cy = load('comparisons_year.json')
+    assert cy['scope']['kind'] == 'year' and cy['scope']['start_step'] == 0 and cy['scope']['n_steps'] == 8759
+    res = pd.read_csv(os.path.join(ROOT, 'swiss', 'experiments', 'results', 'baselines_2023.csv')).set_index('controller')
+    ref = res.loc[REF]
+    for name, c in cy['comparisons'].items():
+        for k, (col, tol) in YEAR_TOL.items():
+            m = c['metrics'][k]
+            assert abs(m['value'] - res.loc[name, col]) <= tol * max(1.0, abs(res.loc[name, col])), (name, k)
+            assert abs(m['reference'] - ref[col]) <= tol * max(1.0, abs(ref[col])), (name, k)
+        carbon = 100 * (res.loc[name, 'term_carbon_sum'] / ref.term_carbon_sum - 1)
+        assert abs(c['mechanisms']['relative_carbon_change_pct'] - carbon) < 1e-6, name
+
+
+def test_mechanism_decompositions_are_exact_in_both_scopes():
+    for f in ('comparisons.json', 'comparisons_year.json'):
+        for name, c in load(f)['comparisons'].items():
+            m, x = c['mechanisms'], c['metrics']
+            tol = 1e-3 + 1e-6 * abs(m['tank_charging_electricity_kwh_el'])
+            assert abs(m['extra_hp_electricity_kwh_el'] - (m['tank_charging_electricity_kwh_el'] - m['electricity_avoided_at_discharge_kwh_el'])) < tol, (f, name)
+            assert abs(m['extra_hp_electricity_kwh_el'] - (m['electricity_from_tank_losses_kwh_el'] + m['electricity_from_stored_remainder_kwh_el']
+                                                          + m['electricity_from_cop_timing_kwh_el'])) < tol, (f, name)
+            assert abs(x['cost_chf']['delta'] - (m['cost_from_tariff_timing_chf'] + m['cost_from_extra_electricity_chf'])) < tol, (f, name)
+            assert abs(x['import_kwh_el']['delta'] - m['extra_hp_electricity_kwh_el']) < tol, 'household electricity is unchanged by a controller'
+            assert abs((m['tank_heat_in_kwh_th'] - m['tank_heat_out_kwh_th'] - m['stored_heat_change_kwh_th']) - m['extra_tank_loss_kwh_th']) < tol, (f, name)
+            if m['relative_carbon_change_pct'] is not None:
+                assert abs(m['relative_carbon_change_pct'] - (m['carbon_from_timing_pct'] + m['carbon_from_extra_electricity_pct'])) < 1e-4, (f, name)
+            assert m['electricity_from_tank_losses_kwh_el'] >= -1e-6 and m['tank_heat_in_kwh_th'] >= m['tank_heat_out_kwh_th'] - 1e-6
+
+
+def test_window_mechanisms_recomputed_from_run_arrays(runs, cond):
+    """Independent re-implementation of the decomposition from the exported run arrays (test code only; no exporter code)."""
+    price = arr(cond['series']['price_chf_kwh'])
+    ref = runs[REF]
+    for name, c in load('comparisons.json')['comparisons'].items():
+        r = runs[name]
+        t = dict(inn=0.0, out=0.0, A=0.0, B=0.0)
+        for role in ROLES:
+            for p in ('sh', 'hw'):
+                b = r['buildings'][role]
+                if b[f'{p}_tank_soc'] is None:
+                    continue
+                inn, out, cop = arr(b[f'hp_{p}_to_tank_kwh_th']), arr(b[f'{p}_tank_to_demand_kwh_th']), arr(b[f'cop_{p}'])
+                t['inn'] += inn.sum(); t['out'] += out.sum()
+                t['A'] += (inn / cop).sum(); t['B'] += (out / cop).sum()
+        m = c['mechanisms']
+        assert abs(t['inn'] - m['tank_heat_in_kwh_th']) < 1e-2, name
+        assert abs(t['out'] - m['tank_heat_out_kwh_th']) < 1e-2, name
+        assert abs(t['A'] - m['tank_charging_electricity_kwh_el']) < 1e-2, name
+        assert abs(t['B'] - m['electricity_avoided_at_discharge_kwh_el']) < 1e-2, name
+        assert abs((t['A'] - t['B']) - m['extra_hp_electricity_kwh_el']) < 1e-2, name
+        # cost: sum_t price_t x (extra heat-pump electricity of the step) equals the cost delta
+        dcost = sum(((arr(r['buildings'][ro]['net_kwh_el']) - arr(ref['buildings'][ro]['net_kwh_el'])) * price).sum() for ro in ROLES)
+        assert abs(dcost - c['metrics']['cost_chf']['delta']) < 1e-3, name
+
+
+def test_bau_has_no_mechanisms():
+    for f in ('comparisons.json', 'comparisons_year.json'):
+        m = load(f)['comparisons']['ALG-002_business_as_usual']['mechanisms']
+        assert all(abs(v) < 1e-9 for k, v in m.items() if isinstance(v, float) and k != 'relative_carbon_change_pct')
+        assert abs(m['relative_carbon_change_pct']) < 1e-9
+
+
+def test_per_building_kpi_average_differs_from_district_total():
+    """Documents why the KPI table and the district comparison differ: CityLearn's KPI is the unweighted MEAN OF BUILDING RATIOS."""
+    res = pd.read_csv(os.path.join(ROOT, 'swiss', 'experiments', 'results', 'baselines_2023.csv')).set_index('controller')
+    R = os.path.join(ROOT, 'swiss', 'experiments', 'results', 'traces')
+    ref, t = (pd.read_csv(os.path.join(R, f'{n}.csv.gz')) for n in (REF, 'ALG-003_basic_rbc'))
+    ci = t.carbon_intensity.to_numpy()
+    ratios = [(np.maximum(t[f'b{i}_net_kwh'], 0) * ci).sum() / (np.maximum(ref[f'b{i}_net_kwh'], 0) * ci).sum() for i in range(1, 7)]
+    assert abs(np.mean(ratios) - res.loc['ALG-003_basic_rbc', 'kpi_carbon_emissions_total']) < 1e-5
+    district = load('comparisons_year.json')['comparisons']['ALG-003_basic_rbc']['mechanisms']['relative_carbon_change_pct']
+    assert abs(district / 100 - (res.loc['ALG-003_basic_rbc', 'term_carbon_sum'] / res.loc[REF, 'term_carbon_sum'] - 1)) < 1e-9
+    assert district / 100 > np.mean(ratios) - 1 + 1e-3, 'energy-weighted district total differs from the mean of building ratios'

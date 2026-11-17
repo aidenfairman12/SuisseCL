@@ -1,6 +1,6 @@
 """Export contract v1 files to web/public/bundle/sim/ from REAL CityLearn rollouts (no numbers are typed in here).
 
-  manifest.json, buildings.json, components.json, conditions.json, comparisons.json, runs/<scenario>/<controller>.json
+  manifest.json, buildings.json, components.json, conditions.json, comparisons.json, comparisons_year.json, runs/<scenario>/<controller>.json
 
 Default: a 48-hour SAMPLE (kind "sample") = the coldest weekday of the year (local calendar day, Mon-Fri) and the following
 day, all six controllers. `--full` exports the whole simulated year (8,759 steps; inputs 8,760) with the same code.
@@ -159,10 +159,54 @@ def summarise(rec, price, tier_high, start, n):
     hi = tier_high[sl].astype(bool)
     loss = sum(b[f'{p}_tank_loss_kwh_th'][sl].sum() for b in B for p in ('sh', 'hw') if b[f'{p}_tank_capacity_kwh_th'] > 0)
     from_tank = sum(b[f'{p}_tank_to_demand_kwh_th'][sl].sum() for b in B for p in ('sh', 'hw') if b[f'{p}_tank_capacity_kwh_th'] > 0)
+    blocks = (np.arange(rec['n']) // 24)[sl]          # 24-step blocks from step 0 (= local midnight), the convention of baselines_2023.csv
+    daily = float(pd.Series(net).groupby(blocks).max().mean())
     return {'import_kwh_el': float(imp.sum()), 'peak_kw_el': float(net.max() / (STEP_S / 3600)), 'peak_step': int(net.argmax()),
+            'mean_daily_peak_kw_el': daily / (STEP_S / 3600),
             'cost_chf': float((imp * price[sl]).sum()), 'high_tariff_import_share': float(imp[hi].sum() / imp.sum()) if imp.sum() else 0.0,
             'hp_kwh_el': float(sum((b['hp_sh_kwh_el'][sl] + b['hp_hw_kwh_el'][sl]).sum() for b in B)), 'tank_loss_kwh_th': float(loss),
             'heat_from_tanks_kwh_th': float(from_tank), 'reward_sum': float(rec['reward'][sl].sum())}
+
+
+def tank_terms(rec, ref, price, ci, start, n):
+    """EXACT decomposition of what a controller changes relative to the no-control reference, per tank device and summed.
+
+    With demand fixed, a controller changes only the heat that passes through tanks: in_t (heat pump -> tank) and out_t (tank -> demand), so
+        extra heat-pump electricity   = sum_t (in_t - out_t) / COP_t          (A - B below, A = charging electricity, B = avoided electricity)
+        extra cost                    = sum_t price_t (in_t - out_t) / COP_t   (same weights with the price; carbon likewise with the carbon series)
+    and, with c = mean COP weighted by charging heat, pc / pd = the electricity-weighted mean price at charging / discharge time,
+        extra electricity = (loss + stored change) / c  +  B (1/c - 1/d)  = losses + stored remainder + COP timing      [d = discharge-side mean COP]
+        extra cost        = B (pc - pd)  +  (A - B) pc                      = tariff timing + extra electricity bought at the charging price
+    All identities are exact; the reference must not use its tanks (asserted)."""
+    sl = slice(start, start + n)
+    t = {k: 0.0 for k in ('heat_in', 'heat_out', 'stored_change', 'charge_el', 'avoided_el', 'loss_el', 'stored_el', 'timing_el',
+                          'cost_timing', 'cost_extra_el', 'carbon_timing', 'carbon_extra_el')}
+    for b, br in zip(rec['buildings'], ref['buildings']):
+        for pre in ('sh', 'hw'):
+            cap = b[f'{pre}_tank_capacity_kwh_th']
+            if cap <= 0:
+                continue
+            if abs(br[f'hp_{pre}_to_tank_kwh_th'][sl]).sum() + abs(br[f'{pre}_tank_to_demand_kwh_th'][sl]).sum() > 1e-6:
+                raise ValueError('the reference controller must not use its tanks')
+            inn, out, cop, soc = b[f'hp_{pre}_to_tank_kwh_th'][sl], b[f'{pre}_tank_to_demand_kwh_th'][sl], b[f'cop_{pre}'][sl], b[f'{pre}_tank_soc']
+            e_end = soc[start + n - 1] * cap
+            e_start = soc[start - 1] * cap if start > 0 else 0.0
+            d_e = e_end - e_start
+            a, bv = (inn / cop).sum(), (out / cop).sum()
+            if a <= 0:
+                continue
+            c_bar = inn.sum() / a
+            loss = inn.sum() - out.sum() - d_e
+            t['heat_in'] += inn.sum(); t['heat_out'] += out.sum(); t['stored_change'] += d_e
+            t['charge_el'] += a; t['avoided_el'] += bv
+            t['loss_el'] += loss / c_bar; t['stored_el'] += d_e / c_bar
+            t['timing_el'] += (a - bv) - (loss + d_e) / c_bar
+            for sig, key in ((price[sl], 'cost'), (ci[sl], 'carbon')):
+                ac, bc = (sig * inn / cop).sum(), (sig * out / cop).sum()
+                pc, pd_ = ac / a, (bc / bv if bv > 0 else 0.0)
+                t[f'{key}_timing'] += bv * (pc - pd_)
+                t[f'{key}_extra_el'] += (a - bv) * pc
+    return t
 
 
 def compare(recs, price, tier_high, ci, start, n):
@@ -176,18 +220,28 @@ def compare(recs, price, tier_high, ci, start, n):
             continue
         s = summarise(rec, price, tier_high, start, n)
         imp = np.sum([np.maximum(b['net_kwh_el'][sl], 0) for b in rec['buildings']], axis=0)
-        units = {'import_kwh_el': 'kWh_el', 'peak_kw_el': 'kW_el', 'cost_chf': 'CHF', 'high_tariff_import_share': 'fraction', 'hp_kwh_el': 'kWh_el',
+        units = {'import_kwh_el': 'kWh_el', 'peak_kw_el': 'kW_el', 'mean_daily_peak_kw_el': 'kW_el', 'cost_chf': 'CHF', 'high_tariff_import_share': 'fraction', 'hp_kwh_el': 'kWh_el',
                  'tank_loss_kwh_th': 'kWh_th', 'heat_from_tanks_kwh_th': 'kWh_th'}
         metrics = {k: {'unit': u, 'value': s[k], 'reference': ref[k], 'delta': s[k] - ref[k],
                        'delta_pct': (100.0 * (s[k] - ref[k]) / abs(ref[k])) if ref[k] else None} for k, u in units.items()}
-        carbon = (imp * ci[sl]).sum() / (imp_ref * ci[sl]).sum() - 1.0 if (imp_ref * ci[sl]).sum() else None
+        ref_carbon = (imp_ref * ci[sl]).sum()
+        carbon = (imp * ci[sl]).sum() / ref_carbon - 1.0 if ref_carbon else None
+        t = tank_terms(rec, recs[REF], price, ci, start, n)
+        pct = (lambda x: None if not ref_carbon else float(100.0 * x / ref_carbon))  # noqa: E731
         out[name] = {'metrics': metrics,
                      'mechanisms': {'import_moved_out_of_high_tariff_kwh_el': float(imp_ref[hi].sum() - imp[hi].sum()),
                                     'extra_tank_loss_kwh_th': s['tank_loss_kwh_th'] - ref['tank_loss_kwh_th'],
                                     'extra_hp_electricity_kwh_el': s['hp_kwh_el'] - ref['hp_kwh_el'],
+                                    'tank_heat_in_kwh_th': float(t['heat_in']), 'tank_heat_out_kwh_th': float(t['heat_out']),
+                                    'stored_heat_change_kwh_th': float(t['stored_change']),
+                                    'tank_charging_electricity_kwh_el': float(t['charge_el']), 'electricity_avoided_at_discharge_kwh_el': float(t['avoided_el']),
+                                    'electricity_from_tank_losses_kwh_el': float(t['loss_el']), 'electricity_from_stored_remainder_kwh_el': float(t['stored_el']),
+                                    'electricity_from_cop_timing_kwh_el': float(t['timing_el']),
+                                    'cost_from_tariff_timing_chf': float(t['cost_timing']), 'cost_from_extra_electricity_chf': float(t['cost_extra_el']),
+                                    'carbon_from_timing_pct': pct(t['carbon_timing']), 'carbon_from_extra_electricity_pct': pct(t['carbon_extra_el']),
                                     'relative_carbon_change_pct': None if carbon is None else float(100.0 * carbon),
                                     'peak_step_reference': ref['peak_step'], 'peak_step': s['peak_step']},
-                     'relative_only': ['relative_carbon_change_pct']}
+                     'relative_only': ['carbon_from_timing_pct', 'carbon_from_extra_electricity_pct', 'relative_carbon_change_pct']}
     return out
 
 
@@ -358,6 +412,8 @@ def main(hours=48, start=None, full=False, out=OUT, only=None):
         runs.append({'scenario': SCENARIO, 'controller': name, 'file': f'runs/{SCENARIO}/{name}.json'})
     emit('comparisons.json', {'contract_version': CONTRACT_VERSION, 'scenario': SCENARIO, 'reference_controller': REF, 'scope': scope,
                               'comparisons': compare(recs, price_chf, tier_high, ci, start, n)})
+    emit('comparisons_year.json', {'contract_version': CONTRACT_VERSION, 'scenario': SCENARIO, 'reference_controller': REF,
+                                   'scope': {'kind': 'year', 'start_step': 0, 'n_steps': N}, 'comparisons': compare(recs, price_chf, tier_high, ci, 0, N)})
     dirty = [ln for ln in git('status', '--porcelain').splitlines() if 'web/public/bundle/sim/' not in ln]
     cond_scope = cond['scope']
     manifest = {

@@ -25,6 +25,9 @@ SERIES_ABSENT = {'type': ['array', 'null'], 'items': NUM}
 MODES_ABSENT = {'type': ['array', 'null'], 'items': {'enum': MODES}}
 IDS = {'type': 'array', 'items': {'type': 'string', 'pattern': r'^[A-Za-z]+[-:][A-Za-z0-9._:\-]+$'}}
 VERSION = {'const': CONTRACT_VERSION}
+MECH_NUM = ['import_moved_out_of_high_tariff_kwh_el', 'extra_tank_loss_kwh_th', 'extra_hp_electricity_kwh_el', 'tank_heat_in_kwh_th', 'tank_heat_out_kwh_th',
+            'stored_heat_change_kwh_th', 'tank_charging_electricity_kwh_el', 'electricity_avoided_at_discharge_kwh_el', 'electricity_from_tank_losses_kwh_el',
+            'electricity_from_stored_remainder_kwh_el', 'electricity_from_cop_timing_kwh_el', 'cost_from_tariff_timing_chf', 'cost_from_extra_electricity_chf']
 
 
 def obj(props, required=None, extra=False):
@@ -111,13 +114,14 @@ def schemas():
                'buildings': {'type': 'object', 'additionalProperties': obj(bprops, [k for k, var in BUILDING_VARIABLES.items()])},
                'district': obj(dprops),
                'situations': obj({'district': tags, 'buildings': {'type': 'object', 'additionalProperties': tags}}),
-               'summary': obj({'import_kwh_el': metric, 'peak_kw_el': metric, 'peak_step': INT, 'cost_chf': metric, 'high_tariff_import_share': metric,
+               'summary': obj({'import_kwh_el': metric, 'peak_kw_el': metric, 'peak_step': INT, 'mean_daily_peak_kw_el': metric, 'cost_chf': metric, 'high_tariff_import_share': metric,
                                'hp_kwh_el': metric, 'tank_loss_kwh_th': metric, 'heat_from_tanks_kwh_th': metric, 'reward_sum': metric})})}
     out['comparisons'] = {'$schema': 'https://json-schema.org/draft/2020-12/schema', 'title': 'comparisons.json',
         **obj({'contract_version': VERSION, 'scenario': S, 'reference_controller': S, 'scope': ref('scope'),
                'comparisons': {'type': 'object', 'additionalProperties': obj({
                    'metrics': {'type': 'object', 'additionalProperties': obj({'unit': S, 'value': metric, 'reference': metric, 'delta': metric, 'delta_pct': {'type': ['number', 'null']}})},
-                   'mechanisms': obj({'import_moved_out_of_high_tariff_kwh_el': metric, 'extra_tank_loss_kwh_th': metric, 'extra_hp_electricity_kwh_el': metric,
+                   'mechanisms': obj({**{k: metric for k in MECH_NUM}, 'carbon_from_timing_pct': {'type': ['number', 'null']},
+                                      'carbon_from_extra_electricity_pct': {'type': ['number', 'null']},
                                       'relative_carbon_change_pct': {'type': ['number', 'null']}, 'peak_step_reference': INT, 'peak_step': INT}),
                    'relative_only': {'type': 'array', 'items': S}})}})}
     return out

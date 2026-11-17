@@ -216,6 +216,11 @@ controllers, produced from real CityLearn rollouts. The full year will use the s
 sample and read the length from `scope.n_steps`. Every variable's label, unit, provenance and source IDs are in `manifest.variables`;
 show the label, never the field id.
 
+For the **Results page** use `comparisons_year.json` (`useComparisonsYear`): annual district totals for every controller plus exact explanations
+(how much extra electricity comes from tank losses vs COP timing, how much the tariff saved vs the extra electricity cost, and the same for relative
+carbon). The checked wording of the Phase A findings is in `docs/experiments/validation_reports/mechanism_check_phase_a.md`; follow it, and note that
+the highest hour and the mean daily peak tell different stories and that the `kpi_*` table is a mean of building ratios, not a district total.
+
 Do not reconstruct anything physical in the browser: heat flows, tank losses, tank mode, situation tags and comparison
 mechanisms are all in the files. If a field you need is missing, request it (section 7).
 

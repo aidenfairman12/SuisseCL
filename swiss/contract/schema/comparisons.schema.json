@@ -66,6 +66,48 @@
        "extra_hp_electricity_kwh_el": {
         "type": "number"
        },
+       "tank_heat_in_kwh_th": {
+        "type": "number"
+       },
+       "tank_heat_out_kwh_th": {
+        "type": "number"
+       },
+       "stored_heat_change_kwh_th": {
+        "type": "number"
+       },
+       "tank_charging_electricity_kwh_el": {
+        "type": "number"
+       },
+       "electricity_avoided_at_discharge_kwh_el": {
+        "type": "number"
+       },
+       "electricity_from_tank_losses_kwh_el": {
+        "type": "number"
+       },
+       "electricity_from_stored_remainder_kwh_el": {
+        "type": "number"
+       },
+       "electricity_from_cop_timing_kwh_el": {
+        "type": "number"
+       },
+       "cost_from_tariff_timing_chf": {
+        "type": "number"
+       },
+       "cost_from_extra_electricity_chf": {
+        "type": "number"
+       },
+       "carbon_from_timing_pct": {
+        "type": [
+         "number",
+         "null"
+        ]
+       },
+       "carbon_from_extra_electricity_pct": {
+        "type": [
+         "number",
+         "null"
+        ]
+       },
        "relative_carbon_change_pct": {
         "type": [
          "number",
@@ -83,6 +125,18 @@
        "import_moved_out_of_high_tariff_kwh_el",
        "extra_tank_loss_kwh_th",
        "extra_hp_electricity_kwh_el",
+       "tank_heat_in_kwh_th",
+       "tank_heat_out_kwh_th",
+       "stored_heat_change_kwh_th",
+       "tank_charging_electricity_kwh_el",
+       "electricity_avoided_at_discharge_kwh_el",
+       "electricity_from_tank_losses_kwh_el",
+       "electricity_from_stored_remainder_kwh_el",
+       "electricity_from_cop_timing_kwh_el",
+       "cost_from_tariff_timing_chf",
+       "cost_from_extra_electricity_chf",
+       "carbon_from_timing_pct",
+       "carbon_from_extra_electricity_pct",
        "relative_carbon_change_pct",
        "peak_step_reference",
        "peak_step"

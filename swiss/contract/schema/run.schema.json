@@ -375,6 +375,9 @@
     "peak_step": {
      "type": "integer"
     },
+    "mean_daily_peak_kw_el": {
+     "type": "number"
+    },
     "cost_chf": {
      "type": "number"
     },
@@ -398,6 +401,7 @@
     "import_kwh_el",
     "peak_kw_el",
     "peak_step",
+    "mean_daily_peak_kw_el",
     "cost_chf",
     "high_tariff_import_share",
     "hp_kwh_el",

@@ -23,7 +23,8 @@ CityLearn 3.3.0 rollout of the Phase A district; no number is typed in by hand.
 | `components.json` | Phase-aware component registry (modeled vs not modeled, phase A/B/C) and the energy / signal / control flows between them |
 | `conditions.json` | Shared per-step inputs: weather, tariff, relative carbon rank, local time, gap flags |
 | `runs/<scenario>/<controller>.json` | One controller's per-step results for all buildings and the district, sparse situation tags, summary |
-| `comparisons.json` | Each controller against the reference ("No control") with the quantities that explain the difference |
+| `comparisons.json` | Each controller against the reference ("No control") over the file's `scope` (the sample window now), with the quantities that explain the difference |
+| `comparisons_year.json` | The same structure over the **whole simulated year** (small: no per-step arrays). Use it for the Results page; check `scope.kind` before labelling |
 
 ## 3. Conventions (read before building anything)
 **Time.** Step `i` of a run array is simulation step `scope.start_step + i`. Step 0 = 2022-12-31T23:00Z = 2023-01-01 00:00 local
@@ -131,11 +132,23 @@ tag supports it (for example "stored heat is covering demand" only when `sh_tank
 | `hp_sh_near_capacity` | Space-heating heat-pump electricity at or above situation_thresholds.near_capacity_fraction of its nominal electrical power. |
 
 ## 8. Comparisons and what they explain
-`comparisons.json` compares each controller with the reference over `scope` (the 48-hour sample window now, the full year later).
-`metrics` hold value, reference, delta and percent for import (`kWh_el`), peak (`kW_el`), cost (`CHF`), high-tariff import share, heat-pump
-electricity, tank losses and heat delivered from tanks. `mechanisms` hold the quantities behind the story:
-`import_moved_out_of_high_tariff_kwh_el`, `extra_tank_loss_kwh_th`, `extra_hp_electricity_kwh_el`, peak step before and after, and
-`relative_carbon_change_pct` (relative only). Percent changes in a 48-hour window are not annual results; label them with the scope.
+`comparisons.json` (scope: the sample window) and `comparisons_year.json` (scope: the whole year) share one structure; always read `scope.kind`
+and label percent changes with it (a 48-hour change is not an annual result). Both compare each controller with the reference ("No control").
+`metrics` hold value, reference, delta and percent for import (`kWh_el`), highest hour and mean daily peak (`kW_el`, 24-step blocks as in the KPI
+table), cost (`CHF`), high-tariff import share, heat-pump electricity, tank losses and heat delivered from tanks. These are **district totals**
+(energy-weighted). CityLearn's `kpi_*` columns are different: the unweighted mean of per-building ratios, so do not mix them.
+
+`mechanisms` are **exact accounting identities** (tested). The demand is fixed, so a controller only changes the heat passing through the tanks:
+- `extra_hp_electricity_kwh_el` = `electricity_from_tank_losses` + `electricity_from_stored_remainder` + `electricity_from_cop_timing`
+  (heat lost in the tanks and heat still stored at the end of the scope, each converted at the charging COP, plus the effect of charging at a
+  different COP than the one at the time the heat is used); also = `tank_charging_electricity` - `electricity_avoided_at_discharge`.
+- cost delta = `cost_from_tariff_timing_chf` (negative = cheaper hours used) + `cost_from_extra_electricity_chf` (extra electricity bought at the charging price).
+- `relative_carbon_change_pct` = `carbon_from_timing_pct` + `carbon_from_extra_electricity_pct`: same identity with the modeled carbon series, in percent of the
+  reference, **relative only**.
+- `tank_heat_in_kwh_th` - `tank_heat_out_kwh_th` - `stored_heat_change_kwh_th` = heat lost in the tanks (`extra_tank_loss_kwh_th`).
+- `import_moved_out_of_high_tariff_kwh_el`, `peak_step_reference` / `peak_step` (when the highest hour occurs).
+Say "because" only for what these identities show. They do not explain why a rule charges when it does, and they depend on the assumed tanks
+(D-017a). See `docs/experiments/validation_reports/mechanism_check_phase_a.md` for the checked wording of the Phase A findings.
 
 ## 9. Sample bundle and regeneration
 `kind: sample`: 48 hours from local midnight of the coldest weekday of 2023 (Monday 2023-12-04, steps 8088-8135), all six controllers.

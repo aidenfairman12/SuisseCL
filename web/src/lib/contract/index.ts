@@ -13,6 +13,8 @@ export const useManifest = () => useSim<Manifest>("manifest");
 export const useBuildings = () => useSim<BuildingsFile>("buildings");
 export const useComponents = () => useSim<ComponentsFile>("components");
 export const useConditions = () => useSim<ConditionsFile>("conditions");
+/** Comparisons over the file's `scope`: the sample window (comparisons) or the whole simulated year (comparisons_year). Check `scope.kind` before labelling. */
 export const useComparisons = () => useSim<ComparisonsFile>("comparisons");
+export const useComparisonsYear = () => useSim<ComparisonsFile>("comparisons_year");
 /** One run = one controller in one scenario (ids from manifest.controllers / manifest.scenarios). Pass null until chosen. */
 export const useRun = (scenario: string | null, controller: string | null) => useSim<RunFile>(scenario && controller ? `runs/${scenario}/${controller}` : null);
