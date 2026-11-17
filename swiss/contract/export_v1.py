@@ -314,6 +314,8 @@ def buildings_file(ui):
             'water_heating': (attr('heat pump (survey); warm-weather draw near zero', None, 'measured', ['SRC-001', 'ISS-026'], True) if role == 'SFH-low' else
                               attr('electric water heater (its electricity is inside household electricity)', None, 'measured', ['SRC-001', 'ISS-027', 'D-014a'], True)) if sfh
             else na('not in the EKZ metadata', ['SRC-002']),
+            'electric_water_heater': (attr(role in ('SFH-mid', 'SFH-high'), None, 'measured', ['SRC-001', 'ISS-027', 'D-014a'], True) if sfh
+                                      else na('not in the EKZ metadata', ['SRC-002'])),   # survey: its electricity is inside household electricity (not a modeled component)
             'household_electricity_source': attr('metered (HEAPO)', None, 'measured', ['SRC-001'], True) if sfh else
             attr('synthetic composite of sampled EKZ apartment meters scaled by housing units; not measured in this building', None, 'synthetic', ['D-015', 'SRC-002'], True),
             'pv_status': attr('none reported in the survey; PV is not modeled in Phase A', None, 'measured', ['ISS-021'], True) if role == 'SFH-low'

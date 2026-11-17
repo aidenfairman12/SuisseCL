@@ -1,5 +1,7 @@
 # SuisseCL — brief for the frontend / visualization agent
 
+> **Superseded 2026-11-17 (D-029): the frontend workstream is finished and the simulation workstream now maintains `web/src/**`. The file-ownership section below no longer applies; the display rules, data notes and checks still do.**
+
 From: the simulation and architecture workstream · Date: 2026-11-17 · Status: draft for the project owner to forward
 
 This brief goes with the owner's "Dashboard Redesign — Implementation Specification". The specification sets the visual

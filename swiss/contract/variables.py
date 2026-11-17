@@ -93,20 +93,30 @@ CONDITION_VARIABLES = {
                              'description': 'Rank of the hour inside the modeled 2023 series (1-99). The absolute level is about 61-63 % of the EPFL reference, so no absolute value is exported.'},
 }
 
-SITUATION_TAGS = {
-    'cold_hour': 'Outdoor temperature at or below the 10th percentile of the year (threshold in situation_thresholds.cold_temp_c).',
-    'high_tariff': 'High tariff tier.', 'low_tariff': 'Low tariff tier.',
-    'district_daily_peak': 'The hour with the highest district grid import of its local calendar day.',
-    'sh_tank_charging': 'Space-heating tank receives heat from the heat pump.', 'sh_tank_discharging': 'Space-heating tank delivers heat to the demand.',
-    'sh_tank_idle': 'Neither charging nor discharging.', 'sh_tank_full': 'Tank fill level at or above situation_thresholds.tank_full_soc.',
-    'sh_tank_empty': 'Tank fill level at or below situation_thresholds.tank_empty_soc.',
-    'sh_tank_covers_demand': 'The tank supplies at least situation_thresholds.storage_covers_demand_share of the space-heating demand (demand > 0).',
-    'hw_tank_charging': 'As sh_tank_charging, hot-water/base-load tank.', 'hw_tank_discharging': 'As sh_tank_discharging, hot-water/base-load tank.',
-    'hw_tank_idle': 'As sh_tank_idle.', 'hw_tank_full': 'As sh_tank_full.', 'hw_tank_empty': 'As sh_tank_empty.',
-    'hw_tank_covers_demand': 'As sh_tank_covers_demand, for the hot-water/base-load demand.',
-    'hp_sh_near_capacity': 'Space-heating heat-pump electricity at or above situation_thresholds.near_capacity_fraction of its nominal electrical power.',
-}
 THRESHOLDS = {'tank_full_soc': 0.99, 'tank_empty_soc': 0.01, 'flow_epsilon_kwh_th': 1e-4, 'near_capacity_fraction': 0.95, 'storage_covers_demand_share': 0.5}
+
+def _tank_tags(pre, name):
+    pc = lambda x: f'{100 * x:.0f} %'  # noqa: E731
+    return {
+        f'{pre}_tank_charging': f'The {name} is being charged by the heat pump.',
+        f'{pre}_tank_discharging': f'The {name} is supplying stored heat to the demand.',
+        f'{pre}_tank_idle': f'The {name} is neither charging nor discharging.',
+        f'{pre}_tank_full': f'The {name} is almost full ({pc(THRESHOLDS["tank_full_soc"])} or more).',
+        f'{pre}_tank_empty': f'The {name} is almost empty ({pc(THRESHOLDS["tank_empty_soc"])} or less).',
+        f'{pre}_tank_covers_demand': f'The {name} supplies at least {pc(THRESHOLDS["storage_covers_demand_share"])} of the heat demand it serves.',
+    }
+
+
+# User-facing wording (the dashboard shows these texts as they are): plain language, no field names; numbers come from THRESHOLDS.
+SITUATION_TAGS = {
+    'cold_hour': 'One of the coldest 10 % of hours of the year outdoors.',
+    'high_tariff': 'A high-tariff hour (weekdays, 07:00 to 20:00 local time).',
+    'low_tariff': 'A low-tariff hour.',
+    'district_daily_peak': 'The hour with the highest electricity draw of its day, all six buildings together.',
+    **_tank_tags('sh', 'heating tank'),
+    **_tank_tags('hw', 'hot-water and base-load tank'),
+    'hp_sh_near_capacity': f'The space-heating heat pump is running at {100 * THRESHOLDS["near_capacity_fraction"]:.0f} % or more of its nominal electrical power.',
+}
 
 UNITS = {
     'kWh_el': 'electrical energy in one step', 'kWh_th': 'thermal energy in one step',

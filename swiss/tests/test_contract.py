@@ -445,3 +445,30 @@ def test_per_building_kpi_average_differs_from_district_total():
     district = load('comparisons_year.json')['comparisons']['ALG-003_basic_rbc']['mechanisms']['relative_carbon_change_pct']
     assert abs(district / 100 - (res.loc['ALG-003_basic_rbc', 'term_carbon_sum'] / res.loc[REF, 'term_carbon_sum'] - 1)) < 1e-9
     assert district / 100 > np.mean(ratios) - 1 + 1e-3, 'energy-weighted district total differs from the mean of building ratios'
+
+
+# ------------------------------------------------------------------------------------------------ structured flag and user-facing wording
+def test_electric_water_heater_is_a_boolean_flag(binfo):
+    """The frontend must not parse free text: the survey fact is a boolean attribute (SFH-mid and SFH-high heat water electrically, ISS-027)."""
+    for role in ROLES:
+        a = binfo[role]['attributes']['electric_water_heater']
+        if role.startswith('SFH'):
+            assert a['available'] is True and a['provenance'] == 'measured' and 'ISS-027' in a['source_ids']
+            assert a['value'] is (role in ('SFH-mid', 'SFH-high')), role
+            assert ('electric water heater' in binfo[role]['attributes']['water_heating']['value']) == a['value'], 'flag and description must agree'
+        else:
+            assert a['available'] is False and a['value'] is None and a['provenance'] is None and a['unavailable_reason']
+
+
+def test_situation_tag_texts_are_plain_language_and_match_the_thresholds(manifest):
+    """The dashboard shows these texts as they are: no field names, and every quoted number comes from situation_thresholds."""
+    import re
+    thr = manifest['situation_thresholds']
+    for tag, text in manifest['situation_tags'].items():
+        assert tag in manifest['situation_tags'] and text.endswith('.') and text[0].isupper(), tag
+        assert not re.search(r'[a-z]+_[a-z]+', text) and 'threshold' not in text.lower(), f'{tag}: internal wording leaks: {text}'
+    pc = lambda x: f'{100 * x:.0f} %'  # noqa: E731
+    assert pc(thr['tank_full_soc']) in manifest['situation_tags']['sh_tank_full']
+    assert pc(thr['tank_empty_soc']) in manifest['situation_tags']['hw_tank_empty']
+    assert pc(thr['storage_covers_demand_share']) in manifest['situation_tags']['sh_tank_covers_demand']
+    assert pc(thr['near_capacity_fraction']) in manifest['situation_tags']['hp_sh_near_capacity']

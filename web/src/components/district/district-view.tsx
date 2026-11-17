@@ -26,7 +26,7 @@ export function DistrictView({ controller: controllerProp, onController }: { con
   const [eventTag, setEventTag] = useState("district_daily_peak");
   const [selectedBuilding, setSelectedBuilding] = useState("");
 
-  const buildingIds = manifest?.buildings ?? [];
+  const buildingIds = useMemo(() => manifest?.buildings ?? [], [manifest]);
   const districtBuildings = buildingIds.flatMap((id) => {
     const info = buildings?.[id];
     if (!info) return [];
