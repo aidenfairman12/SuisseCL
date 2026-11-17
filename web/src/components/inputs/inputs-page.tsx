@@ -8,10 +8,11 @@ import { ClassBadge } from "@/components/audit/bits";
 import { TopicHeader } from "@/components/topic-header";
 import { MoreViews } from "@/components/topic-more";
 import { useBundle } from "@/lib/bundle";
+import { useNames } from "@/lib/names";
 import type { SeriesInputs } from "@/lib/types";
 import { HourPanel } from "./hour-panel";
 
-type TabDef = { id: string; label: string; node: string; more: string[]; panels: (si: SeriesInputs, role: string) => Panel[] };
+type TabDef = { id: string; label: string; node: string; more: string[]; panels: (si: SeriesInputs, role: string, nm: (r: string) => string) => Panel[] };
 
 const flag = (si: SeriesInputs, key: string, onSeries: number) => ({ label: si.flags[key].label, values: si.flags[key].values, colour: flagColour(key), onSeries });
 const S = (si: SeriesInputs, k: string) => ({ name: si.series[k].label, values: si.series[k].values, cls: si.series[k].classification });
@@ -27,10 +28,10 @@ const TABS: TabDef[] = [
   { id: "carbon", label: "Carbon", node: "series:carbon_intensity", more: ["carbon_import_stack", "epfl_monthly", "epfl_diurnal", "epfl_table"],
     panels: (si) => [{ title: "Grid carbon intensity — MODELED", unit: "gCO2eq/kWh", series: [S(si, "carbon"), { ...S(si, "carbon_domestic"), dash: true }], flags: [flag(si, "neighbour_intensity_fallback_flag", 0), flag(si, "gap_interpolated_flag", 1)] }] },
   { id: "buildings", label: "Buildings", node: "series:building_electricity", more: ["building_daily", "selection_pools", "backtest"],
-    panels: (si, role) => {
+    panels: (si, role, nm) => {
       const b = si.buildings[role];
-      return [{ title: `Electricity — ${role} (kWh per hour, stacked)`, unit: "kWh", series: b.components.map((c) => ({ name: c.label, values: c.values, cls: c.classification, stack: "e", area: true })),
-        flags: b.gap_filled_flag.some(Boolean) ? [{ label: `${role} gap-filled (synthetic)`, values: b.gap_filled_flag, colour: flagColour("gap_filled_flag"), onSeries: 0 }] : [] }];
+      return [{ title: `Electricity — ${nm(role)} (kWh per hour, stacked)`, unit: "kWh", series: b.components.map((c) => ({ name: c.label, values: c.values, cls: c.classification, stack: "e", area: true })),
+        flags: b.gap_filled_flag.some(Boolean) ? [{ label: `${nm(role)} gap-filled (constructed)`, values: b.gap_filled_flag, colour: flagColour("gap_filled_flag"), onSeries: 0 }] : [] }];
     } },
 ];
 
@@ -51,18 +52,19 @@ function Legend({ si, overlay, panels }: { si: SeriesInputs; overlay: boolean; p
 
 function InputTab({ def, si }: { def: TabDef; si: SeriesInputs }) {
   const { colours } = useBundle();
+  const names = useNames();
   const [overlay, setOverlay] = useState(true);
   const [role, setRole] = useState("SFH-low");
   const [hour, setHour] = useState<number | null>(null);
   const ts = useMemo(() => timestamps(si), [si]);
-  const panels = useMemo(() => def.panels(si, role), [def, si, role]);
+  const panels = useMemo(() => def.panels(si, role, names.building), [def, si, role, names]);
   return (
     <div className="space-y-4">
       <TopicHeader nodeId={def.node} />
       <div className="flex flex-wrap items-center gap-4">
         <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" checked={overlay} onChange={(e) => setOverlay(e.target.checked)} /> Trust overlay</label>
         {def.id === "buildings" && (
-          <label className="text-sm">Building <select value={role} onChange={(e) => setRole(e.target.value)} className="ml-1 h-8 rounded-lg border bg-background px-2 text-sm">{Object.keys(si.buildings).map((r) => <option key={r}>{r}</option>)}</select></label>
+          <label className="text-sm">Building <select value={role} onChange={(e) => setRole(e.target.value)} className="ml-1 h-8 rounded-lg border bg-background px-2 text-sm">{Object.keys(si.buildings).map((r) => <option key={r} value={r}>{names.building(r)}</option>)}</select></label>
         )}
         <span className="text-xs text-muted-foreground">Drag to zoom (panels follow) · click the plot for every input at that hour</span>
       </div>

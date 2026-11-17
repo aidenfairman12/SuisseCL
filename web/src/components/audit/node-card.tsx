@@ -24,7 +24,7 @@ function Head({ n }: { n: NodeT }) {
         {kindLabel(n.kind)} · <code>{n.id}</code>
       </div>
       <h2 className="flex flex-wrap items-center gap-2 text-xl font-semibold leading-tight">
-        {cleanTitle(n.title)} <ClassBadge cls={n.classification} />
+        {n.display_name || cleanTitle(n.title)} <ClassBadge cls={n.classification} />
       </h2>
       {n.classification_raw && n.classification_raw !== n.classification && (
         <div className="text-xs text-muted-foreground">classification in registry: {n.classification_raw}</div>

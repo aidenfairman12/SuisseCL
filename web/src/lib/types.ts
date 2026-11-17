@@ -56,6 +56,8 @@ export type NodeT = {
   primary?: string | null;
   lineage_end?: string | null;
   formula?: string | null;
+  display_name?: string | null;
+  short_name?: string | null;
   flags?: { column: string; label: string }[];
 };
 
@@ -163,3 +165,30 @@ export type Results = {
   files: string[];
 };
 export type Trace = { arrays: Record<string, (number | null)[]>; n: number };
+
+// ---- story.json (plain-language layer; built from swiss/dashboard/ui_map.yaml and the repository files)
+export type Phase = { letter: string; focus: string; objective: string };
+export type StoryDay = { index: number; date: string; label: string; mean_temp_c: number; hours: number };
+export type StoryData = {
+  controllers: Record<string, { key: string; display_name: string; short_name: string; node: string; note?: string }>;
+  buildings: Record<string, string>;
+  pages: Record<string, string>;
+  glossary: { id: string; term: string; definition: string; node?: string }[];
+  phases: Phase[];
+  derived: { day: StoryDay };
+  story: {
+    hero: { question: string; context: string; status: string; tiles: { value: string; label: string }[] };
+    district: { title: string; caption: string };
+    how: { title: string; steps: { title: string; text: string; node: string }[] };
+    findings: {
+      title: string; verdict: string; rules_line: string; chart_title: string; chart_caption: string; tiles_caption: string; closing: string;
+      tiles: { node: string; label: string; unit: string; value: number; reference: number; vs_none_pct: number }[];
+      day: StoryDay; rule: { controller: string; name: string }; reference: { controller: string; name: string };
+    };
+    trust: {
+      title: string; validation: string; classes_title: string; classes: Record<string, { label: string; meaning: string }>;
+      limitations_title: string; limitations: { title: string; text: string; node: string }[];
+    };
+    next: { title: string; source_note: string; phases: Phase[] };
+  };
+};

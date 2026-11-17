@@ -21,7 +21,7 @@ export type BuildingState = {
 export type SceneState = {
   night: boolean; ghiK: number; sunX: number; sunY: number;
   tariff: string; tariffSub: string; carbon: string; carbonSub: string; weather: string; weatherSub: string;
-  controller: string; reward: string;
+  controller: string;
   maxNet: number; maxHp: number; busFlow: number;
   buildings: BuildingState[];
 };
@@ -110,7 +110,7 @@ function Substation({ open }: { open: (id: string) => void }) {
   );
 }
 
-function Building({ b, i, st, maxNet, maxHp, open }: { b: DistrictBuilding; i: number; st: BuildingState; maxNet: number; maxHp: number; open: (id: string) => void }) {
+function Building({ b, name, i, st, maxNet, maxHp, open }: { b: DistrictBuilding; name: string; i: number; st: BuildingState; maxNet: number; maxHp: number; open: (id: string) => void }) {
   const x = slotX(i), sfh = b.type === "SFH";
   const w = sfh ? 128 : 144, fl = floorsOf(b), fh = 34;
   const h = sfh ? 122 : fl * fh + 32, top = GROUND - h;
@@ -124,8 +124,9 @@ function Building({ b, i, st, maxNet, maxHp, open }: { b: DistrictBuilding; i: n
   else for (let r = 0; r < fl - 1; r++) for (let k = 0; k < 4; k++) wins.push([x + 13 + k * 33, top + 10 + r * fh, 21, 20]);
   let wave = `M${ex},${GROUND - 8}`;
   for (let k = 0; k <= ew; k += 8) wave += ` L${ex + k},${GROUND - 8 - ((k / 8) % 2 ? 6 : 0)}`;
-  const label = sfh ? `${b.source} household${b.area_m2 ? ` · ${f(b.area_m2, 0)} m²` : ""}` : `${b.source} · ${b.units} housing units`;
-  const nameY = sfh ? top - 84 : top - 30;
+  const [line1, rest] = name.split(" (");
+  const line2 = (rest ?? "").replace(")", "");
+  const nameY = sfh ? top - 74 : top - 20;
 
   const tank = (tx: number, kind: "heat" | "dhw", cap: number, soc: number | null) => {
     const tw = 22;
@@ -133,7 +134,7 @@ function Building({ b, i, st, maxNet, maxHp, open }: { b: DistrictBuilding; i: n
       <g className="dclick" onClick={() => open(UI.tank)}>
         <rect x={tx} y={cy + 6} width={tw} height={TH} rx="9" fill="none" stroke="#ced4da" strokeDasharray="3 3" />
         <text x={tx + tw / 2} y={cy + 38} textAnchor="middle" fontSize="8" fill="#adb5bd">none</text>
-        <title>No {kind === "dhw" ? "hot-water" : "heating"} tank in this building (D-017a rule).</title>
+        <title>No {kind === "dhw" ? "hot-water" : "heating"} tank in this building.</title>
       </g>
     );
     const fill = (TH - 4) * Math.max(0, Math.min(1, soc ?? 0));
@@ -144,8 +145,8 @@ function Building({ b, i, st, maxNet, maxHp, open }: { b: DistrictBuilding; i: n
         <clipPath id={id}><rect x={tx + 2} y={cy + 8} width={tw - 4} height={TH - 4} rx="7" /></clipPath>
         <rect clipPath={`url(#${id})`} x={tx + 2} y={cy + 8 + TH - 4 - fill} width={tw - 4} height={fill} fill={`url(#${kind === "dhw" ? "ddhw" : "dheat"})`} />
         <rect x={tx} y={cy + 6} width={tw} height={TH} rx="9" fill="none" stroke={C.synth} strokeWidth="1.2" strokeDasharray="4 2" opacity=".75" />
-        <text x={tx + tw / 2} y={cy + TH + 15} textAnchor="middle" fontSize="8.5" fontWeight="600" fill="#495057">{kind === "dhw" ? "DHW" : "heat"}</text>
-        <title>{`${kind === "dhw" ? "Hot-water" : "Heating buffer"} tank ${f(cap, 2)} kWh_th, state of charge ${f(soc, 3)} (SYNTHETIC, D-017a)`}</title>
+        <text x={tx + tw / 2} y={cy + TH + 15} textAnchor="middle" fontSize="8.5" fontWeight="600" fill="#495057">{kind === "dhw" ? "hot" : "heat"}</text>
+        <title>{`${kind === "dhw" ? "Hot-water" : "Heating buffer"} tank holding up to ${f(cap, 1)} kWh of heat, now ${f(100 * (soc ?? 0), 0)} % full (assumed size)`}</title>
       </g>
     );
   };
@@ -167,13 +168,13 @@ function Building({ b, i, st, maxNet, maxHp, open }: { b: DistrictBuilding; i: n
         <g className="dclick" onClick={() => open(UI.house)}>
           <rect x={lx - 10} y={ly - 2} width="30" height="26" rx="4" fill="url(#dsynth)" stroke={C.synth} strokeDasharray="3 2" />
           <text x={lx + 5} y={ly + 10} textAnchor="middle" fontSize="7.5" fontWeight="700" fill={C.synth}>apts</text>
-          <text x={lx + 5} y={ly + 19} textAnchor="middle" fontSize="6.5" fill={C.synth}>synthetic</text>
-          <title>Apartment load is SYNTHETIC: drawn from other EKZ apartment meters, not this building (D-006, D-015).</title>
+          <text x={lx + 5} y={ly + 19} textAnchor="middle" fontSize="6.5" fill={C.synth}>assumed</text>
+          <title>Apartment electricity is assumed: it is taken from other apartments, not measured in this building.</title>
         </g>
       ) : (
         <g className="dclick" onClick={() => open(UI.house)}>
           <circle cx={lx + 5} cy={ly + 10} r="9" fill="#fff9db" stroke="#fab005" /><path d={`M${lx + 2},${ly + 13} v4 h6 v-4`} stroke="#868e96" fill="none" /><circle cx={lx + 5} cy={ly + 8} r="4" fill="#ffe066" />
-          <title>Household electricity (HEAPO, measured)</title>
+          <title>Household electricity (measured)</title>
         </g>
       )}
       {tank(t1, "heat", b.heating_tank_kwh_th, st.socHeat)}
@@ -194,7 +195,7 @@ function Building({ b, i, st, maxNet, maxHp, open }: { b: DistrictBuilding; i: n
         </g>
         <rect x={hx + 4} y={hy + 27} width="22" height="3" rx="1.5" fill="#dee2e6" />
         <rect x={hx + 4} y={hy + 27} width={22 * Math.min(1, hp / (b.hp_sh_nominal_kw + b.hp_dhw_nominal_kw))} height="3" rx="1.5" fill={C.elec} />
-        <title>{`${b.role} heat pump: ${f(st.hp, 3)} kWh electricity this hour; nominal ${f(b.hp_sh_nominal_kw, 2)} kW (heating) + ${f(b.hp_dhw_nominal_kw, 2)} kW (DHW); T_sup ${b.T_sup_sh_c} °C, η ${f(b.eta_sh, 3)}`}</title>
+        <title>{`Heat pump: ${f(st.hp, 2)} kWh of electricity this hour (rated ${f(b.hp_sh_nominal_kw + b.hp_dhw_nominal_kw, 1)} kW)`}</title>
       </g>
       <text className="dclick" onClick={() => open(UI.hpsize)} x={hx + 15} y={hy - 5} textAnchor="middle" fontSize="9.5" fontWeight="700" fill="#495057">{f(b.hp_sh_nominal_kw, 1)} kW</text>
       <Flow d={`M${hx},${hy + 8} H${x + w + 2} H${t1 + 10} V${cy + 6}`} color={C.heat} v={hp} vmax={maxHp} wmin={1.6} wmax={5} opacity={0.95} />
@@ -205,34 +206,34 @@ function Building({ b, i, st, maxNet, maxHp, open }: { b: DistrictBuilding; i: n
         <title>{`${b.role} net electricity this hour: ${f(st.net, 3)} kWh`}</title>
       </g>
       <g className="dclick" onClick={() => open(UI.selection)}>
-        <text x={x + w / 2} y={nameY} textAnchor="middle" fontSize="14" fontWeight="800" fill="#212529" stroke="#fff" strokeWidth="3" paintOrder="stroke">{b.role}</text>
-        <text x={x + w / 2} y={nameY + 14} textAnchor="middle" fontSize="9.5" fill="#495057" stroke="#fff" strokeWidth="3" paintOrder="stroke">{b.building} · {label}</text>
+        <text x={x + w / 2} y={nameY - 17} textAnchor="middle" fontSize="15" fontWeight="800" fill="#212529" stroke="#fff" strokeWidth="4" paintOrder="stroke">{line1}</text>
+        <text x={x + w / 2} y={nameY} textAnchor="middle" fontSize="13" fontWeight="600" fill="#495057" stroke="#fff" strokeWidth="4" paintOrder="stroke">{line2}</text>
       </g>
       <g transform={`translate(${mx},${BUS_Y + 30})`}>
-        <rect x="-38" y="-11" width="76" height="20" rx="10" fill="#fff" fillOpacity=".95" stroke={C.elec} />
-        <text y="3" textAnchor="middle" fontSize="10.5" fontWeight="700" fill="#5c3d00">{st.net == null ? "no trace" : `${f(st.net, 2)} kWh`}</text>
+        <rect x="-40" y="-11" width="80" height="22" rx="11" fill="#fff" fillOpacity=".95" stroke={C.elec} />
+        <text y="4" textAnchor="middle" fontSize="12" fontWeight="700" fill="#5c3d00">{st.net == null ? "–" : `${f(st.net, 1)} kWh`}</text>
       </g>
     </g>
   );
 }
 
 function Legend() {
-  const items: [string, string, string?][] = [[C.elec, "electricity (import)"], [C.heat, "space-heating water"], [C.dhw, "hot water"], [C.ctrl, "controller action", "6 4"], [C.feed, "data feed", "2 4"]];
-  let x = 18;
+  const items: [string, string][] = [[C.elec, "electricity from the grid"], [C.heat, "heating water"], [C.dhw, "hot water"]];
+  let x = 24;
   return (
     <>
       <rect y={H - 58} width={W} height="58" fill="#212529" />
-      {items.map(([c, t, d]) => {
-        const g = <g key={t} transform={`translate(${x},${H - 28})`}><line x2="26" stroke={c} strokeWidth="3" strokeDasharray={d} /><text x="32" y="4" fontSize="11" fill="#f8f9fa">{t}</text></g>;
-        x += 32 + t.length * 6.2 + 18;
+      {items.map(([c, t]) => {
+        const g = <g key={t} transform={`translate(${x},${H - 28})`}><line x2="30" stroke={c} strokeWidth="4" /><text x="38" y="5" fontSize="14" fill="#f8f9fa">{t}</text></g>;
+        x += 38 + t.length * 7.6 + 28;
         return g;
       })}
-      <g transform={`translate(${x},${H - 36})`}><rect width="22" height="14" rx="3" fill="url(#dsynth)" stroke={C.synth} strokeDasharray="3 2" /><text x="28" y="11" fontSize="11" fill="#f8f9fa">synthetic (tanks, apartment loads)</text></g>
+      <g transform={`translate(${x},${H - 38})`}><rect width="26" height="16" rx="3" fill="url(#dsynth)" stroke={C.synth} strokeDasharray="3 2" /><text x="34" y="13" fontSize="14" fill="#f8f9fa">assumed, not measured</text></g>
     </>
   );
 }
 
-export function Scene({ buildings, state: s, observed, open }: { buildings: DistrictBuilding[]; state: SceneState; observed: Set<string>; open: (id: string) => void }) {
+export function Scene({ buildings, names, titles, state: s, observed, open }: { buildings: DistrictBuilding[]; names: string[]; titles: { tariff: string; carbon: string; weather: string; controller: string }; state: SceneState; observed: Set<string>; open: (id: string) => void }) {
   const yrail = 150;
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className={`dsvg block h-auto w-full rounded-2xl shadow-lg ${s.night ? "dnight" : ""}`} role="img" aria-label="Six-building district, one hour at a time">
@@ -242,7 +243,7 @@ export function Scene({ buildings, state: s, observed, open }: { buildings: Dist
       <g>
         <path className="dfeed" d={`M1150,104 V${yrail} H${slotX(0) + 150}`} stroke={C.feed} />
         {buildings.map((b, i) => <path key={b.building} className="dfeed" d={`M${slotX(i) + (b.type === "SFH" ? 128 : 144) + 21},${yrail} V${GROUND - 36}`} stroke={C.feed} />)}
-        <text x={slotX(0) + 160} y={yrail - 5} fontSize="10" fontStyle="italic" fill={s.night ? "#dee2e6" : "#495057"}>outdoor temperature → heat-pump COP (M-001)</text>
+        <text x={slotX(0) + 160} y={yrail - 5} fontSize="10" fontStyle="italic" fill={s.night ? "#dee2e6" : "#495057"}>outdoor temperature drives heat-pump efficiency</text>
         {observed.has("outdoor_dry_bulb_temperature") && <path className="dfeed dobs" d="M1090,64 H780" stroke={C.ctrl} />}
         <path className="dfeed" d={`M48,104 V${GROUND - 128}`} stroke={C.feed} />
         <path className="dfeed" d={`M100,188 V${GROUND - 48}`} stroke={C.feed} />
@@ -256,18 +257,13 @@ export function Scene({ buildings, state: s, observed, open }: { buildings: Dist
         <path className="dfeed dobs" d={`M${slotX(5) + 70},${GROUND - 8} C1240,300 900,90 780,70`} stroke={C.ctrl} opacity=".35" />
         <Flow d={`M136,${GROUND - 25} V${BUS_Y} H${W - 10}`} color={C.elec} v={s.busFlow} vmax={s.maxNet * buildings.length} wmin={3} wmax={8} />
       </g>
-      {buildings.map((b, i) => <Building key={b.building} b={b} i={i} st={s.buildings[i]} maxNet={s.maxNet} maxHp={s.maxHp} open={open} />)}
-      <FeedCard x={18} y={30} w={232} h={74} ui={UI.tariff} icon="tariff" title="Electricity price" line={s.tariff} sub={s.tariffSub} open={open} />
-      <FeedCard x={18} y={114} w={232} h={74} ui={UI.carbon} icon="carbon" title="Grid carbon (modeled)" line={s.carbon} sub={s.carbonSub} open={open} />
-      <FeedCard x={1030} y={30} w={232} h={74} ui={UI.weather} icon="weather" title="Weather · Zurich/Kloten" line={s.weather} sub={s.weatherSub} open={open} />
-      <FeedCard x={500} y={30} w={280} h={68} ui={UI.controller} icon="ctrl" title="Controller" line={s.controller} sub="" open={open} />
-      <g className="dclick" transform="translate(790,44)" onClick={() => open(UI.reward)}>
-        <rect width="150" height="40" rx="10" fill="#fff" fillOpacity=".9" stroke="#d0bfff" />
-        <text x="12" y="17" fontSize="11" fontWeight="700" fill="#212529">Reward R-001</text>
-        <text x="12" y="32" fontSize="12" fill="#343a40">{s.reward}</text>
-      </g>
+      {buildings.map((b, i) => <Building key={b.building} b={b} name={names[i]} i={i} st={s.buildings[i]} maxNet={s.maxNet} maxHp={s.maxHp} open={open} />)}
+      <FeedCard x={18} y={30} w={232} h={74} ui={UI.tariff} icon="tariff" title={titles.tariff} line={s.tariff} sub={s.tariffSub} open={open} />
+      <FeedCard x={18} y={114} w={232} h={74} ui={UI.carbon} icon="carbon" title={titles.carbon} line={s.carbon} sub={s.carbonSub} open={open} />
+      <FeedCard x={1030} y={30} w={232} h={74} ui={UI.weather} icon="weather" title={titles.weather} line={s.weather} sub={s.weatherSub} open={open} />
+      <FeedCard x={500} y={30} w={280} h={68} ui={UI.controller} icon="ctrl" title={titles.controller} line={s.controller} sub="" open={open} />
       <Legend />
-      <text className="dclick" onClick={() => open(UI.district)} x={W - 18} y={H - 24} textAnchor="end" fontSize="13" fontWeight="700" fill="#f1f3f5">Six-building district · 2023 · about this view ⓘ</text>
+      <text className="dclick" onClick={() => open(UI.district)} x={W - 18} y={H - 24} textAnchor="end" fontSize="14" fontWeight="700" fill="#f1f3f5">Click anything to see where it comes from</text>
     </svg>
   );
 }

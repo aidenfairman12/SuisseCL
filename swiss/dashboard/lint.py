@@ -7,6 +7,8 @@ Checks
   prose      hand-written prose holds no digits outside placeholders, registry IDs and allowed tokens
   coverage   every KPI column in baselines_2023.csv, and every audit-card key written in web/src (system-map boxes, district
              illustration, KPI tiles), has a ui_map entry; figures named in ui_map exist in web/src/components/charts/registry.tsx
+  story      plain-language layer: no digits outside placeholders, no registry IDs, glossary terms exist, display names present,
+             no registry ID in the story page sources (IDs belong in audit cards and Explore pages)
   lineage    every series / KPI / card reaches a SRC-* node or ends in a decision / assumption / lineage_end
   registry   every registry row ID (SRC DER TR M D A ISS ALG EXP V R) is a node
   --check-fresh  every input recorded in meta.json still has the same sha256 (bundle is not stale)
@@ -24,6 +26,7 @@ import yaml  # noqa: E402
 
 from swiss.dashboard import build_bundle as bb  # noqa: E402
 from swiss.dashboard.bundle_io import read_bundle_file  # noqa: E402
+from swiss.dashboard import story as story_mod  # noqa: E402
 from swiss.dashboard.parse_registries import ID_RE, RANGE_RE, SLASH_LETTERS_RE, extract_ids  # noqa: E402
 
 BUNDLE = os.path.join(ROOT, 'web', 'public', 'bundle')
@@ -157,6 +160,32 @@ def lint(check_fresh_flag=False):
             for col in re.findall(r'"([a-z0-9_]+)"', arr):
                 if f'kpi:{col}' not in ui or col not in cols:
                     errs.append(f'coverage: {rel} lists KPI column "{col}" that is not a results column with a ui_map entry')
+
+    # plain-language layer (story page): prose rules, display names, glossary terms used in the UI
+    errs += story_mod.check_prose(ui, prose_digits)
+    headline = set()
+    for rel, text in web_sources():
+        for arr in re.findall(r'(?:HEADLINE|KPIS)\s*=\s*\[([^\]]*)\]', text):
+            headline |= set(re.findall(r'"([a-z0-9_]+)"', arr))
+    for key, e in ui.items():
+        if key.startswith('_'):
+            continue
+        kind = key.split(':')[0]
+        needs = kind in ('series', 'card', 'panel') or key in {f'kpi:{c}' for c in set(story_mod.STORY_KPIS) | headline}
+        if needs and not e.get('display_name'):
+            errs.append(f'display names: {key} is shown on the story or Explore pages but has no display_name')
+        if e.get('display_name') and story_mod.ID_PATTERN.search(e['display_name']):
+            errs.append(f'display names: {key} display_name contains a registry ID')
+    gl_ids = {g['id'] for g in ui.get('_glossary', [])}
+    for rel, text in web_sources():
+        for t in re.findall(r'<Term\s+id=["\']([a-z0-9_]+)["\']', text):
+            if t not in gl_ids:
+                errs.append(f'glossary: {rel} uses <Term id="{t}"> which is not in the glossary')
+        story_page = '/components/story/' in rel or rel.endswith('web/src/app/page.tsx')
+        if story_page:
+            for lit in re.findall(r'"([^"\n]{3,})"', text) + re.findall(r'>([^<>{}\n]{3,})<', text):
+                if story_mod.ID_PATTERN.search(lit):
+                    errs.append(f'story prose: {rel} shows a registry ID in "{lit[:40]}" (IDs belong in audit cards only)')
 
     # lineage
     for nid, n in nodes.items():

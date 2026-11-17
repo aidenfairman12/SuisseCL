@@ -1,7 +1,7 @@
 "use client";
 // Loads bundle JSON files once and shares them. The UI holds no facts of its own: everything shown comes from here.
 import { createContext, useContext, useEffect, useState } from "react";
-import type { Meta, NodeT, Provenance } from "./types";
+import type { Meta, NodeT, Provenance, StoryData } from "./types";
 
 const cache = new Map<string, Promise<unknown>>();
 
@@ -36,20 +36,23 @@ export function useBundleFile<T>(name: string | null): { data: T | null; error: 
   return { data: state.data, error: state.error };
 }
 
-type Ctx = { meta: Meta | null; prov: Provenance | null; nodes: Record<string, NodeT>; colours: Record<string, string>; error: string | null };
-const BundleCtx = createContext<Ctx>({ meta: null, prov: null, nodes: {}, colours: {}, error: null });
+type Ctx = { meta: Meta | null; prov: Provenance | null; story: StoryData | null; nodes: Record<string, NodeT>; colours: Record<string, string>; error: string | null };
+const BundleCtx = createContext<Ctx>({ meta: null, prov: null, story: null, nodes: {}, colours: {}, error: null });
 
 export function BundleProvider({ children }: { children: React.ReactNode }) {
   const [meta, setMeta] = useState<Meta | null>(null);
   const [prov, setProv] = useState<Provenance | null>(null);
+  const [story, setStory] = useState<StoryData | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     loadBundleFile<Meta>("meta").then(setMeta, (e: Error) => setError(e.message));
     loadBundleFile<Provenance>("provenance").then(setProv, (e: Error) => setError(e.message));
+    loadBundleFile<StoryData>("story").then(setStory, (e: Error) => setError(e.message));
   }, []);
   const value: Ctx = {
     meta,
     prov,
+    story,
     nodes: prov?.nodes ?? {},
     colours: prov?.settings.classification_colours ?? {},
     error,

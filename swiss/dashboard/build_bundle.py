@@ -52,6 +52,7 @@ P = {  # every input file the build reads (paths relative to ROOT)
     'reward_scales': 'swiss/experiments/results/reward_scales.json',
     'manifest': 'data/canonical/MANIFEST.sha256',
     'ui_map': 'swiss/dashboard/ui_map.yaml',
+    'master_plan': 'docs/master_plan.md',
 }
 QC_DIR = 'docs/data/data_quality_reports'
 QC_REPORTS = {  # placeholder namespace -> (json file, markdown twin or None, title)
@@ -65,7 +66,7 @@ QC_REPORTS = {  # placeholder namespace -> (json file, markdown twin or None, ti
 }
 # Builder code is an input too: a changed builder means a stale bundle.
 BUILDER_FILES = ['swiss/dashboard/build_bundle.py', 'swiss/dashboard/parse_registries.py', 'swiss/dashboard/bundle_io.py',
-                 'swiss/dashboard/figures.py', 'swiss/pipeline/select_buildings.py', 'swiss/experiments/run_baselines.py',
+                 'swiss/dashboard/figures.py', 'swiss/dashboard/story.py', 'swiss/pipeline/select_buildings.py', 'swiss/experiments/run_baselines.py',
                  'swiss/experiments/run_sensitivity.py', 'swiss/datasets/swiss_district_2023/pricing.csv']
 
 _read_files = set()
@@ -467,6 +468,7 @@ def build_ui_nodes(g, ui, data, errors):
             except (KeyError, FileNotFoundError, SyntaxError) as ex:
                 errors.append(f'{key}: code ref {ref}: {ex}')
         n = g.add(key, kind, e.get('label', key), summary=summary, classification=e.get('classification'),
+                  display_name=e.get('display_name'), short_name=e.get('short_name'),
                   numbers=numbers, code=code, docs=e.get('docs', []) or [], figures=e.get('figures', []) or [],
                   qc=e.get('qc', []) or [], primary=e.get('primary'), flags=e.get('flags', []) or [],
                   formula=e.get('formula'), caveats=[fill(c, data, errors, key) for c in e.get('caveats', []) or []],
@@ -603,7 +605,14 @@ def main():
     data['fig'] = figs
     g = Graph()
     build_registry_nodes(g)
+    from swiss.dashboard import story as story_mod
+    phases = story_mod.parse_master_plan(read_text(P['master_plan']))
+    derived = story_mod.compute_derived(data, g.nodes, series, phases)
+    data['derived'] = derived
+    data['names'] = story_mod.names_namespace(ui['_controllers'])
+    data['tariff'] = {'low': data['qc_tariff']['distinct_total_rp'][0], 'high': data['qc_tariff']['distinct_total_rp'][1]}
     build_ui_nodes(g, ui, data, errors)
+    story_obj = story_mod.build_story(ui, data, derived, g.nodes, phases, lambda t, errs, where: fill(t, data, errs, where), errors)
     # KPI nodes for every results column without a ui_map entry are NOT created: lint requires an entry.
     finalise(g)
     for f in BUILDER_FILES:
@@ -628,6 +637,7 @@ def main():
         bundle_io.write_json_file(os.path.join(BUNDLE, f'{name}.json'), obj)
 
     emit('provenance', clean(prov))
+    emit('story', clean(story_obj))
     emit('series_inputs', clean(series))
     emit('figures', clean(figs))
     emit('results', clean(results))

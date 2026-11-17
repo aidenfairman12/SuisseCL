@@ -14,7 +14,7 @@ export function TopicHeader({ nodeId, maxNumbers = 4 }: { nodeId: string; maxNum
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <h2 className="text-lg font-semibold">{n.title}</h2>
+        <h2 className="text-lg font-semibold">{n.display_name || n.title}</h2>
         <ClassBadge cls={n.classification} />
         <Button size="sm" variant="outline" className="ml-auto gap-1.5" onClick={() => open(nodeId)}>Audit card <ExternalLink className="size-3.5" /></Button>
       </div>

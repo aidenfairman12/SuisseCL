@@ -34,7 +34,7 @@ export function NodeLink({ id, label, title, className }: { id: string; label?: 
       title={n.title}
       className={cn("font-mono text-[12.5px] text-sky-700 hover:underline", open && "font-bold text-red-600", className)}
     >
-      {label ?? (n.ui ? n.title : id)}
+      {label ?? (n.ui ? n.display_name || n.title : id)}
       {title && <span className="ml-1 font-sans text-xs font-normal text-foreground/80">{short(n.title, 90)}</span>}
     </Link>
   );

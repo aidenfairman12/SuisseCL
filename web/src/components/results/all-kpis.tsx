@@ -1,12 +1,14 @@
 "use client";
 import { NodeLink } from "@/components/audit/bits";
 import { useBundle } from "@/lib/bundle";
+import { useNames } from "@/lib/names";
 import { cn } from "@/lib/utils";
 import { REF, fmtKpi, lowerBetter, pctVs, type ResultsFull } from "./results-utils";
 
 /** Every column of the results file for the selected controller, grouped by where the number comes from. */
 export function AllKpis({ res, controller }: { res: ResultsFull; controller: string }) {
   const { nodes } = useBundle();
+  const names = useNames();
   const r = res.rows.find((x) => x.controller === controller)!, r0 = res.rows.find((x) => x.controller === REF)!;
   const cols = res.columns.filter((c) => c !== "controller" && c !== "steps");
   const group = (c: string) => (!c.startsWith("kpi_") ? "own" : r[c] == null ? "na" : "cl");
@@ -31,7 +33,7 @@ export function AllKpis({ res, controller }: { res: ResultsFull; controller: str
                   const good = d == null || d === 0 ? "" : (lowerBetter(c) ? d < 0 : d > 0) ? "text-emerald-700" : "text-red-600";
                   return (
                     <tr key={c} className="border-t">
-                      <td className="py-1 pr-3"><NodeLink id={`kpi:${c}`} label={(n?.title ?? c).replace(" (CityLearn KPI)", "")} className="font-sans text-sm" /></td>
+                      <td className="py-1 pr-3"><NodeLink id={`kpi:${c}`} label={names.kpi(c) === c ? (n?.title ?? c).replace(" (CityLearn KPI)", "") : names.kpi(c)} className="font-sans text-sm" /></td>
                       <td className="py-1 pr-3 text-right tabular-nums">{g === "na" ? <span className="text-muted-foreground">n/a</span> : <>{fmtKpi(r[c], c)} <span className="text-xs text-muted-foreground">{String(n?.fields.unit ?? "")}</span></>}</td>
                       <td className={cn("w-32 py-1 text-right text-xs", good || "text-muted-foreground")}>{d == null ? "" : `${d >= 0 ? "+" : ""}${d.toFixed(2)} %`}</td>
                     </tr>

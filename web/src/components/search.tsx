@@ -18,7 +18,7 @@ function rank(n: NodeT, q: string): number {
   if (id === q || sid === q) return 1;
   if (id.startsWith(q) || sid.startsWith(q)) return 0.9;
   const words = q.split(/\s+/);
-  const title = `${id} ${n.title}`.toLowerCase();
+  const title = `${id} ${n.display_name ?? ""} ${n.title}`.toLowerCase();
   if (words.every((w) => title.includes(w))) return 0.6;
   return words.every((w) => `${title} ${(n.summary ?? "").toLowerCase()}`.includes(w)) ? 0.3 : 0;
 }
@@ -65,7 +65,7 @@ export function SearchButton() {
   const item = (n: NodeT, withKind: boolean) => (
     <CommandItem key={n.id} value={n.id} onSelect={() => go(n.id)}>
       <code className="mr-2 w-28 shrink-0 text-xs">{shortId(n)}</code>
-      <span className="truncate text-sm">{cleanTitle(n.title)}</span>
+      <span className="truncate text-sm">{n.display_name || cleanTitle(n.title)}</span>
       {withKind && <span className="ml-auto shrink-0 pl-2 text-[11px] text-muted-foreground">{kindLabel(n.kind)}</span>}
     </CommandItem>
   );

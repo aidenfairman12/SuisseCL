@@ -366,3 +366,89 @@ def test_bundle_files_are_plain_json():
     for name in ('meta', 'provenance', 'figures', 'results', 'series_inputs'):
         with open(os.path.join(BUNDLE, f'{name}.json'), encoding='utf-8') as f:
             assert isinstance(json.load(f), dict)
+
+
+# ---------------------------------------------------------------- story page content (plain-language layer)
+
+@pytest.fixture(scope='module')
+def story():
+    return read_bundle_file(os.path.join(BUNDLE, 'story.json'))
+
+
+def test_story_numbers_equal_source_files(story):
+    import pandas as pd
+    r = pd.read_csv(p('swiss/experiments/results/baselines_2023.csv')).set_index('controller')
+    s = pd.read_csv(p('swiss/experiments/results/sensitivity_2023.csv')).set_index(['variant', 'controller'])
+    ref, night = r.loc['ALG-001_zero_action'], r.loc['ALG-003_basic_rbc']
+    pct = lambda c: (night[c] - ref[c]) / abs(ref[c]) * 100
+    v = story['story']['findings']['verdict']
+    assert f"{-pct('district_peak_kw'):.1f} %" in v and f"{pct('district_import_kwh'):.1f} %" in v and f"rises by {pct('cost_chf_excl_vat'):.1f} %" in v
+    shift = -s.loc[('reference', 'basic_rbc'), 'high_tariff_share_pts_vs_zero']
+    assert f'{shift:.1f} percentage points' in v and '15.05 against 19.05 Rp/kWh' in v
+    tiles = {t['node']: t for t in story['story']['findings']['tiles']}
+    assert tiles['kpi:cost_chf_excl_vat']['value'] == pytest.approx(night.cost_chf_excl_vat)
+    assert tiles['kpi:district_peak_kw']['vs_none_pct'] == pytest.approx(pct('district_peak_kw'))
+    assert tiles['kpi:district_import_kwh']['reference'] == pytest.approx(ref.district_import_kwh)
+    tariff = r[r.index.str.startswith('ALG-004')]
+    lo, hi = ((tariff.cost_chf_excl_vat - ref.cost_chf_excl_vat) / ref.cost_chf_excl_vat * 100).agg(['min', 'max'])
+    assert f'{lo:+.1f} to {hi:+.1f} %' in story['story']['findings']['rules_line']
+
+
+def test_story_validation_count_matches_nodes(story, prov):
+    checks = [n for n in prov.values() if n['kind'] == 'validation_check']
+    passed = sum(1 for n in checks if n['passed'])
+    assert f'{passed} of {len(checks)} validation checks pass' in story['story']['trust']['validation']
+    assert passed < len(checks)            # V7 (partial) and V9 (plausibility only) must not be counted as passes
+
+
+def test_story_phases_come_from_master_plan(story):
+    text = open(p('docs/master_plan.md'), encoding='utf-8').read()
+    assert [x['letter'] for x in story['phases']] == ['A', 'B', 'C']
+    for ph in story['story']['next']['phases']:
+        assert ph['objective'] in text
+    assert 'Phase A of 3' in story['story']['hero']['status']
+
+
+def test_winter_day_is_the_coldest_weekday():
+    import pandas as pd
+    w = pd.read_csv(p('data/canonical/weather_klo_2023_hourly.csv'))
+    t = pd.Series(w.temp_c.to_numpy(), index=pd.to_datetime(w.timestamp_utc, utc=True).dt.tz_convert('Europe/Zurich'))
+    daily = t.groupby(t.index.date).agg(['mean', 'count'])
+    daily = daily[(daily['count'] == 24) & (pd.to_datetime(daily.index).weekday < 5) & (daily.index < pd.Timestamp('2023-12-31').date())]
+    story = read_bundle_file(os.path.join(BUNDLE, 'story.json'))
+    assert story['derived']['day']['date'] == str(daily['mean'].idxmin())
+
+
+def test_every_controller_and_building_has_a_display_name(story):
+    import pandas as pd
+    for c in pd.read_csv(p('swiss/experiments/results/baselines_2023.csv')).controller:
+        assert story['controllers'][c]['display_name']
+    assert set(story['buildings']) == {'SFH-low', 'SFH-mid', 'SFH-high', 'MFH-small', 'MFH-medium', 'MFH-large'}
+    assert len(story['glossary']) >= 15
+
+
+def test_prose_rules_catch_violations():
+    from swiss.dashboard import story as sm
+    ui = {'_settings': {'prose_allowed_tokens': ['2023']}, '_glossary': [{'id': 'peak', 'term': 'Peak', 'definition': 'ok'}],
+          '_story': {'hero': {'a': 'costs 58 g in 2023', 'b': 'see D-017a', 'c': 'the [[peak|peak]] and [[x|nope]]', 'd': 'fine {derived.hours:,}'}},
+          '_controllers': {'X': {'display_name': ''}}}
+    errs = sm.check_prose(ui, lint.prose_digits)
+    assert any('"58"' in e for e in errs) and not any('2023' in e for e in errs)
+    assert any('registry ID' in e for e in errs) and any('unknown glossary term "nope"' in e for e in errs)
+    assert any('no display_name' in e for e in errs) and not any('hero.d' in e for e in errs)
+
+
+def test_story_prose_has_no_registry_ids(story):
+    import re
+    from swiss.dashboard.story import ID_PATTERN
+    def walk(o):
+        if isinstance(o, str): yield o
+        elif isinstance(o, list):
+            for x in o: yield from walk(x)
+        elif isinstance(o, dict):
+            for k, v in o.items():
+                if k not in ('node', 'id', 'letter', 'controller'): yield from walk(v)
+    for key in ('story', 'glossary', 'pages', 'buildings'):
+        for text in walk(story[key]):
+            assert not ID_PATTERN.search(text), text
+    assert not any(ID_PATTERN.search(c['display_name']) for c in story['controllers'].values())

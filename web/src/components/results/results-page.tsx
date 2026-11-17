@@ -8,6 +8,7 @@ import { TopicHeader } from "@/components/topic-header";
 import { AllKpis } from "./all-kpis";
 import { CompareTable } from "./compare-table";
 import { HourlyView } from "./hourly-view";
+import { useNames } from "@/lib/names";
 import { useResults } from "./results-utils";
 
 function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
@@ -16,21 +17,22 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
 
 export function ResultsPage() {
   const res = useResults();
+  const names = useNames();
   const [controller, setController] = useState(DEFAULT_CONTROLLER);
   if (!res) return <p className="text-sm text-muted-foreground">Loading results…</p>;
   return (
     <div className="space-y-10">
-      <Section title="Controllers compared" hint="full year 2023">
+      <Section title="Control rules compared" hint="full year 2023">
         <CompareTable res={res} controller={controller} onController={setController} />
       </Section>
-      <Section title="Hour by hour" hint={`selected controller: ${controller}`}>
+      <Section title="Hour by hour" hint={`selected rule: ${names.ctrl(controller)}`}>
         <HourlyView res={res} controller={controller} />
       </Section>
       <Section title="How robust is this?" hint="the same controllers rerun under different synthetic assumptions">
         <TopicHeader nodeId="panel:sensitivity" maxNumbers={0} />
         <FigureView name="sensitivity_bars" bare />
       </Section>
-      <Section title="All KPIs" hint={`for ${controller}, against no control`}>
+      <Section title="All KPIs" hint={`for ${names.ctrl(controller)}, against no control`}>
         <Accordion className="rounded-lg border px-3">
           <AccordionItem value="all"><AccordionTrigger>Show all {res.columns.length - 2} results columns</AccordionTrigger><AccordionContent><AllKpis res={res} controller={controller} /></AccordionContent></AccordionItem>
         </Accordion>

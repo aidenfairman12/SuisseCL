@@ -34,10 +34,138 @@ _settings:
     assumption: '#6b46c1'
     mixed: '#4a5568'
 
+# ---------------------------------------------------------------- plain-language layer (story page, names, glossary)
+# All prose of the story page lives here. Numbers only through {placeholders} (namespaces as above plus `derived`, `names`,
+# `tariff`); [[words|term_id]] marks a glossary term. lint.py enforces: no digits outside placeholders, no registry IDs,
+# every term id exists, every controller/building has a display name. The verdict and the "what's next" wording are
+# interpretation and are reviewed by the project owner.
+
+_controllers:     # key = controller as named in baselines_2023.csv
+  ALG-001_zero_action: {key: none, display_name: No control, short_name: No control, node: ALG-001}
+  ALG-002_business_as_usual: {key: bau, display_name: Business as usual, short_name: Business as usual, note: identical to no control in this district, node: ALG-002}
+  ALG-003_basic_rbc: {key: night, display_name: Night-charging rule, short_name: Night rule, node: ALG-003}
+  ALG-004_hour_rbc_tariff_r0.05: {key: tariff_gentle, display_name: Tariff-timed rule (gentle), short_name: Tariff, node: ALG-004}
+  ALG-004_hour_rbc_tariff_r0.10: {key: tariff_medium, display_name: Tariff-timed rule (medium), short_name: Tariff, node: ALG-004}
+  ALG-004_hour_rbc_tariff_r0.20: {key: tariff_strong, display_name: Tariff-timed rule (strong), short_name: Tariff, node: ALG-004}
+
+_buildings:       # key = role as named in the bundle
+  SFH-low: Single-family house (low use)
+  SFH-mid: Single-family house (medium use)
+  SFH-high: Single-family house (high use)
+  MFH-small: Apartment building (small)
+  MFH-medium: Apartment building (medium)
+  MFH-large: Apartment building (large)
+
+_pages:           # the question each Explore page answers
+  inputs: What data drives the simulation, and how far can each series be trusted?
+  model: How do the measured inputs become heat demand, storage and electricity use?
+  results: What does each control rule do to the bill, the highest grid draw and the electricity bought, and when in the year?
+  audit: Where does every number come from, and what is still open?
+  glossary: What do the technical terms on this site mean?
+
+_glossary:
+  - {id: heat_pump, term: Heat pump, definition: "An electric machine that moves heat from outdoor air into a building. It delivers several units of heat for each unit of electricity it uses."}
+  - {id: cop, term: COP (coefficient of performance), definition: "Heat delivered divided by electricity used at one moment. It is higher on mild days and lower on cold days.", node: card:cop_model}
+  - {id: spf, term: SPF (seasonal performance factor), definition: "The COP averaged over a whole year. The model is tuned so each building's yearly SPF matches published Swiss field data.", node: card:cop_model}
+  - {id: dhw, term: Hot water (DHW), definition: "Domestic hot water for showers and taps, as opposed to space heating. Heat pumps usually serve both."}
+  - {id: storage_tank, term: Storage tank, definition: "A water tank that stores heat. Charging it early lets a home use the heat later, so the heat pump can run when electricity is cheap or the grid is quiet.", node: card:tanks}
+  - {id: tou_tariff, term: Time-of-use tariff, definition: "A price that depends on the hour: lower at night and on weekends, higher during the working day.", node: series:price}
+  - {id: kw_kwh, term: kW and kWh, definition: "Power (kW) is how fast energy flows at one moment, like speed. Energy (kWh) is the total that has flowed, like distance. A bill is charged for energy; a grid is sized for power."}
+  - {id: peak, term: Highest grid draw (peak), definition: "The largest power the district takes from the grid in any hour of the year. Grids and fuses are sized for it.", node: kpi:district_peak_kw}
+  - {id: rule_based_control, term: Rule-based control, definition: "A controller that follows fixed rules, such as charging the tanks at night. The rules are written by hand and do not learn.", node: card:controllers}
+  - {id: rl, term: Reinforcement learning, definition: "A way of letting software learn good control by trial and error against a score. It is planned for later phases and is not used yet."}
+  - {id: carbon_intensity, term: Carbon intensity, definition: "How much CO2 is emitted per unit of electricity at a given hour. It is lower when hydro and nuclear dominate and higher when imports from fossil-heavy neighbours are needed.", node: series:carbon_intensity}
+  - {id: measured, term: Measured, definition: "Recorded by a real sensor or meter, such as a smart meter or a weather station."}
+  - {id: derived, term: Calculated (derived), definition: "Worked out from measured data with a stated formula, such as heat demand from heat-pump electricity."}
+  - {id: modeled, term: Modeled, definition: "Produced by a model rather than observed. The carbon curve is an example, so its level is an estimate."}
+  - {id: synthetic, term: Constructed (synthetic), definition: "Built for this study because no real data exists, such as the tank sizes and the apartment loads. Always shown hatched or labelled as assumed."}
+  - {id: counterfactual, term: Conventional counterfactual, definition: "The reference CityLearn compares against: the same buildings without storage control. A value of one means no change from it; lower is better."}
+
+_story:
+  hero:
+    question: Can smarter timing of heat pumps and hot-water tanks cut electricity cost and grid peaks in Swiss homes?
+    context: >
+      Swiss homes are switching to [[heat pumps|heat_pump]], and heat pumps draw the most on cold winter evenings, exactly when
+      the whole grid is busy. Electricity is cheaper at night under a [[time-of-use tariff|tou_tariff]], and a
+      [[storage tank|storage_tank]] lets a home heat early and use the heat later. This project builds a realistic
+      test bed to find out how much that timing can help.
+    status: "Phase {derived.phases.a.letter} of {derived.phases.count} · the test bed is built and the first simple control rules are tested"
+    tiles:
+      - {value: "{derived.n_buildings}", label: "real Zurich-area buildings: {derived.n_houses} houses and {derived.n_apartments} apartment buildings"}
+      - {value: "{derived.hours:,}", label: "hours of 2023 simulated, one hour at a time"}
+      - {value: Every, label: number can be traced back to its source}
+  district:
+    title: The test bed
+    caption: >
+      Drag the slider to see one hour of the year: heat pumps run, tanks fill and empty, and electricity flows in from the
+      grid. Switch the control rule to compare. Hatched parts are assumed, not measured: in the apartment buildings the heat
+      pump and the shared areas are measured, but the apartments' own electricity is taken from other homes.
+  how:
+    title: How the simulation works
+    steps:
+      - {title: Real meter data, text: "Hourly electricity of the heat pumps and households, recorded in homes around Zurich.", node: "series:building_electricity"}
+      - {title: Heat demand, rebuilt, text: "Heat is not metered, so it is calculated from heat-pump electricity and outdoor temperature.", node: "card:cop_model"}
+      - {title: A rule decides when to heat, text: "Simple rules decide when each home charges its heat and hot-water tanks. Smarter control comes later.", node: "card:controllers"}
+      - {title: The year is scored, text: "Each rule is judged on the electricity bill, the highest grid draw and the electricity bought, against doing nothing.", node: "panel:kpis"}
+  findings:
+    title: What the first test shows
+    verdict: >
+      The [[{names.night}|rule_based_control]] moves {derived.rule.shift_pts:.1f} percentage points of the year's electricity
+      out of the expensive hours (from {results[ALG-001_zero_action].high_tariff_import_share:.1%} to
+      {results[ALG-003_basic_rbc].high_tariff_import_share:.1%} of everything bought) and cuts the
+      [[highest grid draw|peak]] by {derived.rule.peak_cut_pct:.1f} %. But storing
+      heat costs extra electricity: it buys {derived.rule.import_pct:.1f} % more overall, so the bill does not fall. It
+      rises by {derived.rule.cost_pct:.1f} %. The cheap-hour discount is small, {tariff.low} against {tariff.high} Rp/kWh.
+    rules_line: >
+      The three tariff-timed variants land in the same range: the bill changes by {derived.tariff_rules.cost_min:+.1f} to
+      {derived.tariff_rules.cost_max:+.1f} % and the highest grid draw by {derived.tariff_rules.peak_min:+.1f} to
+      {derived.tariff_rules.peak_max:+.1f} % (a minus sign means a lower peak).
+    chart_title: A cold winter weekday, hour by hour
+    chart_caption: >
+      Grid draw of all the buildings together on {derived.day.label}, the coldest weekday of the year, with and without the
+      {names.night_lower}. The shaded hours are the expensive tariff.
+    tiles_caption: Whole-year totals compared with no control. Lower is better.
+    closing: >
+      So timing alone, with simple rules, trims the peak but does not save money. That is why the next phases add smarter
+      control and richer tariffs.
+  trust:
+    title: Why you can trust it, and where not
+    validation: >
+      {derived.validation.passed} of {derived.validation.total} validation checks pass; the others pass only partly or only as
+      a plausibility check.
+    classes_title: What is real, and what is not
+    classes:
+      measured: {label: Measured, meaning: recorded by a sensor or meter}
+      derived: {label: Calculated, meaning: worked out from measured data with a stated formula}
+      modeled: {label: Estimated by a model, meaning: produced by a model, not observed}
+      synthetic: {label: Constructed for this study, meaning: built because no real data exists}
+      assumption: {label: Assumed, meaning: a chosen value with no direct data behind it}
+      mixed: {label: A mix, meaning: contains several of the kinds above}
+    limitations_title: The three biggest limits
+    limitations:
+      - title: The CO₂ curve is an estimate
+        text: >
+          It is modeled from generation and trade data. Its level is about {epfl[2016].hourly_consumption_vs_epfl.ratio_mean:.0%} to
+          {epfl[2017].hourly_consumption_vs_epfl.ratio_mean:.0%} of a published reference, so use it for timing, not for absolute values.
+        node: series:carbon_intensity
+      - title: The tanks are assumed
+        text: >
+          No home has a documented tank, so the sizes follow a stated sizing rule and are tested at half and double size.
+        node: card:tanks
+      - title: Comfort is not scored
+        text: >
+          The model has no indoor temperature, so heat demand is always met and comfort cannot be judged yet.
+        node: card:environment
+  next:
+    title: What comes next
+    source_note: From the project roadmap in docs/master_plan.md
+    phases_shown: [B, C]
+
 # ---------------------------------------------------------------- inputs (plan §4.1)
 
 series:outdoor_temperature:
   label: Outdoor temperature (Zurich/Kloten)
+  display_name: Outdoor temperature
   figures: [ts_temp, klo_vs_heapo]
   classification: measured
   primary: DER-007
@@ -57,6 +185,7 @@ series:outdoor_temperature:
 
 series:ghi:
   label: Global horizontal irradiance
+  display_name: Sunlight, total
   figures: [ts_irradiance, ghi_vs_diffuse]
   classification: measured
   primary: DER-007
@@ -71,6 +200,7 @@ series:ghi:
 
 series:diffuse:
   label: Diffuse horizontal irradiance
+  display_name: Sunlight, scattered part
   figures: [ghi_vs_diffuse]
   classification: measured
   primary: DER-007
@@ -82,6 +212,7 @@ series:diffuse:
 
 series:beam:
   label: Beam (direct) horizontal irradiance
+  display_name: Sunlight, direct part
   figures: [ts_irradiance, ghi_vs_diffuse]
   classification: derived
   primary: DER-007
@@ -93,6 +224,7 @@ series:beam:
 
 series:price:
   label: Electricity price (EKZ standard tariff)
+  display_name: Electricity price
   figures: [price_heatmap]
   classification: measured
   primary: DER-008
@@ -112,6 +244,7 @@ series:price:
 
 series:carbon_intensity:
   label: Grid carbon intensity (modeled)
+  display_name: CO₂ of the grid (estimated)
   figures: [carbon_cons_vs_dom, carbon_import_stack, epfl_monthly, epfl_diurnal, epfl_table]
   classification: modeled
   primary: DER-011
@@ -141,6 +274,7 @@ series:carbon_intensity:
 
 series:building_electricity:
   label: Building electricity (per building)
+  display_name: Building electricity use
   figures: [building_daily, backtest]
   classification: mixed
   primary: DER-005
@@ -157,6 +291,7 @@ series:building_electricity:
 
 card:building_selection:
   label: Building selection
+  display_name: How the buildings were chosen
   figures: [selection_pools]
   classification: derived
   primary: DER-003
@@ -174,6 +309,7 @@ card:building_selection:
 
 card:cop_model:
   label: Heat-pump COP and thermal demand
+  display_name: How heat demand is rebuilt
   figures: [cop_curves, spf_check, hp_split_monthly]
   classification: derived
   primary: DER-009
@@ -203,6 +339,7 @@ card:cop_model:
 
 card:tanks:
   label: Thermal storage tanks (synthetic)
+  display_name: Heat storage tanks (assumed)
   figures: [tank_sizes]
   classification: synthetic
   primary: D-017a
@@ -219,6 +356,7 @@ card:tanks:
 
 card:hp_nominal_power:
   label: Heat-pump nominal power
+  display_name: Heat-pump size (assumed)
   figures: [hp_sizing]
   classification: assumption
   primary: TR-009
@@ -234,6 +372,7 @@ card:hp_nominal_power:
 
 card:environment:
   label: CityLearn environment
+  display_name: The simulation environment
   figures: [env_interface]
   primary: DER-010
   nodes: [DER-010, TR-009, D-018, V1, V2]
@@ -248,6 +387,7 @@ card:environment:
 
 card:reward:
   label: Reward R-001
+  display_name: How a run is scored
   figures: [reward_year]
   primary: R-001
   nodes: [R-001, D-019, D-018]
@@ -263,6 +403,7 @@ card:reward:
 
 card:controller_tariff_map:
   label: ALG-004 tariff action map
+  display_name: Tariff-timed rule schedule
   figures: [action_map]
   primary: ALG-004
   nodes: [ALG-004, D-012, D-019]
@@ -274,6 +415,7 @@ card:controller_tariff_map:
 
 panel:sensitivity:
   label: Sensitivity variants
+  display_name: What if the assumptions are off?
   figures: [sensitivity_bars]
   nodes: [D-017a, D-016, D-014d, EXP-001]
   primary: EXP-001
@@ -285,6 +427,7 @@ panel:sensitivity:
 
 panel:validation:
   label: Validation checks
+  display_name: Validation checks
   nodes: [V1, V2, V3, V4, V5, V6, V7, V8, V9]
   summary: >
     Internal-consistency and plausibility checks, not calibration against observations.
@@ -296,6 +439,7 @@ panel:validation:
 
 kpi:reward_return:
   label: Reward return (R-001)
+  display_name: Overall score
   primary: EXP-001
   nodes: [R-001, EXP-001]
   fields: {origin: own}
@@ -303,36 +447,42 @@ kpi:reward_return:
   code: [swiss/experiments/run_baselines.py::rollout]
 kpi:district_import_kwh:
   label: District grid import
+  display_name: Electricity bought from the grid
   nodes: [EXP-001, DER-010]
   fields: {origin: own, unit: kWh}
   summary: Sum over hours of the positive part of each building's net electricity.
   code: [swiss/experiments/run_baselines.py::rollout]
 kpi:district_peak_kw:
   label: District peak
+  display_name: Highest grid draw
   nodes: [EXP-001, DER-010]
   fields: {origin: own, unit: kW}
   summary: Largest hourly district net electricity of the year.
   code: [swiss/experiments/run_baselines.py::rollout]
 kpi:cost_chf_excl_vat:
   label: Electricity cost
+  display_name: Electricity bill
   nodes: [EXP-001, DER-008, D-012]
   fields: {origin: own, unit: CHF excl. VAT}
   summary: Hourly import times the EKZ tariff, summed over the year. Excludes VAT and levies.
   code: [swiss/experiments/run_baselines.py::rollout]
 kpi:mean_daily_peak_kw:
   label: Mean daily peak
+  display_name: Average daily peak
   nodes: [EXP-001]
   fields: {origin: own, unit: kW}
   summary: Mean over days of the daily maximum district net electricity (days are consecutive blocks of hours).
   code: [swiss/experiments/run_baselines.py::rollout]
 kpi:ramping_sum_kw:
   label: Ramping
+  display_name: Load swings
   nodes: [EXP-001]
   fields: {origin: own, unit: kW}
   summary: Sum of absolute hour-to-hour changes of district net electricity.
   code: [swiss/experiments/run_baselines.py::rollout]
 kpi:high_tariff_import_share:
   label: High-tariff import share
+  display_name: Share bought in expensive hours
   nodes: [EXP-001, DER-008]
   fields: {origin: own, unit: '-'}
   summary: Share of annual import that falls in high-tariff hours.
@@ -360,6 +510,7 @@ kpi:term_ramp_sum:
   code: [swiss/experiments/rewards.py::SwissDistrictReward.terms]
 kpi:term_carbon_sum:
   label: Reward term carbon (sum)
+  display_name: CO₂ (estimated)
   primary: EXP-001
   nodes: [R-001, DER-011]
   fields: {origin: own}
@@ -439,6 +590,7 @@ kpi:kpi_zero_net_energy:
 
 card:controllers:
   label: Controllers (baselines)
+  display_name: The control rules
   primary: ALG-001
   nodes: [ALG-001, ALG-002, ALG-003, ALG-004, D-019, EXP-007, EXP-008, EXP-009, EXP-010, EXP-011, EXP-012]
   lineage_end: D-019
@@ -451,6 +603,7 @@ card:controllers:
 
 panel:kpis:
   label: Results (KPIs)
+  display_name: Results
   primary: EXP-007
   nodes: [EXP-007, EXP-008, EXP-009, EXP-010, EXP-011, EXP-012, R-001]
   summary: >
@@ -461,6 +614,7 @@ panel:kpis:
 
 panel:open_issues:
   label: Open issues
+  display_name: Open issues
   nodes_open_issues: true    # filled at build time with every issue whose current status is open
   summary: >
     Issues whose current status is open, from the issues and risks log. Each one also appears on the cards it affects.
@@ -468,6 +622,7 @@ panel:open_issues:
 
 card:district:
   label: The simulated district
+  display_name: The simulated district
   classification: mixed
   primary: DER-010
   nodes: [DER-010, DER-003, D-006, D-017a, D-018, TR-009, D-010]

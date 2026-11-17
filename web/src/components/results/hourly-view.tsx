@@ -5,12 +5,14 @@ import { useSi } from "@/components/charts/figures-inputs";
 import { WD, fmt, timestamps } from "@/components/charts/util";
 import { NodeLink } from "@/components/audit/bits";
 import { useBundle } from "@/lib/bundle";
+import { useNames } from "@/lib/names";
 import { DRILL, REF, drillHours, useTrace, type ResultsFull } from "./results-utils";
 
 const ROLES = ["SFH-low", "SFH-mid", "SFH-high", "MFH-small", "MFH-medium", "MFH-large"];
 
 export function HourlyView({ res, controller }: { res: ResultsFull; controller: string }) {
   const { nodes } = useBundle();
+  const names = useNames();
   const si = useSi();
   const T = useTrace(res, controller), T0 = useTrace(res, REF);
   const [building, setBuilding] = useState(1);
@@ -23,20 +25,20 @@ export function HourlyView({ res, controller }: { res: ResultsFull; controller: 
     for (const t of ((nodes["R-001"]?.fields.terms as unknown as Record<string, string>[]) ?? [])) w[t.Term] = parseFloat(t["Default weight"]);
     const term = (k: string) => T[`term_${k}`].map((v) => (v == null ? null : (-w[k] * v) / res.reward_scales[k]));
     return [
-      { title: `District net electricity — ${controller}${controller === REF ? "" : ` vs ${REF}`}`, unit: "kWh per hour", series: [...(controller === REF ? [] : [{ name: `${REF} (no control)`, values: T0.district_net_kwh, cls: "", color: "#a0aec0" }]), { name: controller, values: T.district_net_kwh, cls: "", color: "#2b6cb0" }] },
-      { title: `Tank state of charge — ${ROLES[building - 1]}, ${controller} (SYNTHETIC tanks, D-017a)`, unit: "0–1", series: [{ name: "heating tank", values: T[`b${building}_heating_storage_soc`], cls: "", color: "#e8590c" }, { name: "hot-water tank", values: T[`b${building}_dhw_storage_soc`], cls: "", color: "#1098ad" }] },
-      { title: `Reward R-001 terms — ${controller} (−weight × term ÷ scale per step)`, unit: "reward", series: ["cost", "peak", "ramp", "carbon"].filter((k) => w[k]).map((k) => ({ name: `${k} (weight ${w[k]})`, values: term(k), cls: "", color: ({ cost: "#2b6cb0", peak: "#c53030", ramp: "#dd6b20", carbon: "#b7791f" } as Record<string, string>)[k] })) },
+      { title: `Grid draw of all buildings — ${names.ctrl(controller)}${controller === REF ? "" : ` vs ${names.ctrl(REF)}`}`, unit: "kWh per hour", series: [...(controller === REF ? [] : [{ name: names.ctrl(REF), values: T0.district_net_kwh, cls: "", color: "#a0aec0" }]), { name: names.ctrl(controller), values: T.district_net_kwh, cls: "", color: "#2b6cb0" }] },
+      { title: `Tank fill level — ${names.building(ROLES[building - 1])}, ${names.ctrl(controller)} (assumed tanks)`, unit: "0–1", series: [{ name: "heating tank", values: T[`b${building}_heating_storage_soc`], cls: "", color: "#e8590c" }, { name: "hot-water tank", values: T[`b${building}_dhw_storage_soc`], cls: "", color: "#1098ad" }] },
+      { title: `How each step is scored — ${names.ctrl(controller)} (cost, peak, swings; lower is better)`, unit: "reward", series: ["cost", "peak", "ramp", "carbon"].filter((k) => w[k]).map((k) => ({ name: `${k} (weight ${w[k]})`, values: term(k), cls: "", color: ({ cost: "#2b6cb0", peak: "#c53030", ramp: "#dd6b20", carbon: "#b7791f" } as Record<string, string>)[k] })) },
     ];
-  }, [T, T0, controller, building, res.reward_scales, nodes]);
+  }, [T, T0, controller, building, res.reward_scales, nodes, names]);
   if (!si) return null;
   const ts = timestamps(si).slice(0, T?.district_net_kwh.length ?? si.n);
   const drillable = res.columns.filter((c) => DRILL[c]);
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-4 text-sm">
-        <label>Highlight the hours that drive <select value={kpi} onChange={(e) => setKpi(e.target.value)} className="ml-1 h-8 rounded-lg border bg-background px-2 text-sm">{drillable.map((c) => <option key={c} value={c}>{(nodes[`kpi:${c}`]?.title ?? c).replace(" (R-001)", "")}</option>)}</select></label>
-        <span className="text-xs text-muted-foreground">gold = {DRILL[kpi]?.label} for {controller} ({highlight.length} h)</span>
-        <label>Tank of <select value={building} onChange={(e) => setBuilding(+e.target.value)} className="ml-1 h-8 rounded-lg border bg-background px-2 text-sm">{ROLES.map((r, i) => <option key={r} value={i + 1}>{r}</option>)}</select></label>
+        <label>Highlight the hours that drive <select value={kpi} onChange={(e) => setKpi(e.target.value)} className="ml-1 h-8 rounded-lg border bg-background px-2 text-sm">{drillable.map((c) => <option key={c} value={c}>{names.kpi(c)}</option>)}</select></label>
+        <span className="text-xs text-muted-foreground">gold = {DRILL[kpi]?.label} for {names.ctrl(controller)} ({highlight.length} h)</span>
+        <label>Tank of <select value={building} onChange={(e) => setBuilding(+e.target.value)} className="ml-1 h-8 rounded-lg border bg-background px-2 text-sm">{ROLES.map((r, i) => <option key={r} value={i + 1}>{names.building(r)}</option>)}</select></label>
       </div>
       {T && T0 ? <TimeChart panels={panels} ts={ts} overlay={false} colours={{}} highlight={highlight} onHour={setHour} /> : <p className="py-8 text-sm text-muted-foreground">Loading the run trace…</p>}
       {T && hour != null && hour < T.district_net_kwh.length && (
