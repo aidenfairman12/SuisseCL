@@ -106,30 +106,30 @@ badge). Classified by how a value was obtained. `provenance` can be a pair `{SFH
 | `carbon_relative_rank` | Grid carbon intensity, relative rank | percent of the year's hours with lower intensity | modeled (relative only) |
 
 ## 7. Situations (data-driven "What is happening?")
-`situations.district` and `situations.buildings.<id>` map a tag to the steps (relative to `scope.start_step`) where it holds. A tag
+The tag texts below are user-facing and shown as they are; the numbers in them come from `manifest.situation_thresholds`. `situations.district` and `situations.buildings.<id>` map a tag to the steps (relative to `scope.start_step`) where it holds. A tag
 that is absent never holds. Write explanatory text from tags **and** the values at that step, and claim a mechanism only when a
 tag supports it (for example "stored heat is covering demand" only when `sh_tank_covers_demand` holds). Thresholds are in
 `manifest.situation_thresholds`.
 
 | Tag | Meaning |
 |---|---|
-| `cold_hour` | Outdoor temperature at or below the 10th percentile of the year (threshold in situation_thresholds.cold_temp_c). |
-| `high_tariff` | High tariff tier. |
-| `low_tariff` | Low tariff tier. |
-| `district_daily_peak` | The hour with the highest district grid import of its local calendar day. |
-| `sh_tank_charging` | Space-heating tank receives heat from the heat pump. |
-| `sh_tank_discharging` | Space-heating tank delivers heat to the demand. |
-| `sh_tank_idle` | Neither charging nor discharging. |
-| `sh_tank_full` | Tank fill level at or above situation_thresholds.tank_full_soc. |
-| `sh_tank_empty` | Tank fill level at or below situation_thresholds.tank_empty_soc. |
-| `sh_tank_covers_demand` | The tank supplies at least situation_thresholds.storage_covers_demand_share of the space-heating demand (demand > 0). |
-| `hw_tank_charging` | As sh_tank_charging, hot-water/base-load tank. |
-| `hw_tank_discharging` | As sh_tank_discharging, hot-water/base-load tank. |
-| `hw_tank_idle` | As sh_tank_idle. |
-| `hw_tank_full` | As sh_tank_full. |
-| `hw_tank_empty` | As sh_tank_empty. |
-| `hw_tank_covers_demand` | As sh_tank_covers_demand, for the hot-water/base-load demand. |
-| `hp_sh_near_capacity` | Space-heating heat-pump electricity at or above situation_thresholds.near_capacity_fraction of its nominal electrical power. |
+| `cold_hour` | One of the coldest 10 % of hours of the year outdoors. |
+| `high_tariff` | A high-tariff hour (weekdays, 07:00 to 20:00 local time). |
+| `low_tariff` | A low-tariff hour. |
+| `district_daily_peak` | The hour with the highest electricity draw of its day, all six buildings together. |
+| `sh_tank_charging` | The heating tank is being charged by the heat pump. |
+| `sh_tank_discharging` | The heating tank is supplying stored heat to the demand. |
+| `sh_tank_idle` | The heating tank is neither charging nor discharging. |
+| `sh_tank_full` | The heating tank is almost full (99 % or more). |
+| `sh_tank_empty` | The heating tank is almost empty (1 % or less). |
+| `sh_tank_covers_demand` | The heating tank supplies at least 50 % of the heat demand it serves. |
+| `hw_tank_charging` | The hot-water and base-load tank is being charged by the heat pump. |
+| `hw_tank_discharging` | The hot-water and base-load tank is supplying stored heat to the demand. |
+| `hw_tank_idle` | The hot-water and base-load tank is neither charging nor discharging. |
+| `hw_tank_full` | The hot-water and base-load tank is almost full (99 % or more). |
+| `hw_tank_empty` | The hot-water and base-load tank is almost empty (1 % or less). |
+| `hw_tank_covers_demand` | The hot-water and base-load tank supplies at least 50 % of the heat demand it serves. |
+| `hp_sh_near_capacity` | The space-heating heat pump is running at 95 % or more of its nominal electrical power. |
 
 ## 8. Comparisons and what they explain
 `comparisons.json` (scope: the sample window) and `comparisons_year.json` (scope: the whole year) share one structure; always read `scope.kind`
@@ -171,7 +171,7 @@ Regenerate both only when results or the contract change (about 57 MB of JSON pe
 ## 10. Mapping to the dashboard specification
 | Spec item | Contract source |
 |---|---|
-| §4.8 Building profile | `buildings.<id>.attributes` (area, residents, units, floors, heat-pump type, heat delivery, water heating, PV status) and `components` |
+| §4.8 Building profile | `buildings.<id>.attributes` (area, residents, units, floors, heat-pump type, heat delivery, water heating, `electric_water_heater` (boolean; SFH-mid and SFH-high, whose heater electricity is inside household electricity), PV status) and `components` |
 | §4.8 Operating state | run arrays at the selected step: `sh_demand_kwh_th`, `hp_sh_kwh_el` + `hp_hw_kwh_el`, heat-pump heat = `*_direct` + `*_to_tank`, `sh_tank_soc`, `hw_tank_soc`, tariff and weather from `conditions` |
 | §4.8 Provenance | `provenance` and `source_ids` on every variable and attribute |
 | §4.7 Energy flows | `components.json` flows with the variable that sizes each arrow; electricity vs heat via `carrier`; inactive when the step value is 0 |

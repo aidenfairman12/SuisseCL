@@ -28,8 +28,7 @@ export function BuildingCutaway({ building, state, stepSeconds }: { building: Bu
   const tankHw = building.components.tank_hw.present;
   const hpSh = building.components.hp_sh.present;
   const hpHw = building.components.hp_hw.present;
-  const waterHeating = String(attr(building, "water_heating") ?? "").toLowerCase();
-  const electricWaterHeater = waterHeating === "electric water heater (its electricity is inside household electricity)";
+  const electricWaterHeater = attr(building, "electric_water_heater") === true;   // boolean contract attribute (unavailable counts as not shown)
   const capacity = building.components.tank_sh.attributes.capacity_kwh_th?.value;
   const householdProvenance = building.attributes.household_electricity_source?.provenance === "synthetic" ? "Synthetic composite" : "Measured";
   const hwCapacity = building.components.tank_hw.attributes.capacity_kwh_th?.value;
