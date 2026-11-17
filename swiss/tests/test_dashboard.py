@@ -336,3 +336,8 @@ def test_district_view_data_matches_sources():
     assert [b['units'] for b in f['buildings'] if b['type'] == 'MFH'] == [5, 14, 24]
     t = read_bundle_file(os.path.join(BUNDLE, 'trace_ALG-003_basic_rbc.js'))['arrays']
     assert all(f'b{i}_hp_kwh_el' in t for i in range(1, 7))
+
+
+def test_dirty_check_ignores_bundle_even_on_first_line():
+    assert bb.dirty_lines(' M dashboard/bundle/figures.js\n M dashboard/bundle/meta.js\n') == []
+    assert bb.dirty_lines(' M dashboard/bundle/meta.js\n M swiss/dashboard/lint.py\n') == [' M swiss/dashboard/lint.py']

@@ -561,9 +561,16 @@ def manifest_check():
     return {'verified': not bad, 'files_listed': n, 'failures': bad}
 
 
+def dirty_lines(porcelain):
+    """`git status --porcelain` lines that make the tree dirty, ignoring the generated bundle itself.
+    The raw output must not be stripped: the first line may start with a space (' M path')."""
+    return [l for l in porcelain.splitlines() if l and not l[3:].startswith('dashboard/bundle')]
+
+
 def git_state():
     head = git('rev-parse', '--short', 'HEAD')
-    porcelain = [l for l in git('status', '--porcelain').splitlines() if l and not l[3:].startswith('dashboard/bundle')]
+    raw = subprocess.run(['git', '-C', ROOT, 'status', '--porcelain'], capture_output=True, text=True).stdout
+    porcelain = dirty_lines(raw)
     return {'commit': head, 'commit_full': git('rev-parse', 'HEAD'), 'dirty': bool(porcelain),
             'dirty_paths': [l[3:] for l in porcelain][:50]}
 
