@@ -177,7 +177,7 @@ export function Scene({ buildings, names, state, selectedBuilding, onSelect }: {
             <Tree x={255} y={300} scale={.75} tone={2}/><Tree x={570} y={250} scale={.8} tone={1}/><Tree x={1110} y={315} scale={.8} tone={0}/>
           </g>
           <g filter="url(#district-shadow)">
-            {buildings.map((b, i) => <House key={b.building} b={b} name={names[i]} selected={selectedBuilding === b.role} onSelect={() => onSelect(b.role)} {...positions[i]} state={state.buildings[i]}/>)}
+            {buildings.map((b, i) => <House key={b.role} b={b} name={names[i]} selected={selectedBuilding === b.role} onSelect={() => onSelect(b.role)} {...positions[i]} state={state.buildings[i]}/>)}
           </g>
           <g transform="translate(28 26)" filter="url(#soft-shadow)">
             <rect width="340" height="68" rx="15" fill="#fffdf8" fillOpacity=".94" stroke="#d9dfd4"/>
