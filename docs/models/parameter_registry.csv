@@ -48,3 +48,11 @@ M-004,Battery power to capacity ratio,c_rate,0.5,kW/kWh,assumption A-016,assumpt
 M-004,Battery size per kWp PV default,battery_kwh_per_kwp,1.0,kWh/kWp,assumption A-017,assumption
 M-004,Battery size per kWp PV sweep,battery_kwh_per_kwp_sweep,"0.5, 1, 2",kWh/kWp,assumption A-017,assumption
 M-004,Battery degradation and self-discharge,capacity_loss_coefficient / loss_coefficient,0 / 0,-,assumption A-016 (switched off),assumption
+M-005,Pooled heat loss per m2,H_w_per_k_m2,1.03,W/(K m2),"median of three house fits (A-018); sweep 1.0, 1.5, 2.1",derived range + assumption
+M-005,Pooled solar aperture,g,0.026,-,"median of fits (A-018); sweep 0.017, 0.026, 0.044",derived range + assumption
+M-005,Lumped heat capacity per m2,C_j_per_k_m2,110000,J/(K m2),"ISO 13790 medium class from memory, unverified (A-019); sweep 80000, 110000, 165000",assumption
+M-005,Internal gain per m2,L_internal_w_m2,2.0,W/m2,judgement (A-019),assumption
+M-005,Indoor setpoint,setpoint_c,21.0,C,D-018,assumption
+M-005,Comfort band,comfort_lower_c / comfort_upper_c,"20 / 24",C,judgement (A-020),assumption
+M-005,Floor area per apartment unit,floor_area_per_mfh_unit_m2,80,m2,A-014,assumption
+M-005,Effective area per building,effective_area_m2,"297, 355, 532, 548, 1072, 834",m2,calibrated to the derived annual heat (rc_params_2023.json),derived

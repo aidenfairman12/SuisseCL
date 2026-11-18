@@ -1,6 +1,6 @@
 # Phase B plan — authoritative implementation specification
 
-Date: 2026-11-18 · Status: **approved by the owner on 2026-11-18 (D-031, D-032). This file is the single source of truth for Phase B.**
+Date: 2026-11-18 (order of step 7 changed by D-037) · Status: **approved by the owner on 2026-11-18 (D-031, D-032). This file is the single source of truth for Phase B.**
 It supersedes the task order and the "Phase B is not authorized" wording of `master_plan.md` section 7; the task definitions B1 to B9 and the acceptance criteria
 (plan 7.2 and 7.3) still apply unchanged. If this file and `master_plan.md` section 7 disagree, **this file wins**. If this file and a decision in
 `docs/decisions/decision_log.md` disagree, the decision log (newer row) wins and you must report the conflict.
@@ -36,6 +36,7 @@ Rationale and evidence for the order: `phase_b_reordered_proposal.md` (read it o
 | 7 | Day-ahead price data: download approved, but check the licence per price zone first and **do not publish derived series in the public bundle** without a licence check (the dashboard is public by choice) | D-032 |
 | 8 | 15-minute pipeline: undecided by the owner; default is task order position 10 with an early cheap feasibility spike (task B2a) | D-032 |
 | 9 | No cluster jobs until Phase B is finished | D-032 |
+| 10 | RL work (scripts and reward preset) is not started until steps 8 to 11 are done, so it is designed once with the final reward and environment | D-037 |
 
 ## 3. Reality of the tariff (read before touching B5)
 The current Swiss household standard is a **two-tier tariff** (high and low tariff). Our S0 baseline uses the EKZ standard product (15.05 and 19.05 Rp/kWh excluding VAT, high tariff weekdays 07:00 to 20:00 local). **S0 stays the realistic baseline and is never replaced.**
@@ -56,7 +57,7 @@ Task order (each step needs your commit/push requests to the owner as in section
 | 4 | B5 import and export | export price per building from ElCom; accounting identity import_cost − export_revenue = bill | 4.4 checks |
 | 5 | B4 battery | CityLearn electrical storage per building | 4.5 checks |
 | 6 | Ceiling on S1, S2 | oracle generalised (PV, battery, export); written ceiling table | 4.6; gate applied |
-| 7 | RL on S1/S2 | only if gate passed; scripts written, **not submitted** (item 9) | per 4.7 |
+| 7 | RL on S1/S2 | **moved after step 11 (D-037, owner 2026-11-18)**: gate passed (D-036); scripts, export-aware reward preset and jobs are done as one block with the final reward, after steps 8 to 11; jobs are submitted only when the owner lifts item 9 | per 4.7 |
 | 8 | B7 thermal model | routes (a) and (c) checked first, then (b) | 4.8 |
 | 9 | B5 richer tariffs | scenario tariffs incl. downloaded day-ahead prices | 3 and 4.4 |
 | 10 | B2 15-minute pipeline | 15-minute dataset and environment | criteria 1, 2 |

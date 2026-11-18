@@ -1,0 +1,91 @@
+{
+ "method": "daily quasi-steady regression, heating days only",
+ "heating_day_max_c": 12.0,
+ "note": "C_l is not identifiable from heat demand; floor areas of MFH are assumed (80 m2 per unit); heat demand is derived (SPF-anchored)",
+ "fits": {
+  "SFH-low": {
+   "floor_area_m2": 220.0,
+   "heating_days": 195,
+   "H_w_per_k": 226.6,
+   "H_w_per_k_m2": 1.03,
+   "H_bootstrap_p5_p95": [
+    210.4,
+    245.0
+   ],
+   "balance_temp_c": 24.6,
+   "g_eff_m2": 9.71,
+   "r2": 0.839,
+   "annual_heat_kwh_th": 17255.0
+  },
+  "SFH-mid": {
+   "floor_area_m2": 166.0,
+   "heating_days": 195,
+   "H_w_per_k": 347.1,
+   "H_w_per_k_m2": 2.091,
+   "H_bootstrap_p5_p95": [
+    331.1,
+    365.7
+   ],
+   "balance_temp_c": 18.5,
+   "g_eff_m2": 4.28,
+   "r2": 0.873,
+   "annual_heat_kwh_th": 20621.0
+  },
+  "SFH-high": {
+   "floor_area_m2": 260.0,
+   "heating_days": 195,
+   "H_w_per_k": 260.9,
+   "H_w_per_k_m2": 1.003,
+   "H_bootstrap_p5_p95": [
+    228.0,
+    297.1
+   ],
+   "balance_temp_c": 29.1,
+   "g_eff_m2": 4.36,
+   "r2": 0.641,
+   "annual_heat_kwh_th": 30913.0
+  },
+  "MFH-small": {
+   "floor_area_m2": 400.0,
+   "heating_days": 195,
+   "H_w_per_k": 202.8,
+   "H_w_per_k_m2": 0.507,
+   "H_bootstrap_p5_p95": [
+    173.8,
+    238.1
+   ],
+   "balance_temp_c": 35.8,
+   "g_eff_m2": 8.38,
+   "r2": 0.537,
+   "annual_heat_kwh_th": 31837.0
+  },
+  "MFH-medium": {
+   "floor_area_m2": 1120.0,
+   "heating_days": 195,
+   "H_w_per_k": 304.6,
+   "H_w_per_k_m2": 0.272,
+   "H_bootstrap_p5_p95": [
+    219.5,
+    392.6
+   ],
+   "balance_temp_c": 37.2,
+   "g_eff_m2": -5.24,
+   "r2": 0.147,
+   "annual_heat_kwh_th": 62302.0
+  },
+  "MFH-large": {
+   "floor_area_m2": 1920.0,
+   "heating_days": 195,
+   "H_w_per_k": 352.5,
+   "H_w_per_k_m2": 0.184,
+   "H_bootstrap_p5_p95": [
+    301.4,
+    408.2
+   ],
+   "balance_temp_c": 28.9,
+   "g_eff_m2": 5.45,
+   "r2": 0.444,
+   "annual_heat_kwh_th": 48445.0
+  }
+ }
+}

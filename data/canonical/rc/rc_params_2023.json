@@ -1,0 +1,79 @@
+{
+ "priors": {
+  "H_w_per_k_m2": 1.03,
+  "g": 0.026,
+  "C_j_per_k_m2": 110000.0,
+  "L_internal_w_m2": 2.0,
+  "setpoint_c": 21.0,
+  "comfort_lower_c": 20.0,
+  "comfort_upper_c": 24.0
+ },
+ "sweep": {
+  "H_w_per_k_m2": [
+   1.0,
+   1.5,
+   2.1
+  ],
+  "g": [
+   0.017,
+   0.026,
+   0.044
+  ],
+  "C_j_per_k_m2": [
+   80000.0,
+   110000.0,
+   165000.0
+  ]
+ },
+ "time_constant_h": 29.7,
+ "buildings": {
+  "SFH-low": {
+   "annual_derived_heat_kwh_th": 17255.2,
+   "floor_area_m2": 220.0,
+   "effective_area_m2": 296.9,
+   "effective_over_floor": 1.35,
+   "H_w_per_k": 305.8,
+   "C_mj_per_k": 32.7
+  },
+  "SFH-mid": {
+   "annual_derived_heat_kwh_th": 20621.2,
+   "floor_area_m2": 166.0,
+   "effective_area_m2": 354.8,
+   "effective_over_floor": 2.14,
+   "H_w_per_k": 365.4,
+   "C_mj_per_k": 39.0
+  },
+  "SFH-high": {
+   "annual_derived_heat_kwh_th": 30913.4,
+   "floor_area_m2": 260.0,
+   "effective_area_m2": 531.8,
+   "effective_over_floor": 2.05,
+   "H_w_per_k": 547.8,
+   "C_mj_per_k": 58.5
+  },
+  "MFH-small": {
+   "annual_derived_heat_kwh_th": 31836.5,
+   "floor_area_m2": 400.0,
+   "effective_area_m2": 547.7,
+   "effective_over_floor": 1.37,
+   "H_w_per_k": 564.2,
+   "C_mj_per_k": 60.2
+  },
+  "MFH-medium": {
+   "annual_derived_heat_kwh_th": 62301.7,
+   "floor_area_m2": 1120.0,
+   "effective_area_m2": 1071.9,
+   "effective_over_floor": 0.96,
+   "H_w_per_k": 1104.0,
+   "C_mj_per_k": 117.9
+  },
+  "MFH-large": {
+   "annual_derived_heat_kwh_th": 48445.5,
+   "floor_area_m2": 1920.0,
+   "effective_area_m2": 833.5,
+   "effective_over_floor": 0.43,
+   "H_w_per_k": 858.5,
+   "C_mj_per_k": 91.7
+  }
+ }
+}
