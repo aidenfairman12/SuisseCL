@@ -44,14 +44,17 @@ def heat_for_target(T, target, t_amb, irradiance, area_eff, dt_s=3600.0, p=None)
     return (t_inf - t_inf0) * H / 1000.0
 
 
-def simulate_ideal(area_eff, t_amb, ghi, p=None, dt_s=3600.0, t0=None):
+def simulate_ideal(area_eff, t_amb, ghi, p=None, dt_s=3600.0, t0=None, q_max=None):
     """Heating-only ideal control at the setpoint (heat never negative, no cooling). Returns (heat kW per step, indoor temperature per step).
-    Indoor temperature rises above the setpoint when free gains exceed losses (the model has no cooling, windows or shading, Phase C)."""
+    Indoor temperature rises above the setpoint when free gains exceed losses (the model has no cooling, windows or shading, Phase C).
+    q_max (kW per step, optional) limits the heat pump output (the thermostat baseline cannot exceed the device)."""
     p = {**PRIORS, **(p or {})}
     T = p['setpoint_c'] if t0 is None else t0
     q = np.zeros(len(t_amb)); temp = np.zeros(len(t_amb))
     for k in range(len(t_amb)):
         q[k] = max(heat_for_target(T, p['setpoint_c'], t_amb[k], ghi[k], area_eff, dt_s, p), 0.0)
+        if q_max is not None:
+            q[k] = min(q[k], q_max[k])
         T = step_temperature(T, t_amb[k], ghi[k], q[k], area_eff, dt_s, p)
         temp[k] = T
     return q, temp

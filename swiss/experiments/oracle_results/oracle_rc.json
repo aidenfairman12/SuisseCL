@@ -1,0 +1,251 @@
+{
+ "gate_pct": 3.0,
+ "gate_export_rp": 8.0,
+ "bands": {
+  "band 20-24": {
+   "zero_bill": 20894.294094985187,
+   "opt_bill": 16537.8217143298,
+   "opt_import_kwh": 130185.50570469137,
+   "opt_export_kwh": 44502.9463584114,
+   "saving_chf": 4356.472380655388,
+   "saving_pct": 20.85005772796593,
+   "export_price_rp": 8.0,
+   "band": "band 20-24"
+  },
+  "band 21-24": {
+   "zero_bill": 20894.294094985187,
+   "opt_bill": 17559.300367552834,
+   "opt_import_kwh": 137051.35893083183,
+   "opt_export_kwh": 45084.66270285184,
+   "saving_chf": 3334.993727432353,
+   "saving_pct": 15.961265368772525,
+   "export_price_rp": 8.0,
+   "band": "band 21-24"
+  },
+  "no thermal flexibility": {
+   "zero_bill": 20894.294094985187,
+   "opt_bill": 17887.99549513253,
+   "opt_import_kwh": 139406.47590752708,
+   "opt_export_kwh": 47964.0114703183,
+   "saving_chf": 3006.2985998526565,
+   "saving_pct": 14.388131928200409,
+   "export_price_rp": 8.0,
+   "band": "no thermal flexibility"
+  }
+ },
+ "sweep": [
+  {
+   "zero_bill": 20895.027682213262,
+   "opt_bill": 17655.98925646802,
+   "opt_import_kwh": 137967.083154532,
+   "opt_export_kwh": 46011.1543873702,
+   "saving_chf": 3239.0384257452424,
+   "saving_pct": 15.501479466822865,
+   "export_price_rp": 8.0,
+   "band": "band 21-24",
+   "H": 1.0,
+   "C_kj": 80.0,
+   "tau_h": 22.2
+  },
+  {
+   "zero_bill": 20915.591038436058,
+   "opt_bill": 17572.30034607931,
+   "opt_import_kwh": 137181.2281612092,
+   "opt_export_kwh": 45123.69444859507,
+   "saving_chf": 3343.290692356746,
+   "saving_pct": 15.98468188736749,
+   "export_price_rp": 8.0,
+   "band": "band 21-24",
+   "H": 1.0,
+   "C_kj": 110.0,
+   "tau_h": 30.6
+  },
+  {
+   "zero_bill": 20939.70022389829,
+   "opt_bill": 17398.210572263,
+   "opt_import_kwh": 135675.35403545178,
+   "opt_export_kwh": 43728.98242844296,
+   "saving_chf": 3541.489651635289,
+   "saving_pct": 16.912800153621202,
+   "export_price_rp": 8.0,
+   "band": "band 21-24",
+   "H": 1.0,
+   "C_kj": 165.0,
+   "tau_h": 45.8
+  },
+  {
+   "zero_bill": 20874.319459343555,
+   "opt_bill": 17640.506435338524,
+   "opt_import_kwh": 137819.8728088353,
+   "opt_export_kwh": 45951.943323869324,
+   "saving_chf": 3233.8130240050305,
+   "saving_pct": 15.491824920584627,
+   "export_price_rp": 8.0,
+   "band": "band 21-24",
+   "H": 1.03,
+   "C_kj": 80.0,
+   "tau_h": 21.6
+  },
+  {
+   "zero_bill": 20894.294094985187,
+   "opt_bill": 17559.300367552834,
+   "opt_import_kwh": 137051.35893083183,
+   "opt_export_kwh": 45084.66270285184,
+   "saving_chf": 3334.993727432353,
+   "saving_pct": 15.961265368772525,
+   "export_price_rp": 8.0,
+   "band": "band 21-24",
+   "H": 1.03,
+   "C_kj": 110.0,
+   "tau_h": 29.7
+  },
+  {
+   "zero_bill": 20918.440347616066,
+   "opt_bill": 17387.324482414024,
+   "opt_import_kwh": 135556.96327739462,
+   "opt_export_kwh": 43689.46058009644,
+   "saving_chf": 3531.115865202042,
+   "saving_pct": 16.88039742219338,
+   "export_price_rp": 8.0,
+   "band": "band 21-24",
+   "H": 1.03,
+   "C_kj": 165.0,
+   "tau_h": 44.5
+  },
+  {
+   "zero_bill": 20639.697091705675,
+   "opt_bill": 17474.430744664784,
+   "opt_import_kwh": 136249.60606499139,
+   "opt_export_kwh": 45389.61656562949,
+   "saving_chf": 3165.2663470408916,
+   "saving_pct": 15.335817831904587,
+   "export_price_rp": 8.0,
+   "band": "band 21-24",
+   "H": 1.5,
+   "C_kj": 80.0,
+   "tau_h": 14.8
+  },
+  {
+   "zero_bill": 20658.036692037676,
+   "opt_bill": 17422.47402560259,
+   "opt_import_kwh": 135758.98710957827,
+   "opt_export_kwh": 44746.60084429261,
+   "saving_chf": 3235.5626664350857,
+   "saving_pct": 15.662488718892554,
+   "export_price_rp": 8.0,
+   "band": "band 21-24",
+   "H": 1.5,
+   "C_kj": 110.0,
+   "tau_h": 20.4
+  },
+  {
+   "zero_bill": 20676.1374352652,
+   "opt_bill": 17292.514728802365,
+   "opt_import_kwh": 134575.98653436176,
+   "opt_export_kwh": 43547.27510322632,
+   "saving_chf": 3383.622706462833,
+   "saving_pct": 16.364868520808578,
+   "export_price_rp": 8.0,
+   "band": "band 21-24",
+   "H": 1.5,
+   "C_kj": 165.0,
+   "tau_h": 30.6
+  },
+  {
+   "zero_bill": 20446.946272786736,
+   "opt_bill": 17316.705441962084,
+   "opt_import_kwh": 134821.70875681093,
+   "opt_export_kwh": 44885.707516026945,
+   "saving_chf": 3130.240830824652,
+   "saving_pct": 15.309087181349689,
+   "export_price_rp": 8.0,
+   "band": "band 21-24",
+   "H": 2.1,
+   "C_kj": 80.0,
+   "tau_h": 10.6
+  },
+  {
+   "zero_bill": 20473.291781878135,
+   "opt_bill": 17306.42111886182,
+   "opt_import_kwh": 134695.67468785105,
+   "opt_export_kwh": 44492.59774822105,
+   "saving_chf": 3166.870663016314,
+   "saving_pct": 15.46830229723712,
+   "export_price_rp": 8.0,
+   "band": "band 21-24",
+   "H": 2.1,
+   "C_kj": 110.0,
+   "tau_h": 14.6
+  },
+  {
+   "zero_bill": 20496.684608722026,
+   "opt_bill": 17234.245231884204,
+   "opt_import_kwh": 134011.58973920118,
+   "opt_export_kwh": 43628.87417234012,
+   "saving_chf": 3262.4393768378213,
+   "saving_pct": 15.916912608634979,
+   "export_price_rp": 8.0,
+   "band": "band 21-24",
+   "H": 2.1,
+   "C_kj": 165.0,
+   "tau_h": 21.8
+  }
+ ],
+ "replay": {
+  "band 20-24": {
+   "predicted_bill_chf": 6641.293185873915,
+   "realised_bill_chf": 6641.293237468759,
+   "zero_bill_chf": 7561.067818676182,
+   "rel_diff_saving_pct": 5.609509355948311e-06,
+   "max_temperature_difference_k": 0.007408539995374497,
+   "steps": 1500
+  },
+  "band 21-24": {
+   "predicted_bill_chf": 6951.530252773982,
+   "realised_bill_chf": 6951.53029224956,
+   "zero_bill_chf": 7561.067818676182,
+   "rel_diff_saving_pct": 6.4763158476673295e-06,
+   "max_temperature_difference_k": 0.007801993857029288,
+   "steps": 1500
+  }
+ },
+ "export": {
+  "0.0": {
+   "zero_bill": 27434.368561789983,
+   "opt_bill": 21165.796451101516,
+   "opt_import_kwh": 137049.5188465831,
+   "opt_export_kwh": 44495.70609644594,
+   "saving_chf": 6268.572110688467,
+   "saving_pct": 22.849339858396462,
+   "export_price_rp": 0.0,
+   "band": "band 21-24"
+  },
+  "4.0": {
+   "zero_bill": 24164.331328387583,
+   "opt_bill": 19362.620507984873,
+   "opt_import_kwh": 137049.5188465831,
+   "opt_export_kwh": 45079.39857791622,
+   "saving_chf": 4801.71082040271,
+   "saving_pct": 19.871068456844878,
+   "export_price_rp": 4.0,
+   "band": "band 21-24"
+  },
+  "12.0": {
+   "zero_bill": 17624.25686158279,
+   "opt_bill": 15754.341320961827,
+   "opt_import_kwh": 137205.4235940419,
+   "opt_export_kwh": 45291.03912780844,
+   "saving_chf": 1869.9155406209647,
+   "saving_pct": 10.60989723031665,
+   "export_price_rp": 12.0,
+   "band": "band 21-24"
+  }
+ },
+ "gate": {
+  "saving_pct_pure_shifting_default": 15.961265368772525,
+  "passed": true,
+  "sweep_min_pct": 15.309087181349689,
+  "sweep_max_pct": 16.912800153621202,
+  "passed_all_sweep": true
+ }
+}

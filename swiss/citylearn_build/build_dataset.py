@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, ROOT)
 CAN = os.path.join(ROOT, 'data', 'canonical')
 ROLES = ['SFH-low', 'SFH-mid', 'SFH-high', 'MFH-small', 'MFH-medium', 'MFH-large']
 UNITS = {'MFH-small': 5, 'MFH-medium': 14, 'MFH-large': 24}
@@ -33,7 +34,7 @@ def buffer_kwh(role):
     return litres * WH_PER_L_K * 10.0 / 1000.0
 
 
-def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_eff=TANK_EFF, thermal_subdir='thermal', pv_ratio=None, battery_kwh_per_kwp=None):
+def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_eff=TANK_EFF, thermal_subdir='thermal', pv_ratio=None, battery_kwh_per_kwp=None, rc=False):
     out_dir = os.path.join(ROOT, 'swiss', 'datasets', out_name)
     os.makedirs(out_dir, exist_ok=True)
     params = json.load(open(os.path.join(CAN, thermal_subdir, 'thermal_params.json')))
@@ -74,17 +75,25 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
 
     if battery_kwh_per_kwp is not None:
         assert pv_ratio is not None, 'the battery rule is defined per kWp of PV (B4): pass --pv-ratio too'
+    rc_params = None
+    if rc:   # B7: single-node RC thermal model (M-005, D-038); per-building effective area from the energy closure
+        from swiss.models.rc_building import simulate_ideal
+        rc_params = json.load(open(os.path.join(CAN, 'rc', 'rc_params_2023.json')))
+        rc_ghi = (w.beam_horizontal_wm2.fillna(0.0).clip(lower=0) + w.diffuse_wm2.fillna(0.0).clip(lower=0)).to_numpy()
     buildings, manifest = {}, {}
     for i, role in enumerate(ROLES, 1):
         d = pd.read_csv(os.path.join(CAN, thermal_subdir, f'{role}_2023_thermal_hourly.csv'), index_col='timestamp_utc', parse_dates=True)
         assert (d.index == idx).all()
         name = f'Building_{i}'
+        rc_q = rc_T = None
+        if rc:
+            rc_q, rc_T = simulate_ideal(rc_params['buildings'][role]['effective_area_m2'], w.temp_c.to_numpy(), rc_ghi)
         es = pd.DataFrame({
             'month': cal.month, 'hour': cal.hour, 'day_type': cal.day_type,
             'daylight_savings_status': cal.daylight_savings_status,
-            'indoor_dry_bulb_temperature': SETPOINT_C,
+            'indoor_dry_bulb_temperature': SETPOINT_C if rc_T is None else rc_T,
             'non_shiftable_load': d.non_shiftable_load_kwh, 'dhw_demand': d.dhw_demand_kwh,
-            'cooling_demand': 0.0, 'heating_demand': d.heating_demand_kwh, 'solar_generation': 0.0 if pv_w is None else pv_w.to_numpy(),
+            'cooling_demand': 0.0, 'heating_demand': d.heating_demand_kwh if rc_q is None else rc_q, 'solar_generation': 0.0 if pv_w is None else pv_w.to_numpy(),
             'indoor_dry_bulb_temperature_cooling_set_point': 26.0,
             'indoor_dry_bulb_temperature_heating_set_point': SETPOINT_C, 'hvac_mode': 2})
         es.to_csv(os.path.join(out_dir, f'{name}.csv'), index=False)
@@ -121,6 +130,10 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
             dhw_cap = mean_dhw_day * tank_scale
             b['dhw_storage'] = {'type': 'citylearn.energy_model.StorageTank', 'autosize': False,
                                 'attributes': {'capacity': round(dhw_cap, 4), 'efficiency': tank_eff, 'loss_coefficient': LOSS_COEFF}}
+        if rc:
+            b['type'] = 'swiss.citylearn_build.rc_dynamics.RCDynamicsBuilding'
+            b['dynamics'] = {'type': 'swiss.citylearn_build.rc_dynamics.RCDynamics',
+                             'attributes': {'area_eff': rc_params['buildings'][role]['effective_area_m2'], 'filename': 'rc_params.json'}}
         buildings[name] = b
         manifest[name] = {'role': role, 'heating_tank_kwh_th': round(sh_cap, 3), 'dhw_tank_kwh_th': round(dhw_cap, 3),
                           'hp_sh_nominal_kw': b['heating_device']['attributes']['nominal_power'],
@@ -131,15 +144,15 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
             manifest[name]['battery_kwh'] = bat_kwh
     observations = {k: {'active': k in ('day_type', 'hour', 'outdoor_dry_bulb_temperature', 'net_electricity_consumption',
                                          'electricity_pricing', 'electricity_pricing_predicted_1', 'electricity_pricing_predicted_2',
-                                         'electricity_pricing_predicted_3', 'heating_storage_soc', 'dhw_storage_soc') or (k == 'electrical_storage_soc' and battery_kwh_per_kwp is not None),
+                                         'electricity_pricing_predicted_3', 'heating_storage_soc', 'dhw_storage_soc') or (k == 'electrical_storage_soc' and battery_kwh_per_kwp is not None) or (k == 'indoor_dry_bulb_temperature' and rc),
                     'shared_in_central_agent': k in ('day_type', 'hour', 'outdoor_dry_bulb_temperature', 'electricity_pricing',
                                                       'electricity_pricing_predicted_1', 'electricity_pricing_predicted_2',
                                                       'electricity_pricing_predicted_3')}
-                    for k in ['day_type', 'hour', 'outdoor_dry_bulb_temperature', 'net_electricity_consumption', 'electricity_pricing',
+                    for k in ['day_type', 'hour', 'outdoor_dry_bulb_temperature'] + (['indoor_dry_bulb_temperature'] if rc else []) + ['net_electricity_consumption', 'electricity_pricing',
                               'electricity_pricing_predicted_1', 'electricity_pricing_predicted_2', 'electricity_pricing_predicted_3',
                               'heating_storage_soc', 'dhw_storage_soc', 'electrical_storage_soc']}
     actions = {'heating_storage': {'active': True}, 'dhw_storage': {'active': True}, 'electrical_storage': {'active': battery_kwh_per_kwp is not None},
-               'cooling_storage': {'active': False}, 'cooling_device': {'active': False}, 'heating_device': {'active': False},
+               'cooling_storage': {'active': False}, 'cooling_device': {'active': False}, 'heating_device': {'active': rc},
                'cooling_or_heating_device': {'active': False}}
     schema = {'random_seed': 0, 'central_agent': True, 'simulation_start_time_step': 0, 'simulation_end_time_step': 8759,
               'episode_time_steps': None, 'rolling_episode_split': False, 'random_episode_split': False,
@@ -148,6 +161,8 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
               'buildings': buildings, 'root_directory': '.'}   # '.' = the schema's own folder (CityLearn 3.3.0 resolves it relative to schema.json), so the dataset is portable
     json.dump(schema, open(os.path.join(out_dir, 'schema.json'), 'w'), indent=1)
     json.dump(manifest, open(os.path.join(out_dir, 'build_manifest.json'), 'w'), indent=1)
+    if rc:
+        json.dump(rc_params, open(os.path.join(out_dir, 'rc_params.json'), 'w'), indent=1)
     print(json.dumps(manifest, indent=1))
     return out_dir
 
@@ -159,7 +174,8 @@ if __name__ == '__main__':
     ap.add_argument('--carbon-file', default=None)
     ap.add_argument('--tank-eff', type=float, default=TANK_EFF)
     ap.add_argument('--thermal-subdir', default='thermal')
+    ap.add_argument('--rc', action='store_true', help='B7: single-node RC thermal model per building (scenario S3)')
     ap.add_argument('--battery-kwh-per-kwp', type=float, default=None, help='B4: add an assumed battery of this many kWh per kWp of PV (needs --pv-ratio)')
     ap.add_argument('--pv-ratio', type=float, default=None, help='B3: add assumed PV with this yield-to-demand ratio (0.5, 1.0, 1.5)')
     a = ap.parse_args()
-    main(a.tank_scale, a.out_name, a.carbon_file, a.tank_eff, a.thermal_subdir, a.pv_ratio, a.battery_kwh_per_kwp)
+    main(a.tank_scale, a.out_name, a.carbon_file, a.tank_eff, a.thermal_subdir, a.pv_ratio, a.battery_kwh_per_kwp, a.rc)
