@@ -42,3 +42,9 @@ M-003,Assumed floor area per apartment unit,floor_area_per_mfh_unit_m2,80,m2,jud
 M-003,Assumed floors (house / apartment building),floors,2 / 4,-,judgement (A-013),assumption
 M-003,Assumed export price default,export_price_default,8.0,Rp/kWh,assumption A-015 (no source),assumption
 M-003,Assumed export price sweep,export_price_sweep,"0, 4, 8, 12",Rp/kWh,assumption A-015,assumption
+M-004,Battery round-trip efficiency,round_trip_efficiency,0.90,-,assumption A-016,assumption
+M-004,Battery depth of discharge,depth_of_discharge,0.9,-,assumption A-016,assumption
+M-004,Battery power to capacity ratio,c_rate,0.5,kW/kWh,assumption A-016,assumption
+M-004,Battery size per kWp PV default,battery_kwh_per_kwp,1.0,kWh/kWp,assumption A-017,assumption
+M-004,Battery size per kWp PV sweep,battery_kwh_per_kwp_sweep,"0.5, 1, 2",kWh/kWp,assumption A-017,assumption
+M-004,Battery degradation and self-discharge,capacity_loss_coefficient / loss_coefficient,0 / 0,-,assumption A-016 (switched off),assumption

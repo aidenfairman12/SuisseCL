@@ -17,5 +17,6 @@ c[['carbon_intensity_kg_per_kwh']].rename(columns={'carbon_intensity_kg_per_kwh'
 PYEOF
 $PY -I swiss/citylearn_build/build_dataset.py --carbon-file data/canonical/carbon_intensity_citylearn_2023.csv >/dev/null   # DER-010
 $PY -I swiss/citylearn_build/build_dataset.py --carbon-file data/canonical/carbon_intensity_citylearn_2023.csv --pv-ratio 1.0 --out-name swiss_pv_2023 >/dev/null   # DER-013
+$PY -I swiss/citylearn_build/build_dataset.py --carbon-file data/canonical/carbon_intensity_citylearn_2023.csv --pv-ratio 1.0 --battery-kwh-per-kwp 1.0 --out-name swiss_pvbat_2023 >/dev/null   # DER-014
 (cd data/canonical && find . -type f ! -name MANIFEST.sha256 | sort | xargs shasum -a 256 > MANIFEST.sha256)
 echo "pipeline done"

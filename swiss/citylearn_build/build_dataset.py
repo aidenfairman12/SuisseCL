@@ -24,6 +24,7 @@ WH_PER_L_K = 1.163
 SETPOINT_C = 21.0
 LOSS_COEFF = 0.003
 TANK_EFF = 0.95
+BATTERY = {'efficiency': 0.90, 'depth_of_discharge': 0.9, 'c_rate': 0.5}   # B4 assumptions A-016: ROUND-TRIP efficiency (CityLearn applies its square root in each direction, verified), usable share, power per kWh
 DHW_MIN_KWH_DAY = 3.0
 
 
@@ -32,7 +33,7 @@ def buffer_kwh(role):
     return litres * WH_PER_L_K * 10.0 / 1000.0
 
 
-def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_eff=TANK_EFF, thermal_subdir='thermal', pv_ratio=None):
+def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_eff=TANK_EFF, thermal_subdir='thermal', pv_ratio=None, battery_kwh_per_kwp=None):
     out_dir = os.path.join(ROOT, 'swiss', 'datasets', out_name)
     os.makedirs(out_dir, exist_ok=True)
     params = json.load(open(os.path.join(CAN, thermal_subdir, 'thermal_params.json')))
@@ -71,6 +72,8 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
         assert (pv_w.index == idx).all()
         pv_caps = json.load(open(os.path.join(CAN, 'pv', 'pv_capacity_2023.json')))['buildings']
 
+    if battery_kwh_per_kwp is not None:
+        assert pv_ratio is not None, 'the battery rule is defined per kWp of PV (B4): pass --pv-ratio too'
     buildings, manifest = {}, {}
     for i, role in enumerate(ROLES, 1):
         d = pd.read_csv(os.path.join(CAN, thermal_subdir, f'{role}_2023_thermal_hourly.csv'), index_col='timestamp_utc', parse_dates=True)
@@ -103,6 +106,16 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
         if pv_w is not None:
             kwp = pv_caps[role]['ratios'][str(float(pv_ratio))]['kwp']
             b['pv'] = {'type': 'citylearn.energy_model.PV', 'autosize': False, 'attributes': {'nominal_power': kwp}}
+        bat_kwh = 0.0
+        if battery_kwh_per_kwp is not None:   # B4: assumed battery per building (M-004), constant efficiency, no degradation
+            bat_kwh = round(b['pv']['attributes']['nominal_power'] * battery_kwh_per_kwp, 4)
+            eta = BATTERY['efficiency']
+            b['electrical_storage'] = {'type': 'citylearn.energy_model.Battery', 'autosize': False,
+                                       'attributes': {'capacity': bat_kwh, 'nominal_power': round(bat_kwh * BATTERY['c_rate'], 4),
+                                                      'depth_of_discharge': BATTERY['depth_of_discharge'], 'efficiency': eta,
+                                                      'loss_coefficient': 0.0, 'capacity_loss_coefficient': 0.0,
+                                                      'power_efficiency_curve': [[0.0, eta], [1.0, eta]],
+                                                      'capacity_power_curve': [[0.0, 1.0], [1.0, 1.0]]}}
         dhw_cap = 0.0
         if mean_dhw_day >= DHW_MIN_KWH_DAY:
             dhw_cap = mean_dhw_day * tank_scale
@@ -114,16 +127,18 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
                           'hp_dhw_nominal_kw': b['dhw_device']['attributes']['nominal_power']}
         if pv_w is not None:
             manifest[name]['pv_kwp'] = b['pv']['attributes']['nominal_power']
+        if battery_kwh_per_kwp is not None:
+            manifest[name]['battery_kwh'] = bat_kwh
     observations = {k: {'active': k in ('day_type', 'hour', 'outdoor_dry_bulb_temperature', 'net_electricity_consumption',
                                          'electricity_pricing', 'electricity_pricing_predicted_1', 'electricity_pricing_predicted_2',
-                                         'electricity_pricing_predicted_3', 'heating_storage_soc', 'dhw_storage_soc'),
+                                         'electricity_pricing_predicted_3', 'heating_storage_soc', 'dhw_storage_soc') or (k == 'electrical_storage_soc' and battery_kwh_per_kwp is not None),
                     'shared_in_central_agent': k in ('day_type', 'hour', 'outdoor_dry_bulb_temperature', 'electricity_pricing',
                                                       'electricity_pricing_predicted_1', 'electricity_pricing_predicted_2',
                                                       'electricity_pricing_predicted_3')}
                     for k in ['day_type', 'hour', 'outdoor_dry_bulb_temperature', 'net_electricity_consumption', 'electricity_pricing',
                               'electricity_pricing_predicted_1', 'electricity_pricing_predicted_2', 'electricity_pricing_predicted_3',
                               'heating_storage_soc', 'dhw_storage_soc', 'electrical_storage_soc']}
-    actions = {'heating_storage': {'active': True}, 'dhw_storage': {'active': True}, 'electrical_storage': {'active': False},
+    actions = {'heating_storage': {'active': True}, 'dhw_storage': {'active': True}, 'electrical_storage': {'active': battery_kwh_per_kwp is not None},
                'cooling_storage': {'active': False}, 'cooling_device': {'active': False}, 'heating_device': {'active': False},
                'cooling_or_heating_device': {'active': False}}
     schema = {'random_seed': 0, 'central_agent': True, 'simulation_start_time_step': 0, 'simulation_end_time_step': 8759,
@@ -144,6 +159,7 @@ if __name__ == '__main__':
     ap.add_argument('--carbon-file', default=None)
     ap.add_argument('--tank-eff', type=float, default=TANK_EFF)
     ap.add_argument('--thermal-subdir', default='thermal')
+    ap.add_argument('--battery-kwh-per-kwp', type=float, default=None, help='B4: add an assumed battery of this many kWh per kWp of PV (needs --pv-ratio)')
     ap.add_argument('--pv-ratio', type=float, default=None, help='B3: add assumed PV with this yield-to-demand ratio (0.5, 1.0, 1.5)')
     a = ap.parse_args()
-    main(a.tank_scale, a.out_name, a.carbon_file, a.tank_eff, a.thermal_subdir, a.pv_ratio)
+    main(a.tank_scale, a.out_name, a.carbon_file, a.tank_eff, a.thermal_subdir, a.pv_ratio, a.battery_kwh_per_kwp)
