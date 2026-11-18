@@ -309,3 +309,11 @@ No account created, no API key used, nothing downloaded for this step.
 - `phase_a_completion_report.md` refreshed in place (status, section 1.3, criterion 10, controller results with the mechanism decomposition, register status, working defaults accepted, repository changes, test count, section 11c); original assessments kept.
 - Phase A awaits the owner's approval at the phase gate (plan 9.6); Phases B and C remain unauthorized.
 
+### EL-0049 — 2026-11-18 — RL on the Swiss environment: protocol, episode-end fixes and the exact cost optimum (user: "yes lets start the RL ... do the episode-end fixes and exact optimum")
+- Cluster check (read-only SSH, VPN on): UBELIX clone `~/SuisseCL` was at `35c59a9` (before the Swiss work) with four finished US-project result files not yet on the laptop; they were copied down. Cluster environment matches the pins (torch 2.2.2+cpu, numpy 1.26.4, pandas 2.3.3, citylearn 3.3.0). Nothing was submitted.
+- Feasibility on the laptop: SAC (central and per building) and MARLISA run on the Swiss environment unchanged; steady state about 30 ms/step (central SAC), about 150 ms/step (per-building SAC, MARLISA); the first episode is exploration only and misleadingly fast.
+- Found and fixed two artefacts of short episodes: empty-tank starts (rules looked 1.5 % worse than over the year; now evaluated from a 96-step warm-up) and SAC treating a window end as terminal (now bootstrapped). Stored heat at a window end is reported as a corrected-cost range.
+- `swiss/experiments/oracle.py`: exact perfect-foresight cost optimum per tank (linear program). A first version missed the heat pump output shared between direct supply and charging; the replay check in CityLearn caught it (281 vs 306 CHF) and after the fix the program and the environment agree exactly (299.08 CHF). Ceiling 0.84 % of the bill at the assumed tank sizes, 0.57 % to 2.17 % for 0.5 to 8 times the size.
+- Two 40,000-step local pilots of central SAC (R-001 and cost-dominant) did not beat no control (cost +0.4 % to +0.56 % on the test weeks, highest hour -2 % to -3 %); single seed, about a quarter of the planned budget.
+- Records: D-030, ISS-034, ISS-032 update, ALG-005 to ALG-007, protocol and reward-preset documentation, `validation_reports/oracle_cost_bound.md`. Reward choice (D-023) still pending.
+

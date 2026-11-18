@@ -1,0 +1,118 @@
+{
+ "zero_action_cost_chf": 35750.324239179085,
+ "zero_action_cost_test_weeks_chf": 5375.621207479193,
+ "tanks": 11,
+ "scales": {
+  "0.5": {
+   "tank_capacity_scale": 0.5,
+   "total_capacity_kwh_th": 89.22805,
+   "optimal_cost_chf": 35545.306953422856,
+   "saving_chf": 205.01728575622164,
+   "saving_pct": 0.5734697240355137,
+   "saving_test_weeks_chf": 29.489073099348666,
+   "saving_test_weeks_pct": 0.5485705179211664,
+   "import_change_kwh": -107.71464948379435,
+   "seconds": 3.6
+  },
+  "1.0": {
+   "tank_capacity_scale": 1.0,
+   "total_capacity_kwh_th": 178.4561,
+   "optimal_cost_chf": 35451.24295703409,
+   "saving_chf": 299.081282144992,
+   "saving_pct": 0.83658341150715,
+   "saving_test_weeks_chf": 39.789341445555756,
+   "saving_test_weeks_pct": 0.7401812722629372,
+   "import_change_kwh": -234.2377440200362,
+   "seconds": 4.0
+  },
+  "2.0": {
+   "tank_capacity_scale": 2.0,
+   "total_capacity_kwh_th": 356.9122,
+   "optimal_cost_chf": 35339.37320520364,
+   "saving_chf": 410.95103397543346,
+   "saving_pct": 1.1495029561859713,
+   "saving_test_weeks_chf": 47.817961318740785,
+   "saving_test_weeks_pct": 0.8895336831436493,
+   "import_change_kwh": -482.5695321979583,
+   "seconds": 4.9
+  },
+  "4.0": {
+   "tank_capacity_scale": 4.0,
+   "total_capacity_kwh_th": 713.8244,
+   "optimal_cost_chf": 35177.59518349091,
+   "saving_chf": 572.7290556881678,
+   "saving_pct": 1.6020247868423783,
+   "saving_test_weeks_chf": 69.18590779015054,
+   "saving_test_weeks_pct": 1.2870309331671475,
+   "import_change_kwh": -721.4141343694646,
+   "seconds": 5.6
+  },
+  "8.0": {
+   "tank_capacity_scale": 8.0,
+   "total_capacity_kwh_th": 1427.6488,
+   "optimal_cost_chf": 34974.567297993504,
+   "saving_chf": 775.756941185582,
+   "saving_pct": 2.169929805379005,
+   "saving_test_weeks_chf": 95.12486339374257,
+   "saving_test_weeks_pct": 1.769560386088844,
+   "import_change_kwh": -716.069818218064,
+   "seconds": 6.2
+  }
+ },
+ "what_if": [
+  {
+   "case": "as assumed (tank x1, 95 % efficiency, 0.3 %/h standby, 4 Rp/kWh spread)",
+   "saving_chf": 299.081282144992,
+   "saving_pct": 0.83658341150715,
+   "bill_chf": 35750.324239179085
+  },
+  {
+   "case": "ideal tank (no round-trip or standby loss)",
+   "saving_chf": 529.3616218914185,
+   "saving_pct": 1.4807183799225143,
+   "bill_chf": 35750.324239179085
+  },
+  {
+   "case": "tank x4",
+   "saving_chf": 572.7290556881678,
+   "saving_pct": 1.6020247868423783,
+   "bill_chf": 35750.324239179085
+  },
+  {
+   "case": "tank x4, ideal tank",
+   "saving_chf": 1075.560769685273,
+   "saving_pct": 3.008534307240092,
+   "bill_chf": 35750.324239179085
+  },
+  {
+   "case": "price spread x2 (8 Rp/kWh)",
+   "saving_chf": 600.9083396303754,
+   "saving_pct": 1.675156388302513,
+   "bill_chf": 35871.77554444897
+  },
+  {
+   "case": "price spread x5 (20 Rp/kWh)",
+   "saving_chf": 1585.711071999629,
+   "saving_pct": 4.376049803384026,
+   "bill_chf": 36236.12946025863
+  },
+  {
+   "case": "price spread x5, tank x4",
+   "saving_chf": 2799.9025738710516,
+   "saving_pct": 7.726825727736176,
+   "bill_chf": 36236.12946025863
+  },
+  {
+   "case": "price spread x5, tank x4, ideal tank",
+   "saving_chf": 3186.3331034267358,
+   "saving_pct": 8.793249033181906,
+   "bill_chf": 36236.12946025863
+  }
+ ],
+ "replay_check": {
+  "predicted_saving_chf": 299.081282144992,
+  "realised_cost_chf": 35451.24300450193,
+  "realised_saving_chf": 299.0812346771563,
+  "abs_difference_chf": 4.746783565678925e-05
+ }
+}

@@ -91,6 +91,8 @@ That work is a *method sanity check*, not a Swiss result. Swiss data research is
   `cl/bin/python my_data/aggregate.py`.
 
 ## 7. Open decisions and recommended next steps
+> **2026-11-18:** the items below are Phase A history. The current plan is `docs/phases/phase_b_plan.md` (D-031, D-032); read it first. No cluster jobs until Phase B is finished.
+
 1. **Fix the comfort term / reward before any weight sweep.** Make `reward_diagnostics.py` pass: comfort(cooling-to-setpoint)
    must be clearly lower than comfort(cooling off). Then pick the scale from a sensible reference (not a heavy-tailed one) or use a
    bounded penalty, and treat comfort as a near-constraint. This must be redone for heating anyway (Swiss).

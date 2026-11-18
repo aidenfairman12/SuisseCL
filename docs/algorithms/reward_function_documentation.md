@@ -12,3 +12,11 @@ reward_t = − Σ_k w_k · term_k(t) / scale_k, central agent, penalty-only.
 
 Why no comfort term: the earlier US-cooling track found the comfort term mis-scaled (HANDOFF section 4.3); for Phase A it is removed because the dataset has no indoor-temperature dynamics (constant 21 °C placeholder) and heating/DHW demand is always served, so comfort cannot be measured. Cost and peak/ramp are relative to the uncontrolled reference, so a score of −(w sum) corresponds to the zero-action controller.
 Known weaknesses: equal weights are arbitrary; peak² surrogate emphasises winter evening peaks; without a comfort term, a learning agent could trade comfort silently if later given thermal dynamics (revisit in Phase B with an RC model).
+
+## Presets used by the RL runs (`swiss/experiments/rl.py`, D-030)
+| Preset | cost | peak | ramp | carbon | Purpose |
+|---|---|---|---|---|---|
+| `r001` | 1 | 1 | 1 | 0 | R-001 as documented above; comparable with all baselines |
+| `cost` | 1 | 0.1 | 0.1 | 0 | cost-dominant: tests whether a learner finds bill savings; the small peak and ramp weights discourage spikes |
+Which preset is the primary one is the owner's confirmation under D-023 (pending). Both are scored on all metrics (cost raw and corrected, import, highest hour, mean daily peak, high-tariff share, relative carbon, reward). The exact cost optimum bounds the bill saving of any controller at 0.84 % at the assumed tank sizes, so the cost term alone gives a very weak learning signal; peak and ramp have more relative headroom (the night-charging rule improves the highest hour by 6 % and the ramp term by 2 %).
+
