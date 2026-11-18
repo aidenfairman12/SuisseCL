@@ -1,6 +1,6 @@
 # Phase A completion report — Swiss heating baseline (for the phase approval gate)
 
-Date: 2026-11-17, refreshed 2026-11-18 · Plan: `master_plan.md` v1.0 · Log: `execution_log.md` (EL-0001…) · Status: **Phase A implemented; every pending item is closed; awaiting your approval at the phase gate (plan 9.6). Phases B and C not started.**
+Date: 2026-11-17, refreshed 2026-11-18 · Plan: `master_plan.md` v1.0 · Log: `execution_log.md` (EL-0001…) · Status: **Phase A implemented and APPROVED by the owner on 2026-11-18 (D-031). Phase B authorised under `phase_b_plan.md`; Phase C not started.**
 Code/data state: Phase A commits `615e8b4`…`2fe420b` plus the final documentation commit (see section 9), and later work on `main` through PR #8 (dashboard, data contract v1, mechanism check, decisions D-020…D-029).
 
 **Refresh 2026-11-18 (what changed since the first version):** (1) both pending items of 1.3 are closed: the EPFL check is done and the working defaults were accepted (D-026); (2) the issue register was brought up to date: 33 issues = 13 open limitations, 19 closed with evidence, 1 noted (section 7), and the decision statuses that later decisions settled were corrected (D-005, D-013a, D-014, D-014c, D-017); (3) reproduction was checked from a fresh clone of `main` (section 10); (4) the controller results gained an exact mechanism decomposition (section 6); (5) section 11c lists what changed for Phases B and C. The original assessments are unchanged unless a line says otherwise.

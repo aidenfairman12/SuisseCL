@@ -128,6 +128,9 @@ def run(scales):
                                      'import_change_kwh': float(imp.sum() - imp0.sum()), 'seconds': round(time.time() - t0, 1)}
         print(f'tank capacity x{sc:<4}: optimum saves {saving:7.1f} CHF/yr = {100 * saving / cost0:5.2f} % of {cost0:,.0f} CHF '
               f'(test weeks {result["scales"][str(sc)]["saving_test_weeks_pct"]:.2f} %)   [{time.time() - t0:.0f}s]', flush=True)
+    result['what_if'] = what_if(tanks, imp0)
+    for w in result['what_if']:
+        print(f'  what-if: {w["case"]:70s} {w["saving_chf"]:7.0f} CHF = {w["saving_pct"]:5.2f} %', flush=True)
     return result, tanks, env0
 
 
@@ -146,6 +149,33 @@ def validate_by_replay(tanks, n_buildings, price):
 
 
 REPORT = os.path.join(ROOT, 'docs', 'experiments', 'validation_reports', 'oracle_cost_bound.md')
+# One-assumption-at-a-time what-ifs: where would headroom come from? (spread = the standard tariff stretched around its mean, a STYLISED stand-in
+# for a more dynamic price, not a real tariff; ideal = no round-trip or standby loss)
+WHAT_IF = [('as assumed (tank x1, 95 % efficiency, 0.3 %/h standby, 4 Rp/kWh spread)', {}),
+           ('ideal tank (no round-trip or standby loss)', {'ideal': True}),
+           ('tank x4', {'scale': 4.0}),
+           ('tank x4, ideal tank', {'scale': 4.0, 'ideal': True}),
+           ('price spread x2 (8 Rp/kWh)', {'spread': 2.0}),
+           ('price spread x5 (20 Rp/kWh)', {'spread': 5.0}),
+           ('price spread x5, tank x4', {'spread': 5.0, 'scale': 4.0}),
+           ('price spread x5, tank x4, ideal tank', {'spread': 5.0, 'scale': 4.0, 'ideal': True})]
+
+
+def what_if(tanks, imp0, cases=None):
+    """Exact optimum (CHF per year and share of that scenario's bill) for each what-if case."""
+    base_price = rl.PRICE[:N]
+    out = []
+    for name, kw in (WHAT_IF if cases is None else cases):
+        price = base_price.mean() + kw.get('spread', 1.0) * (base_price - base_price.mean())
+        saving = 0.0
+        for t in tanks:
+            tt = dict(t)
+            if kw.get('ideal'):
+                tt['rho'], tt['loss'] = 1.0, 0.0
+            saving += -solve_tank(tt, price, kw.get('scale', 1.0))[3]
+        cost0 = float((imp0 * price).sum())
+        out.append({'case': name, 'saving_chf': saving, 'saving_pct': 100.0 * saving / cost0, 'bill_chf': cost0})
+    return out
 
 
 def write_report(result, path=REPORT):
@@ -161,6 +191,12 @@ def write_report(result, path=REPORT):
              '| Tank size (x assumed, D-017a) | Total capacity (kWh_th) | Best saving per year | Share of the bill | Share on the 8 test weeks |', '|---|---|---|---|---|']
     for k, v in sc.items():
         lines.append(f'| x{v["tank_capacity_scale"]:g} | {v["total_capacity_kwh_th"]:.0f} | {v["saving_chf"]:.0f} CHF | {v["saving_pct"]:.2f} % | {v["saving_test_weeks_pct"]:.2f} % |')
+    lines += ['', '## What would create headroom? (one assumption changed at a time)', '',
+              '| Case | Best saving per year | Share of that case\'s bill |', '|---|---|---|']
+    for w in result.get('what_if', []):
+        lines.append(f'| {w["case"]} | {w["saving_chf"]:.0f} CHF | {w["saving_pct"]:.2f} % |')
+    lines += ['', 'Savings grow roughly with storage size times price spread. A price spread is the standard tariff stretched around its mean: a stylised stand-in for a more '
+              'dynamic price, not a real tariff. Real data for wider spreads (day-ahead prices) carry licence restrictions and are not used.']
     lines += ['', '## How to read it',
               '- At the assumed tank sizes (x1) no controller can save more than this share of the electricity bill in this simulator. The bound is exact, so a score clearly above it would point to an evaluation artefact, not to a better controller (the test-week share differs slightly because evaluation windows start from a warm-up instead of the continuous year).',
               '- Savings grow much more slowly than tank size (diminishing returns): the tariff spread is only 4 Rp/kWh, the round trip loses about 5 % and the COP is lower at night.',

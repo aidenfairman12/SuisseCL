@@ -14,6 +14,21 @@ Reference: no control costs 35 750 CHF a year (EKZ standard tariff 2023, excl. V
 | x4 | 714 | 573 CHF | 1.60 % | 1.29 % |
 | x8 | 1428 | 776 CHF | 2.17 % | 1.77 % |
 
+## What would create headroom? (one assumption changed at a time)
+
+| Case | Best saving per year | Share of that case's bill |
+|---|---|---|
+| as assumed (tank x1, 95 % efficiency, 0.3 %/h standby, 4 Rp/kWh spread) | 299 CHF | 0.84 % |
+| ideal tank (no round-trip or standby loss) | 529 CHF | 1.48 % |
+| tank x4 | 573 CHF | 1.60 % |
+| tank x4, ideal tank | 1076 CHF | 3.01 % |
+| price spread x2 (8 Rp/kWh) | 601 CHF | 1.68 % |
+| price spread x5 (20 Rp/kWh) | 1586 CHF | 4.38 % |
+| price spread x5, tank x4 | 2800 CHF | 7.73 % |
+| price spread x5, tank x4, ideal tank | 3186 CHF | 8.79 % |
+
+Savings grow roughly with storage size times price spread. A price spread is the standard tariff stretched around its mean: a stylised stand-in for a more dynamic price, not a real tariff. Real data for wider spreads (day-ahead prices) carry licence restrictions and are not used.
+
 ## How to read it
 - At the assumed tank sizes (x1) no controller can save more than this share of the electricity bill in this simulator. The bound is exact, so a score clearly above it would point to an evaluation artefact, not to a better controller (the test-week share differs slightly because evaluation windows start from a warm-up instead of the continuous year).
 - Savings grow much more slowly than tank size (diminishing returns): the tariff spread is only 4 Rp/kWh, the round trip loses about 5 % and the COP is lower at night.

@@ -669,7 +669,9 @@ The report must distinguish completed, partially completed, blocked, and deferre
 
 ## 7. Phase B implementation specification
 
-**Phase B is not authorized until Phase A has been reviewed and approved.**
+> **Superseded 2026-11-18 (D-031, D-032).** Phase A is approved and Phase B is authorised under `docs/phases/phase_b_plan.md`, which is the single source of truth for task order, decisions and scope. The text below is kept as history; the task definitions B1 to B9 and the acceptance criteria in 7.3 still apply, but where this section and `phase_b_plan.md` differ, `phase_b_plan.md` wins.
+
+~~**Phase B is not authorized until Phase A has been reviewed and approved.**~~
 
 ### 7.1 Objective
 
