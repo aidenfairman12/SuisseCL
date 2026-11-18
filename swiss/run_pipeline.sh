@@ -7,6 +7,7 @@ $PY -I swiss/pipeline/select_buildings.py                # TR-003      -> data/i
 $PY -I swiss/pipeline/build_buildings_hourly.py          # TR-004/006  -> data/canonical/{quarter_hourly,hourly}
 $PY -I swiss/pipeline/build_weather.py                   # TR-005
 $PY -I swiss/pipeline/build_tariff.py                    # TR-007
+$PY -I swiss/pipeline/build_tariff_scenarios.py >/dev/null      # TR-014 -> DER-017
 $PY -I swiss/pipeline/build_thermal_demand.py            # TR-008      -> data/canonical/thermal
 $PY -I swiss/pipeline/build_pv.py                       # TR-012      -> data/canonical/pv
 $PY -I swiss/pipeline/build_carbon.py 2023               # TR-010      -> data/canonical/carbon_ch_2023_hourly.csv
