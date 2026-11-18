@@ -40,3 +40,5 @@ M-003,Assumed PV usable roof share,usable_roof_share,0.5,-,judgement (A-013),ass
 M-003,Assumed PV module density,module_kwp_per_m2,0.20,kWp/m2,judgement (A-013),assumption
 M-003,Assumed floor area per apartment unit,floor_area_per_mfh_unit_m2,80,m2,judgement (A-014),assumption
 M-003,Assumed floors (house / apartment building),floors,2 / 4,-,judgement (A-013),assumption
+M-003,Assumed export price default,export_price_default,8.0,Rp/kWh,assumption A-015 (no source),assumption
+M-003,Assumed export price sweep,export_price_sweep,"0, 4, 8, 12",Rp/kWh,assumption A-015,assumption
