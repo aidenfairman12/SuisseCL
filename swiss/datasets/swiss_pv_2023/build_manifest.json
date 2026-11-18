@@ -1,0 +1,50 @@
+{
+ "Building_1": {
+  "role": "SFH-low",
+  "heating_tank_kwh_th": 3.489,
+  "dhw_tank_kwh_th": 0.0,
+  "hp_sh_nominal_kw": 5.3344,
+  "hp_dhw_nominal_kw": 0.0398,
+  "pv_kwp": 9.35
+ },
+ "Building_2": {
+  "role": "SFH-mid",
+  "heating_tank_kwh_th": 3.489,
+  "dhw_tank_kwh_th": 3.687,
+  "hp_sh_nominal_kw": 4.745,
+  "hp_dhw_nominal_kw": 0.3522,
+  "pv_kwp": 8.3
+ },
+ "Building_3": {
+  "role": "SFH-high",
+  "heating_tank_kwh_th": 3.489,
+  "dhw_tank_kwh_th": 24.304,
+  "hp_sh_nominal_kw": 7.8214,
+  "hp_dhw_nominal_kw": 5.1337,
+  "pv_kwp": 12.413
+ },
+ "Building_4": {
+  "role": "MFH-small",
+  "heating_tank_kwh_th": 2.908,
+  "dhw_tank_kwh_th": 20.769,
+  "hp_sh_nominal_kw": 7.0159,
+  "hp_dhw_nominal_kw": 0.8476,
+  "pv_kwp": 10.0
+ },
+ "Building_5": {
+  "role": "MFH-medium",
+  "heating_tank_kwh_th": 8.141,
+  "dhw_tank_kwh_th": 47.72,
+  "hp_sh_nominal_kw": 20.9591,
+  "hp_dhw_nominal_kw": 8.6594,
+  "pv_kwp": 28.0
+ },
+ "Building_6": {
+  "role": "MFH-large",
+  "heating_tank_kwh_th": 13.956,
+  "dhw_tank_kwh_th": 46.504,
+  "hp_sh_nominal_kw": 18.5323,
+  "hp_dhw_nominal_kw": 5.3331,
+  "pv_kwp": 48.0
+ }
+}

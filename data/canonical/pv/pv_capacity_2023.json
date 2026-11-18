@@ -1,0 +1,184 @@
+{
+ "annual_specific_yield_kwh_per_kwp": 1148.9,
+ "plausible_range": [
+  900.0,
+  1250.0
+ ],
+ "in_plausible_range": true,
+ "ghi_kwh_per_m2": 1280.5,
+ "model_params": {
+  "latitude_deg": 47.4793,
+  "longitude_deg": 8.5371,
+  "altitude_m": 426.0,
+  "tilt_deg": 30.0,
+  "azimuth_deg": 180.0,
+  "albedo": 0.2,
+  "perez_model": "allsitescomposite1990",
+  "sapm_open_rack_glass_glass": true,
+  "wind_speed_ms": 2.0,
+  "gamma_pdc_per_k": -0.004,
+  "losses_percent": "pvwatts_default",
+  "inverter_eta_nom": 0.96,
+  "dc_ac_ratio": 1.2
+ },
+ "sizing_params": {
+  "floors_sfh": 2,
+  "floors_mfh": 4,
+  "floor_area_per_mfh_unit_m2": 80.0,
+  "usable_roof_share": 0.5,
+  "module_kwp_per_m2": 0.2
+ },
+ "classification": "modeled + assumed-parameter badge",
+ "buildings": {
+  "SFH-low": {
+   "annual_import_no_control_kwh": 10742.1,
+   "floor_area_m2": 220.0,
+   "rooftop_cap_kwp": 11.0,
+   "ratios": {
+    "0.5": {
+     "kwp": 4.675,
+     "cap_binding": false,
+     "annual_pv_kwh": 5371.0,
+     "yield_to_demand_actual": 0.5
+    },
+    "1.0": {
+     "kwp": 9.35,
+     "cap_binding": false,
+     "annual_pv_kwh": 10742.1,
+     "yield_to_demand_actual": 1.0
+    },
+    "1.5": {
+     "kwp": 11.0,
+     "cap_binding": true,
+     "annual_pv_kwh": 12638.3,
+     "yield_to_demand_actual": 1.177
+    }
+   }
+  },
+  "SFH-mid": {
+   "annual_import_no_control_kwh": 11317.1,
+   "floor_area_m2": 166.0,
+   "rooftop_cap_kwp": 8.3,
+   "ratios": {
+    "0.5": {
+     "kwp": 4.925,
+     "cap_binding": false,
+     "annual_pv_kwh": 5658.6,
+     "yield_to_demand_actual": 0.5
+    },
+    "1.0": {
+     "kwp": 8.3,
+     "cap_binding": true,
+     "annual_pv_kwh": 9536.2,
+     "yield_to_demand_actual": 0.843
+    },
+    "1.5": {
+     "kwp": 8.3,
+     "cap_binding": true,
+     "annual_pv_kwh": 9536.2,
+     "yield_to_demand_actual": 0.843
+    }
+   }
+  },
+  "SFH-high": {
+   "annual_import_no_control_kwh": 14261.3,
+   "floor_area_m2": 260.0,
+   "rooftop_cap_kwp": 13.0,
+   "ratios": {
+    "0.5": {
+     "kwp": 6.206,
+     "cap_binding": false,
+     "annual_pv_kwh": 7130.7,
+     "yield_to_demand_actual": 0.5
+    },
+    "1.0": {
+     "kwp": 12.413,
+     "cap_binding": false,
+     "annual_pv_kwh": 14261.3,
+     "yield_to_demand_actual": 1.0
+    },
+    "1.5": {
+     "kwp": 13.0,
+     "cap_binding": true,
+     "annual_pv_kwh": 14936.1,
+     "yield_to_demand_actual": 1.047
+    }
+   }
+  },
+  "MFH-small": {
+   "annual_import_no_control_kwh": 25127.5,
+   "floor_area_m2": 400.0,
+   "rooftop_cap_kwp": 10.0,
+   "ratios": {
+    "0.5": {
+     "kwp": 10.0,
+     "cap_binding": true,
+     "annual_pv_kwh": 11489.3,
+     "yield_to_demand_actual": 0.457
+    },
+    "1.0": {
+     "kwp": 10.0,
+     "cap_binding": true,
+     "annual_pv_kwh": 11489.3,
+     "yield_to_demand_actual": 0.457
+    },
+    "1.5": {
+     "kwp": 10.0,
+     "cap_binding": true,
+     "annual_pv_kwh": 11489.3,
+     "yield_to_demand_actual": 0.457
+    }
+   }
+  },
+  "MFH-medium": {
+   "annual_import_no_control_kwh": 82743.4,
+   "floor_area_m2": 1120.0,
+   "rooftop_cap_kwp": 28.0,
+   "ratios": {
+    "0.5": {
+     "kwp": 28.0,
+     "cap_binding": true,
+     "annual_pv_kwh": 32170.2,
+     "yield_to_demand_actual": 0.389
+    },
+    "1.0": {
+     "kwp": 28.0,
+     "cap_binding": true,
+     "annual_pv_kwh": 32170.2,
+     "yield_to_demand_actual": 0.389
+    },
+    "1.5": {
+     "kwp": 28.0,
+     "cap_binding": true,
+     "annual_pv_kwh": 32170.2,
+     "yield_to_demand_actual": 0.389
+    }
+   }
+  },
+  "MFH-large": {
+   "annual_import_no_control_kwh": 70547.4,
+   "floor_area_m2": 1920.0,
+   "rooftop_cap_kwp": 48.0,
+   "ratios": {
+    "0.5": {
+     "kwp": 30.701,
+     "cap_binding": false,
+     "annual_pv_kwh": 35273.7,
+     "yield_to_demand_actual": 0.5
+    },
+    "1.0": {
+     "kwp": 48.0,
+     "cap_binding": true,
+     "annual_pv_kwh": 55148.9,
+     "yield_to_demand_actual": 0.782
+    },
+    "1.5": {
+     "kwp": 48.0,
+     "cap_binding": true,
+     "annual_pv_kwh": 55148.9,
+     "yield_to_demand_actual": 0.782
+    }
+   }
+  }
+ }
+}

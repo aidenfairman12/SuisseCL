@@ -30,3 +30,13 @@ M-002,EF Solar PV rooftop (CH),ef_g_per_kwh,41,gCO2eq/kWh,same, judgement A-009,
 M-002,EF Solar PV utility (neighbours),ef_g_per_kwh,48,gCO2eq/kWh,same, judgement A-009,literature
 M-002,EF Lignite / coal-derived gas / oil (proxy),ef_g_per_kwh,820,gCO2eq/kWh,PROXY coal PC A-006/A-007,literature
 M-002,EF Waste / Others (proxy),ef_g_per_kwh,230,gCO2eq/kWh,PROXY biomass A-008,literature
+M-003,Assumed PV south tilt,tilt_deg,30,deg,plan phase_b_plan.md 4.3 (assumption),assumption
+M-003,Assumed PV ground albedo,albedo,0.20,-,typical value (A-011),assumption
+M-003,Assumed PV wind speed for cell temperature,wind_speed_ms,2.0,m/s,PVWatts convention; no wind data in weather file (A-012),assumption
+M-003,Assumed PV temperature coefficient,temp_coeff_per_k,-0.004,1/K,typical crystalline silicon (A-012),assumption
+M-003,PV loss items,pvwatts_losses_percent,14.08,%,pvlib pvwatts_losses defaults (A-012),literature default
+M-003,PV inverter nominal efficiency and DC/AC ratio,inverter_eta_nom / dc_ac_ratio,0.96 / 1.2,-,PVWatts defaults (A-012),literature default
+M-003,Assumed PV usable roof share,usable_roof_share,0.5,-,judgement (A-013),assumption
+M-003,Assumed PV module density,module_kwp_per_m2,0.20,kWp/m2,judgement (A-013),assumption
+M-003,Assumed floor area per apartment unit,floor_area_per_mfh_unit_m2,80,m2,judgement (A-014),assumption
+M-003,Assumed floors (house / apartment building),floors,2 / 4,-,judgement (A-013),assumption

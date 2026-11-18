@@ -1,4 +1,4 @@
-# Locked environment used for all Phase A results (macOS x86_64, Python 3.11.5), captured 2026-11-17 with: cl/bin/pip freeze (openpyxl added for the EPFL comparison)
+# Locked environment used for all Phase A results (macOS x86_64, Python 3.11.5), captured 2026-11-17 with: cl/bin/pip freeze (openpyxl added for the EPFL comparison); pvlib 0.16.1 and its dependency h5py added 2026-11-18 for B3 (numpy, pandas, scipy, torch unchanged)
 certifi==2026.10.23
 charset-normalizer==3.5.2
 citylearn==3.3.0
@@ -8,6 +8,7 @@ Farama-Notifications==0.0.6
 filelock==4.2.10
 fsspec==2026.9.0
 gymnasium==1.4.0
+h5py==3.16.0
 idna==3.20
 iniconfig==2.3.1
 Jinja2==3.1.6
@@ -22,6 +23,7 @@ packaging==26.3
 pandas==2.3.3
 platformdirs==4.14.5
 pluggy==1.7.0
+pvlib==0.16.1
 Pygments==2.21.0
 pytest==9.2.0
 python-dateutil==4.0.0

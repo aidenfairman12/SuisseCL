@@ -38,11 +38,11 @@ def meta():
 # ---------------------------------------------------------------- parsers
 
 @pytest.mark.parametrize('path,id_col,n', [
-    ('docs/data/transformation_log.md', 'ID', 11),
+    ('docs/data/transformation_log.md', 'ID', 12),
     ('docs/decisions/issues_and_risks.md', 'ID', 73),      # 73 rows incl. update rows
-    ('docs/decisions/decision_log.md', 'ID', 40),
-    ('docs/decisions/assumptions_log.md', 'ID', 10),
-    ('docs/models/model_registry.md', 'ID', 2),
+    ('docs/decisions/decision_log.md', 'ID', 41),
+    ('docs/decisions/assumptions_log.md', 'ID', 14),
+    ('docs/models/model_registry.md', 'ID', 3),
     ('docs/algorithms/algorithm_registry.md', 'ID', 7),
     ('docs/experiments/validation_reports/validation_phase_a.md', 'ID', 9),
 ])
@@ -64,8 +64,8 @@ def test_md_parser_pipe_in_code_span_and_short_row():
 
 
 @pytest.mark.parametrize('path,n', [
-    ('docs/data/data_source_registry.csv', 22),
-    ('docs/models/parameter_registry.csv', 31),
+    ('docs/data/data_source_registry.csv', 24),
+    ('docs/models/parameter_registry.csv', 41),
     ('docs/experiments/experiment_registry.csv', 12),
 ])
 def test_csv_row_counts_and_alignment(path, n):

@@ -32,7 +32,7 @@ def buffer_kwh(role):
     return litres * WH_PER_L_K * 10.0 / 1000.0
 
 
-def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_eff=TANK_EFF, thermal_subdir='thermal'):
+def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_eff=TANK_EFF, thermal_subdir='thermal', pv_ratio=None):
     out_dir = os.path.join(ROOT, 'swiss', 'datasets', out_name)
     os.makedirs(out_dir, exist_ok=True)
     params = json.load(open(os.path.join(CAN, thermal_subdir, 'thermal_params.json')))
@@ -65,6 +65,12 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
         pd.read_csv(carbon_file).to_csv(os.path.join(out_dir, 'carbon_intensity.csv'), index=False)
         carbon_ref = 'carbon_intensity.csv'
 
+    pv_w = pv_caps = None
+    if pv_ratio is not None:   # B3: assumed-PV scenario (M-003); default build is unchanged
+        pv_w = pd.read_csv(os.path.join(CAN, 'pv', 'pv_ac_w_per_kwp_2023_hourly.csv'), index_col='timestamp_utc', parse_dates=True).pv_ac_w_per_kwp
+        assert (pv_w.index == idx).all()
+        pv_caps = json.load(open(os.path.join(CAN, 'pv', 'pv_capacity_2023.json')))['buildings']
+
     buildings, manifest = {}, {}
     for i, role in enumerate(ROLES, 1):
         d = pd.read_csv(os.path.join(CAN, thermal_subdir, f'{role}_2023_thermal_hourly.csv'), index_col='timestamp_utc', parse_dates=True)
@@ -75,7 +81,7 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
             'daylight_savings_status': cal.daylight_savings_status,
             'indoor_dry_bulb_temperature': SETPOINT_C,
             'non_shiftable_load': d.non_shiftable_load_kwh, 'dhw_demand': d.dhw_demand_kwh,
-            'cooling_demand': 0.0, 'heating_demand': d.heating_demand_kwh, 'solar_generation': 0.0,
+            'cooling_demand': 0.0, 'heating_demand': d.heating_demand_kwh, 'solar_generation': 0.0 if pv_w is None else pv_w.to_numpy(),
             'indoor_dry_bulb_temperature_cooling_set_point': 26.0,
             'indoor_dry_bulb_temperature_heating_set_point': SETPOINT_C, 'hvac_mode': 2})
         es.to_csv(os.path.join(out_dir, f'{name}.csv'), index=False)
@@ -94,6 +100,9 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
                                            'target_heating_temperature': p['T_sup_dhw_c'], 'target_cooling_temperature': 8.0}},
              'heating_storage': {'type': 'citylearn.energy_model.StorageTank', 'autosize': False,
                                  'attributes': {'capacity': round(sh_cap, 4), 'efficiency': tank_eff, 'loss_coefficient': LOSS_COEFF}}}
+        if pv_w is not None:
+            kwp = pv_caps[role]['ratios'][str(float(pv_ratio))]['kwp']
+            b['pv'] = {'type': 'citylearn.energy_model.PV', 'autosize': False, 'attributes': {'nominal_power': kwp}}
         dhw_cap = 0.0
         if mean_dhw_day >= DHW_MIN_KWH_DAY:
             dhw_cap = mean_dhw_day * tank_scale
@@ -103,6 +112,8 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
         manifest[name] = {'role': role, 'heating_tank_kwh_th': round(sh_cap, 3), 'dhw_tank_kwh_th': round(dhw_cap, 3),
                           'hp_sh_nominal_kw': b['heating_device']['attributes']['nominal_power'],
                           'hp_dhw_nominal_kw': b['dhw_device']['attributes']['nominal_power']}
+        if pv_w is not None:
+            manifest[name]['pv_kwp'] = b['pv']['attributes']['nominal_power']
     observations = {k: {'active': k in ('day_type', 'hour', 'outdoor_dry_bulb_temperature', 'net_electricity_consumption',
                                          'electricity_pricing', 'electricity_pricing_predicted_1', 'electricity_pricing_predicted_2',
                                          'electricity_pricing_predicted_3', 'heating_storage_soc', 'dhw_storage_soc'),
@@ -133,5 +144,6 @@ if __name__ == '__main__':
     ap.add_argument('--carbon-file', default=None)
     ap.add_argument('--tank-eff', type=float, default=TANK_EFF)
     ap.add_argument('--thermal-subdir', default='thermal')
+    ap.add_argument('--pv-ratio', type=float, default=None, help='B3: add assumed PV with this yield-to-demand ratio (0.5, 1.0, 1.5)')
     a = ap.parse_args()
-    main(a.tank_scale, a.out_name, a.carbon_file, a.tank_eff, a.thermal_subdir)
+    main(a.tank_scale, a.out_name, a.carbon_file, a.tank_eff, a.thermal_subdir, a.pv_ratio)
