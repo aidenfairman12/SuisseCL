@@ -40,10 +40,10 @@ def meta():
 @pytest.mark.parametrize('path,id_col,n', [
     ('docs/data/transformation_log.md', 'ID', 12),
     ('docs/decisions/issues_and_risks.md', 'ID', 75),      # 75 rows incl. update rows
-    ('docs/decisions/decision_log.md', 'ID', 43),
+    ('docs/decisions/decision_log.md', 'ID', 44),
     ('docs/decisions/assumptions_log.md', 'ID', 17),
     ('docs/models/model_registry.md', 'ID', 4),
-    ('docs/algorithms/algorithm_registry.md', 'ID', 7),
+    ('docs/algorithms/algorithm_registry.md', 'ID', 8),
     ('docs/experiments/validation_reports/validation_phase_a.md', 'ID', 9),
 ])
 def test_md_row_counts(path, id_col, n):

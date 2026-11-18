@@ -1,0 +1,226 @@
+{
+ "gate_pct": 3.0,
+ "gate_export_rp": 8.0,
+ "rungs": {
+  "S1": {
+   "0.0": {
+    "zero_bill": 25631.240731706763,
+    "opt_bill": 23585.547172835875,
+    "zero_import_cost": 25631.240731706763,
+    "opt_import_cost": 23585.54717283586,
+    "opt_export_kwh": 65556.80491082366,
+    "zero_export_kwh": 76513.291106054,
+    "opt_import_kwh": 146372.39022641233,
+    "saving_chf": 2045.6935588708875,
+    "saving_pct": 7.981250616324208,
+    "export_price_rp": 0.0
+   },
+   "4.0": {
+    "zero_bill": 22570.709087464602,
+    "opt_bill": 20959.796400143692,
+    "zero_import_cost": 25631.240731706763,
+    "opt_import_cost": 23585.54717283586,
+    "opt_export_kwh": 65643.76931730498,
+    "zero_export_kwh": 76513.291106054,
+    "opt_import_kwh": 146372.39022641233,
+    "saving_chf": 1610.9126873209098,
+    "saving_pct": 7.1371824477396855,
+    "export_price_rp": 4.0
+   },
+   "8.0": {
+    "zero_bill": 19510.17744322244,
+    "opt_bill": 18334.04562045317,
+    "zero_import_cost": 25631.240731706763,
+    "opt_import_cost": 23585.547253646197,
+    "opt_export_kwh": 65643.77041491291,
+    "zero_export_kwh": 76513.291106054,
+    "opt_import_kwh": 146372.3907633581,
+    "saving_chf": 1176.1318227692718,
+    "saving_pct": 6.02829895418426,
+    "export_price_rp": 8.0
+   },
+   "12.0": {
+    "zero_bill": 16449.64579898028,
+    "opt_bill": 15707.98728286139,
+    "zero_import_cost": 25631.240731706763,
+    "opt_import_cost": 23589.23174482266,
+    "opt_export_kwh": 65677.03718301082,
+    "zero_export_kwh": 76513.291106054,
+    "opt_import_kwh": 146396.59833676176,
+    "saving_chf": 741.6585161188905,
+    "saving_pct": 4.508659488369447,
+    "export_price_rp": 12.0
+   },
+   "gate": {
+    "saving_pct_at_gate_price": 6.02829895418426,
+    "passed": true,
+    "passed_at_any_price": true
+   }
+  },
+  "S2": {
+   "0.0": {
+    "zero_bill": 25631.240731706763,
+    "opt_bill": 19937.37169748966,
+    "zero_import_cost": 25631.240731706763,
+    "opt_import_cost": 19937.371697489663,
+    "opt_export_kwh": 43165.875208675774,
+    "zero_export_kwh": 76513.291106054,
+    "opt_import_kwh": 127467.98269251661,
+    "saving_chf": 5693.869034217103,
+    "saving_pct": 22.214566566703823,
+    "export_price_rp": 0.0,
+    "bill_vs_s1_zero_action_chf": 5693.869034217103,
+    "bill_vs_s1_zero_action_pct": 22.214566566703823
+   },
+   "4.0": {
+    "zero_bill": 22570.709087464602,
+    "opt_bill": 18202.275647504233,
+    "zero_import_cost": 25631.240731706763,
+    "opt_import_cost": 19937.37169748966,
+    "opt_export_kwh": 43377.401249635455,
+    "zero_export_kwh": 76513.291106054,
+    "opt_import_kwh": 127467.98269251661,
+    "saving_chf": 4368.433439960369,
+    "saving_pct": 19.35443597731949,
+    "export_price_rp": 4.0,
+    "bill_vs_s1_zero_action_chf": 4368.433439960369,
+    "bill_vs_s1_zero_action_pct": 19.35443597731949
+   },
+   "8.0": {
+    "zero_bill": 19510.17744322244,
+    "opt_bill": 16467.17959751885,
+    "zero_import_cost": 25631.240731706763,
+    "opt_import_cost": 19937.37169748966,
+    "opt_export_kwh": 43377.401249635455,
+    "zero_export_kwh": 76513.291106054,
+    "opt_import_kwh": 127467.98269251661,
+    "saving_chf": 3042.9978457035904,
+    "saving_pct": 15.596976780755444,
+    "export_price_rp": 8.0,
+    "bill_vs_s1_zero_action_chf": 3042.9978457035904,
+    "bill_vs_s1_zero_action_pct": 15.596976780755444
+   },
+   "12.0": {
+    "zero_bill": 16449.64579898028,
+    "opt_bill": 14731.778491719358,
+    "zero_import_cost": 25631.240731706763,
+    "opt_import_cost": 19941.310914053123,
+    "opt_export_kwh": 43412.77018611473,
+    "zero_export_kwh": 76513.291106054,
+    "opt_import_kwh": 127494.15688895155,
+    "saving_chf": 1717.8673072609217,
+    "saving_pct": 10.443187216635467,
+    "export_price_rp": 12.0,
+    "bill_vs_s1_zero_action_chf": 1717.8673072609217,
+    "bill_vs_s1_zero_action_pct": 10.443187216635467
+   },
+   "gate": {
+    "saving_pct_at_gate_price": 15.596976780755444,
+    "passed": true,
+    "passed_at_any_price": true
+   }
+  }
+ },
+ "what_if": [
+  {
+   "case": "S2, battery 0.5 kWh/kWp",
+   "export_price_rp": 8.0,
+   "zero_bill": 19510.17744322244,
+   "opt_bill": 17220.02472541806,
+   "zero_import_cost": 25631.240731706763,
+   "opt_import_cost": 21472.29196749474,
+   "opt_export_kwh": 53153.3405259588,
+   "zero_export_kwh": 76513.291106054,
+   "opt_import_kwh": 135863.26755479287,
+   "saving_chf": 2290.15271780438,
+   "saving_pct": 11.738246484272475
+  },
+  {
+   "case": "S2, battery 2 kWh/kWp",
+   "export_price_rp": 8.0,
+   "zero_bill": 19510.17744322244,
+   "opt_bill": 15590.226681228622,
+   "zero_import_cost": 25631.240731706763,
+   "opt_import_cost": 18135.468616682985,
+   "opt_export_kwh": 31815.524193179535,
+   "zero_export_kwh": 76513.291106054,
+   "opt_import_kwh": 117697.61234353452,
+   "saving_chf": 3919.9507619938195,
+   "saving_pct": 20.091825271202516
+  },
+  {
+   "case": "S2, PV x0.5 (battery 1 kWh/kWp)",
+   "export_price_rp": 8.0,
+   "zero_bill": 22863.27542639106,
+   "opt_bill": 20429.852551302472,
+   "zero_import_cost": 26459.316961646036,
+   "opt_import_cost": 22087.897365587625,
+   "opt_export_kwh": 20725.56017856501,
+   "zero_export_kwh": 44950.51919068719,
+   "opt_import_kwh": 140332.34411682896,
+   "saving_chf": 2433.4228750885886,
+   "saving_pct": 10.6433694635008
+  },
+  {
+   "case": "S2, PV x1.5 (battery 1 kWh/kWp)",
+   "export_price_rp": 8.0,
+   "zero_bill": 19288.418982620507,
+   "opt_bill": 16219.285285235597,
+   "zero_import_cost": 25601.606744790544,
+   "opt_import_cost": 19850.02324028781,
+   "opt_export_kwh": 45384.22443815293,
+   "zero_export_kwh": 78914.84702712545,
+   "opt_import_kwh": 126939.52886363749,
+   "saving_chf": 3069.13369738491,
+   "saving_pct": 15.91179505251467
+  },
+  {
+   "case": "S1, PV x0.5",
+   "export_price_rp": 8.0,
+   "zero_bill": 22863.27542639106,
+   "opt_bill": 21767.998128323517,
+   "zero_import_cost": 26459.316961646036,
+   "opt_import_cost": 24583.56777694195,
+   "opt_export_kwh": 35194.62060773147,
+   "zero_export_kwh": 44950.51919068719,
+   "opt_import_kwh": 152222.61674615642,
+   "saving_chf": 1095.2772980675436,
+   "saving_pct": 4.79055287416634
+  },
+  {
+   "case": "S1, PV x1.5",
+   "export_price_rp": 8.0,
+   "zero_bill": 19288.418982620507,
+   "opt_bill": 18110.126286456612,
+   "zero_import_cost": 25601.606744790544,
+   "opt_import_cost": 23551.40723153243,
+   "opt_export_kwh": 68016.01181344775,
+   "zero_export_kwh": 78914.84702712545,
+   "opt_import_kwh": 146174.27448486272,
+   "saving_chf": 1178.292696163895,
+   "saving_pct": 6.108809110925966
+  }
+ ],
+ "replay": {
+  "S1": {
+   "predicted_bill_chf": 18334.04562045317,
+   "realised_bill_chf": 18334.0456626204,
+   "zero_bill_chf": 19510.17744322244,
+   "predicted_saving_chf": 1176.1318227692718,
+   "realised_saving_chf": 1176.1317806020415,
+   "rel_diff_bill_pct": 2.161294042512115e-07,
+   "rel_diff_saving_pct": 3.5852469476683045e-06,
+   "steps": 8759
+  },
+  "S2": {
+   "predicted_bill_chf": 16467.17959751885,
+   "realised_bill_chf": 16467.17974346914,
+   "zero_bill_chf": 19510.17744322244,
+   "predicted_saving_chf": 3042.9978457035904,
+   "realised_saving_chf": 3042.9976997533013,
+   "rel_diff_bill_pct": 7.480725871245114e-07,
+   "rel_diff_saving_pct": 4.7962665947386135e-06,
+   "steps": 8759
+  }
+ }
+}
