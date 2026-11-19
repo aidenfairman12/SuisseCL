@@ -1,0 +1,116 @@
+# Phase B completion report — PV, battery, export, tariffs, thermal model, 15 minutes, EV and LEG (for the phase approval gate)
+
+Date: 2026-11-19 · Plan: `phase_b_plan.md` (D-031, D-032, D-037, D-041) · Log: `execution_log.md` (EL-0050 to EL-0074) · Status: **Phase B implemented; waiting for the owner's review. Phase C not started.**
+Code state: commits from `b3af922` to the final Phase B commit on `main` (see section 12); nothing pushed (owner instruction D-041).
+
+## 1. Summary
+### 1.1 What was built
+A ladder of scenarios on the Phase A district, each exact-optimised, replayed in CityLearn and gated by the ceiling-first rule of D-032 (RL only where the exact optimum saves at least 3 % of the bill):
+
+| Rung | Content | Added in |
+|---|---|---|
+| S0 | Phase A district, EKZ standard two-tier tariff (the realistic baseline, never replaced) | Phase A |
+| S1 | + assumed rooftop PV (pvlib chain, capacity rule A-013) and an assumed export price (8 Rp/kWh) | B3, B5 |
+| S2 | + assumed battery per building (1 kWh per kWp of PV, 90 % round trip, 0.5 kW per kWh) | B4 |
+| S3 | + single-node RC building model (Melillo et al. 2021, pooled per-m2 priors) with a comfort band | B7 |
+| tariff scenarios | EKZ pilot time-of-use and dynamic grid fees, stylised spreads, Swiss day-ahead pass-through (labelled what-ifs) | B5 |
+| 15 minutes | all four rungs also at 900 s | B2 |
+| EV, LEG | labelled LP-level scenarios on S2 | B8, B6 |
+
+Also delivered: the B9 metrics module and district metrics tables, the exact-optimum programs (linear programs per building, joint for the LEG), an RL block (reward `bill`, three learners, three scenarios) with scripts, deployment and submitted cluster jobs, and registrations for everything new.
+
+### 1.2 Headline results (district, 2023, exact optimum with perfect foresight, share of the bill; export price 8 Rp/kWh; all PV, battery, thermal and export numbers are assumed scenario values)
+| Rung | Hourly | 15 minutes | Gate (3 %) |
+|---|---|---|---|
+| S0 tanks only | 0.84 % | 0.87 % | below (Phase A) |
+| S1 + PV | 6.03 % | 6.50 % | passed |
+| S2 + battery | 15.60 % | 16.16 % | passed |
+| S3 + RC model, pure shifting (band 21-24 C) | 15.96 % | 16.26 % | passed |
+| S3 with lower limit 20 C (includes energy saved by a colder house) | 20.85 % | 21.13 % | passed |
+
+What drives them: the tanks absorbing PV surplus (S1), the battery (S2: +9.6 points), and little from building thermal mass (+1.6 points over tanks and battery, S3); the export price matters (S2: 22.2, 19.4, 15.6, 10.4 % at 0, 4, 8, 12 Rp/kWh). Richer realistic tariff structures roughly double the tanks-only ceiling (S0 1.7 to 2.1 %), still below the gate; with PV and battery every tariff passes (S2 15.6 to 20.0 %, S3 16.0 to 20.8 % under pilot structures and day-ahead; 32.9 and 37.9 % under a stylised five-fold spread).
+
+### 1.3 What Phase B did not establish
+No quantity of the PV, battery, export, thermal, EV or LEG models is validated against measurements of these buildings (none exist in the data). The ceilings are conditional on assumptions; RL results (section 8) are what a learner reaches against them.
+
+## 2. Task status
+| Task | Status | Notes |
+|---|---|---|
+| B1 review | Completed | ISS-019, ISS-021, ISS-024 re-checked, stay open (EL-0050) |
+| B2 15-minute pipeline | Completed, with limits | exact aggregation to hourly, DST checked, environment at 900 s; weather is hourly information only (ISS-035) |
+| B3 PV | Completed, assumed | own first model replaced by pvlib at the owner's request (D-033); no measured PV |
+| B4 battery | Completed, assumed | constant round-trip efficiency, flat curves so the optimum stays linear |
+| B5 tariffs and export | Completed | ElCom has no export remuneration (verified by query); SFOE price not downloaded (licence); assumed sweep (D-034); scenario tariffs and day-ahead (D-040, D-042) |
+| B6 LEG | Completed as labelled scenario | facts from one utility document; statute not read (ISS-039) |
+| B7 thermal model | Completed, synthetic | routes (a) and (c) found nothing usable (EL-0062, EL-0063); owner supplied the Melillo equation; pooled priors (D-038) |
+| B8 EV | Completed as labelled scenario | aggregate station profile, assumed vehicles (ISS-038); no CityLearn replay |
+| B9 metrics | Completed | `metrics.py`, `district_metrics_phase_b.md` |
+| RL block | Code, local checks, jobs submitted; results in section 8 | D-044 |
+
+## 3. Acceptance criteria (plan 7.3) — honest assessment
+| # | Criterion | Assessment |
+|---|---|---|
+| 1 | Environment supports 15-minute resolution | **Met**: four datasets at 900 s, zero-action import and cost within 0.01 % of hourly, exact optimum replayed in CityLearn to 0.00 CHF on the first 4,000 steps for S1, S2 and S3; the full-year 15-minute programs were not replayed (about 15 minutes each) |
+| 2 | Higher-resolution data integration reproducible | **Met**: `build_15min.py`, hourly series are exact aggregates (tests), files regenerated by `run_pipeline.sh` (not tracked: 160 MB) |
+| 3 | PV represented and validated | **Met with limits**: pvlib 0.16.1 chain, 1,149 kWh/kWp for 2023, zero at night, sign and units checked by rollout; no comparison with measured PV (none), plausibility range itself unsourced |
+| 4 | Battery respects physical constraints | **Met**: tests for state-of-charge bounds, power limit, conservation with losses; replay exact |
+| 5 | Import and export accounting correct | **Met**: CityLearn credits no exports (found in its source), own accounting reproduces its import cost; export price assumed |
+| 6 | Dynamic tariff calculations documented | **Met**: TR-014, TR-015, DER-017, DER-018; pilot structures applied outside their period and labelled |
+| 7 | LEG behaviour based on explicit assumptions | **Met as scenario**: A-027, SRC-013; physical flows unchanged, allocation financial |
+| 8 | EV only where justified | **Met as scenario**: data on disk, SFH-low excluded (double counting), A-026 |
+| 9 | Improved thermal model evaluated against the earlier model | **Met as a model-to-model comparison** (`rc_vs_phase_a.md`); no validation against observation is possible |
+| 10 | District-level metrics generated | **Met** (`district_metrics_phase_b.md`); held-out validation exists for the RL protocol only |
+| 11 | All new data, models, algorithms, experiments registered | **Met** by the registry audit tests; completeness of descriptions is my judgement |
+| 12 | Phase B reproducible | **Partly verified**: scripts, tests (see section 12), deterministic optima; no clean-clone rebuild was run; RL runs are stochastic and cluster-dependent |
+
+## 4. Changes to the Phase A architecture
+- New packages and modules: `swiss/models/{pv,export_price,rc_building}.py`, `swiss/pipeline/{build_pv,build_tariff_scenarios,build_dayahead,build_15min,fit_rc_params,build_rc_params}.py`, `swiss/citylearn_build/rc_dynamics.py` (a `DynamicsBuilding` subclass; CityLearn is unchanged), `swiss/experiments/{metrics,accounting,oracle_pvbat,oracle_rc,oracle_tariffs,oracle_q15,oracle_ev_leg,phase_b_metrics,thermostat,rl_reference,rl_report}.py`, `swiss/hpc/{submit,deploy}_phase_b.sh`.
+- The dataset builder takes `--pv-ratio`, `--battery-kwh-per-kwp`, `--rc`, `--q15`; the default datasets are byte-identical to Phase A.
+- `rl.py` takes `--scenario` and reward `bill`; the Phase A behaviour is unchanged.
+- The data contract v1 and the dashboard were **not** extended to Phase B scenarios (the audit bundle covers the new registry rows); the full-year contract bundle stays hourly.
+- Pins: pvlib 0.16.1 and h5py 3.16.0 added; numpy, pandas, scipy, torch unchanged.
+
+## 5. New data sources
+SRC-012 Energy-Charts day-ahead price CH 2023 (CC BY 4.0 from Bundesnetzagentur | SMARD.de; downloaded with approval, 153 KB, free); SRC-013 EKZ LEG conditions (document); derived DER-012 to DER-020 (PV, RC parameters, scenario tariffs, day-ahead scenario, 15-minute series and datasets). Checked and found unusable: ElCom producer remuneration (the `aidfee` field is the 2.3 Rp/kWh consumer surcharge, not an export price), the SFOE reference market price (licence and format unconfirmed, not downloaded), DOMOS Sion (restricted, no indoor temperature), Meister et al. 2026 framework (no code found).
+
+## 6. Temporal resolution
+Hourly stays the reference. At 15 minutes: HP, other load, derived heat and PV are quarter-hour series whose hourly sums equal the hourly pipeline exactly; the weather is the hourly series with irradiance redistributed by a clear-sky shape (A-022) and temperature constant inside the hour; the EKZ tariff is native 15-minute (it changes on the hour). Devices are sized on 15-minute peaks (up to +47 %, A-024). CityLearn facts found: a tank action moves at most capacity x step length per step; `loss_coefficient` is rescaled to the step length by CityLearn; the battery action is a fraction of nominal power x step length. A finer step adds 0.03 to 0.6 points to the ceilings (price changes hourly, weather hourly).
+
+## 7. PV, battery, tariff, LEG, EV, thermal model
+- **PV (M-003)**: south 30 degrees, Perez transposition, SAPM cell temperature (assumed 2 m/s wind), PVWatts losses 14.08 %, inverter 0.96; capacity = annual no-control import / specific yield (ratios 0.5, 1.0, 1.5), capped by a rooftop proxy (A-013); at ratio 1.0 the cap binds for SFH-mid and all apartment buildings; district 116.1 kWp.
+- **Battery (M-004)**: 1 kWh per kWp, round trip 0.90 (CityLearn applies its square root per direction, verified), depth of discharge 0.9, 0.5 kW per kWh, no degradation; sweep 0.5 to 2 kWh/kWp (S2: 11.7 % to 20.1 %).
+- **Tariffs**: import and export are separate series; bill = import cost - export revenue; scenario tariffs are what-ifs (never current Swiss prices). Day-ahead scenario revenue-neutral to S0 with an assumed 0.97 CHF/EUR.
+- **LEG** (labelled scenario, six buildings as one community): discount 40 % (20 %, 0 % in the sweep) on the grid fee of internally exchanged energy; zero-action bill falls by 144 to 267 CHF (0.7 to 1.4 %), the joint optimum by 82 to 208 CHF; internal exchange is only 3 to 4 % of imports because exports and imports rarely coincide; the allocation between buildings depends on the assumed internal price (9 Rp/kWh) and is not shown by the district total.
+- **EV** (labelled scenario, SFH-mid and SFH-high): about 1,300 kWh per vehicle and year; making charging flexible inside a 17:00 to 08:00 window is worth 24 CHF per year on top of tanks and battery.
+- **Thermal model (M-005)**: C dT/dt = -H (T - T_amb) + g I + L (Melillo et al. 2021, equation as supplied by the owner), exact hourly step, pooled priors H 1.03 W/(K m2), g 0.026, C 110 kJ/(K m2) (unverified class value), effective area per building by energy closure with the derived heat (0.43 to 2.14 times the floor area: the pooled prior does not describe all six buildings at their floor areas).
+
+## 8. Validation and evaluation results
+- Exact optima are replayed in CityLearn (hourly: 0.00 CHF difference for S1, S2, S3 over the first 1,500 steps; 15 minutes: first 4,000 steps; one earlier replay mismatch was not reproduced, ISS-037). All year-long programs are deterministic.
+- Building mass contributes 329 CHF per year (1.6 points) over tanks and battery; letting the house run colder adds 1,021 CHF but that is saved energy.
+- **District metrics** (`district_metrics_phase_b.md`): PV self-consumption 42.6 % (zero action), 50.8 % (S1 optimum), 67.5 % (S2 optimum); self-sufficiency 26.5 %, 31.6 %, 40.4 %; battery use 1,671 equivalent cycles (sum of six); emissions index (modeled carbon, relative) 1.00, 0.77, 0.73, 0.69 for S0 zero, S1 zero, S1 optimum, S2 optimum. **The cost optimum raises the coincident import peak** (S2 +74 %, 125 kW against 72 kW; S3 +96 %): the bill ceiling is not a grid-benefit ceiling.
+- **RC against Phase A** (`rc_vs_phase_a.md`): annual heat equal by calibration; daily correlation 0.75 to 0.97, hourly 0.15 to 0.67; RC peaks are 1.7 to 3 times lower than the derived peaks and the series is much smoother.
+- **RL results**: see section 8b below (filled from `rl_phase_b.md` when the cluster jobs finished).
+
+### 8b. RL results
+RL_RESULTS_PLACEHOLDER
+
+## 9. Remaining limitations
+- All PV, battery, export price, thermal, EV and LEG parameters are assumptions; no validation against measured data of these buildings.
+- Weather is hourly information only (ISS-035); heat timing from derived series (ISS-004, ISS-030); the apartment buildings remain a synthetic composite (ISS-018) and their RC fit is weak; pooled thermal priors hide between-building differences (A-018); C is an unverified class value.
+- Tank sizes are still synthetic (ISS-032); the model has no part-load or cycling effect (ISS-034) and no cooling (A-020): indoor temperature exceeds 24 C in about 2,700 hours a year in each building under heating only.
+- ElCom and SFOE export prices unavailable or unlicensed; the export price is an assumed sweep. Pilot tariffs applied outside their period; dynamic fee ignores the 2023 weather.
+- LEG facts from one utility document (ISS-039); EV from an aggregate station (ISS-038).
+- The cost-optimal schedules raise coincident peaks; no peak-aware optimum was computed.
+- Not done: dashboard and contract extension to Phase B scenarios; full-year replay of the 15-minute programs; clean-clone reproduction.
+
+## 10. Registry status
+Decisions D-033 to D-045, assumptions A-011 to A-027, models M-003 to M-005, algorithms ALG-008 to ALG-010, experiments EXP-013 to EXP-018, issues ISS-035 to ISS-039; the audit bundle and registry tests cover all rows.
+
+## 11. Updated Phase C proposal (for your approval; nothing implemented)
+See `phase_c_proposal_updated.md`.
+
+## 12. Repository changes and reproduction
+Commits since the Phase A approval: B1 and B9 `b3af922`, B3 `e40f28b`, B5 `772d4fe`, B4 `172a248`, step 6 `650f99b`, step 8 `48845dc` and `abebf68`, step 9 part 1 `09b61a2`, steps 9 part 2 and 10 with the RL code `c449541`, each followed by a bundle commit; final commits listed in the execution log. Reproduction: `docs/reproduction.md` section 4b. Tests: `PYTHONPATH=. cl/bin/python -m pytest swiss/tests -q` (see the execution log for the count of the final run).
+
+## 13. Stop
+Per plan 9.5 I stop here. Phase C needs your explicit authorisation and a decision on the climate data route (section 11).

@@ -91,7 +91,7 @@ That work is a *method sanity check*, not a Swiss result. Swiss data research is
   `cl/bin/python my_data/aggregate.py`.
 
 ## 7. Open decisions and recommended next steps
-> **2026-11-18:** the items below are Phase A history. The current plan is `docs/phases/phase_b_plan.md` (D-031, D-032); read it first. No cluster jobs until Phase B is finished.
+> **2026-11-19:** the items below are Phase A history. Phase B is implemented (`docs/phases/phase_b_completion_report.md`); the RL jobs of the Phase B grid run from `~/SuisseCL_phaseB` on UBELIX (`docs/phases/phase_b_rl_deployment.md`). Phase C needs the owner's approval of `docs/phases/phase_c_proposal_updated.md`. Working agreements of section 8 stand; D-041 gave standing approvals for the Phase B run only (local commits, no pushes).
 
 1. **Fix the comfort term / reward before any weight sweep.** Make `reward_diagnostics.py` pass: comfort(cooling-to-setpoint)
    must be clearly lower than comfort(cooling off). Then pick the scale from a sensible reference (not a heavy-tailed one) or use a

@@ -50,8 +50,10 @@ def battery_spec(cap_kwh, dt_h=1.0):
     return {'cap': cap_kwh, 'power': BATTERY['c_rate'] * cap_kwh * dt_h, 'eta1': eta1, 'emin': emin, 'e0': emin}     # power = energy per step
 
 
-def solve_building(net0, price, p_exp, tanks, battery=None):
-    """Exact optimum for one building. Returns dict with arrays and the bill; `tanks` entries as oracle.tank_inputs (sliced to len(net0))."""
+def solve_building(net0, price, p_exp, tanks, battery=None, ev=None, build_only=False):
+    """Exact optimum for one building. Returns dict with arrays and the bill; `tanks` entries as oracle.tank_inputs (sliced to len(net0)).
+    ev (B8): optional dict {'cap': per-step maximum charging energy (0 outside plug-in windows), 'windows': [(start, end, energy_kwh)]}; the charging energy of every window
+    must be delivered inside it (net0 then contains only the non-shiftable part of the EV load). build_only=True returns the assembled program (for the joint LEG program)."""
     n = len(net0)
     p_exp = np.broadcast_to(np.asarray(p_exp, dtype=float), (n,))     # scalar or one price per step
     assert (p_exp <= price + 1e-12).all(), 'export price above an import price makes the program unbounded'
@@ -72,6 +74,8 @@ def solve_building(net0, price, p_exp, tanks, battery=None):
         add('c', 0.0, battery['power'], 0.0)
         add('u', 0.0, battery['power'], 0.0)
         add('Eb', battery['emin'], battery['cap'], 0.0)
+    if ev is not None:
+        add('ev', 0.0, np.asarray(ev['cap'], dtype=float), 0.0)
     add('i', 0.0, np.inf, price)
     add('x', 0.0, np.inf, -p_exp)
     nv = sum(b[1] for b in blocks)
@@ -99,7 +103,17 @@ def solve_building(net0, price, p_exp, tanks, battery=None):
         ent += [(f'a{k}', -sp.diags(1.0 / t['cop'])), (f'd{k}', sp.diags(1.0 / t['cop']))]
     if battery is not None:
         ent += [('c', -I), ('u', I)]
+    if ev is not None:
+        ent += [('ev', -I)]
+        for (a, b2, e_kwh) in ev['windows']:          # every plug-in window receives exactly its energy
+            cols = np.arange(idx['ev'] + a, idx['ev'] + b2)
+            eq_rows.append(sp.csr_matrix((np.ones(len(cols)), (np.zeros(len(cols), dtype=int), cols)), shape=(1, nv)))
+            b_eq.append(np.array([float(e_kwh)]))
     eq_rows.append(row(ent)); b_eq.append(np.asarray(net0, dtype=float))
+    if build_only:
+        return {'c': cvec, 'lo': lo, 'hi': hi, 'A_eq': sp.vstack(eq_rows, format='csr'), 'b_eq': np.concatenate(b_eq),
+                'A_ub': sp.vstack(ub_rows, format='csr') if ub_rows else sp.csr_matrix((0, nv)), 'b_ub': np.concatenate(b_ub) if b_ub else np.zeros(0), 'idx': idx, 'n': n, 'nv': nv,
+                'price': price, 'p_exp': p_exp, 'tanks': tanks, 'battery': battery, 'ev': ev}
     r = linprog(cvec, A_ub=sp.vstack(ub_rows, format='csr') if ub_rows else None, b_ub=np.concatenate(b_ub) if b_ub else None,
                 A_eq=sp.vstack(eq_rows, format='csr'), b_eq=np.concatenate(b_eq), bounds=np.column_stack([lo, hi]), method='highs')
     if r.status != 0:
@@ -110,7 +124,17 @@ def solve_building(net0, price, p_exp, tanks, battery=None):
     return {'bill': float(r.fun), 'import_kwh': float(imp.sum()), 'export_kwh': float(exp.sum()), 'import_cost': float((price * imp).sum()),
             'imp': imp, 'exp': exp, 'a': [get(f'a{k}') for k in range(len(tanks))], 'd': [get(f'd{k}') for k in range(len(tanks))],
             'c': get('c') if battery is not None else None, 'u': get('u') if battery is not None else None,
-            'Eb': get('Eb') if battery is not None else None}
+            'Eb': get('Eb') if battery is not None else None, 'ev': get('ev') if ev is not None else None}
+
+
+def unpack(lp, x):
+    """Solution arrays of one building from a stacked solution vector slice x (length lp['nv'])."""
+    n, idx = lp['n'], lp['idx']
+    get = lambda name: x[idx[name]: idx[name] + n]   # noqa: E731
+    imp, exp = get('i'), get('x')
+    return {'imp': imp, 'exp': exp, 'c': get('c') if lp['battery'] is not None else None, 'u': get('u') if lp['battery'] is not None else None,
+            'ev': get('ev') if lp['ev'] is not None else None, 'import_kwh': float(imp.sum()), 'export_kwh': float(exp.sum()),
+            'bill': float((lp['price'] * imp).sum() - (lp['p_exp'] * exp).sum())}
 
 
 def zero_bill(net0, price, p_exp):
@@ -137,7 +161,7 @@ class Inputs:
         meta = json.load(open(os.path.join(CAN, 'pv', 'pv_capacity_2023.json')))
         self.kwp = {r: [meta['buildings'][role]['ratios'][str(r)]['kwp'] for role in ROLES] for r in (0.5, 1.0, 1.5)}
 
-    def scenario(self, pv_ratio, battery_kwh_per_kwp, p_exp_rp, n=None, with_solution=False):
+    def scenario(self, pv_ratio, battery_kwh_per_kwp, p_exp_rp, n=None, with_solution=False, ev=None):
         """District result for one scenario. pv_ratio None = no PV (S0); battery_kwh_per_kwp None = no battery."""
         n = n or self.N
         p_exp = np.asarray(p_exp_rp, dtype=float) / 100.0                  # scalar or per-step series (Rp/kWh in)
@@ -151,7 +175,15 @@ class Inputs:
             net0 = self.net_s0[bi][:n] - kwp * self.pv_per_kwp[:n]
             bat = None if battery_kwh_per_kwp is None else battery_spec(kwp * battery_kwh_per_kwp, self.dt_h)
             tanks = [{**t, **{k: t[k][:n] for k in ('cop', 'maxout', 'demand')}} for t in self.tanks[bi]]
-            s = solve_building(net0, price, p_exp, tanks, bat)
+            evb = None if ev is None else ev.get(bi)
+            net0_zero = net0 if evb is None else net0 + evb['base'][:n]          # B8: uncontrolled EV load is part of the baseline
+            if evb is None:
+                s = solve_building(net0, price, p_exp, tanks, bat)
+            elif evb.get('flexible', True):
+                s = solve_building(net0 + evb['fixed'][:n], price, p_exp, tanks, bat, ev={'cap': evb['cap'][:n], 'windows': evb['windows']})
+            else:                                                                  # EV charges as measured, everything else optimised
+                s = solve_building(net0_zero, price, p_exp, tanks, bat)
+            net0 = net0_zero
             tot['zero_bill'] += zero_bill(net0, price, p_exp)
             tot['zero_import_cost'] += float((price * np.maximum(net0, 0)).sum())
             tot['zero_export_kwh'] += float(np.maximum(-net0, 0).sum())

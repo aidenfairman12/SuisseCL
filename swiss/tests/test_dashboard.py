@@ -38,10 +38,10 @@ def meta():
 # ---------------------------------------------------------------- parsers
 
 @pytest.mark.parametrize('path,id_col,n', [
-    ('docs/data/transformation_log.md', 'ID', 16),
-    ('docs/decisions/issues_and_risks.md', 'ID', 80),      # 80 rows incl. update rows
-    ('docs/decisions/decision_log.md', 'ID', 52),
-    ('docs/decisions/assumptions_log.md', 'ID', 25),
+    ('docs/data/transformation_log.md', 'ID', 17),
+    ('docs/decisions/issues_and_risks.md', 'ID', 82),      # 82 rows incl. update rows
+    ('docs/decisions/decision_log.md', 'ID', 53),
+    ('docs/decisions/assumptions_log.md', 'ID', 27),
     ('docs/models/model_registry.md', 'ID', 5),
     ('docs/algorithms/algorithm_registry.md', 'ID', 10),
     ('docs/experiments/validation_reports/validation_phase_a.md', 'ID', 9),
@@ -64,9 +64,9 @@ def test_md_parser_pipe_in_code_span_and_short_row():
 
 
 @pytest.mark.parametrize('path,n', [
-    ('docs/data/data_source_registry.csv', 32),
-    ('docs/models/parameter_registry.csv', 62),
-    ('docs/experiments/experiment_registry.csv', 17),
+    ('docs/data/data_source_registry.csv', 33),
+    ('docs/models/parameter_registry.csv', 67),
+    ('docs/experiments/experiment_registry.csv', 18),
 ])
 def test_csv_row_counts_and_alignment(path, n):
     hdr, rows = parse_csv_registry(p(path), anchor_col='classification')

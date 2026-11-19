@@ -61,3 +61,8 @@ M-003,Clear-sky shape used to redistribute hourly irradiance in 15 minutes,irrad
 M-001,Device size factor at 900 s,device_size_factor_q15,1.1 x max 15-minute power,-,assumption A-024,assumption
 M-005,RL comfort weight and scale,comfort_weight / comfort_scale,"3 / 1 K",-,assumption A-025,assumption
 M-004,RL export price in the bill reward,export_price_reward,0.08,CHF/kWh,assumption A-015 / A-025,assumption
+M-004,EV maximum charging power,ev_power_kw,7.4,kW,assumption A-026,assumption
+M-004,EV plug-in window,ev_plug_in_window,17:00 to 08:00 local,-,assumption A-026,assumption
+M-004,Vehicles behind the measured charging station,ev_units,5,vehicles,assumption A-026 (one per housing unit),assumption
+M-004,LEG grid-tariff discount,leg_delta,0.4 (0.2 and 0 in the sweep),-,EKZ conditions document SRC-013 (reported),literature (utility document)
+M-004,LEG internal energy price,leg_internal_price,0.09,CHF/kWh,assumption A-027,assumption

@@ -1,0 +1,114 @@
+{
+ "ev_info": {
+  "annual_kwh_per_ev": 1307.4070388557727,
+  "missing_hours_filled": 146,
+  "windows": 364,
+  "shiftable_share": 0.7199904845095673
+ },
+ "export_price_rp": 8.0,
+ "delta": 0.4,
+ "p_leg_chf_kwh": 0.09,
+ "ev": {
+  "S2_no_ev": {
+   "zero_bill": 19510.17744322244,
+   "opt_bill": 16467.17959751885,
+   "saving_pct": 15.596976780755444
+  },
+  "S2_ev_uncontrolled_others_optimised": {
+   "zero_bill": 19888.084573010852,
+   "opt_bill": 16835.462486782708,
+   "saving_pct": 15.348999925164783
+  },
+  "S2_ev_flexible": {
+   "zero_bill": 19888.084573010852,
+   "opt_bill": 16811.676086361433,
+   "saving_pct": 15.468601188594418
+  },
+  "ev_flexibility_value_chf": 23.786400421275175,
+  "ev_flexibility_value_pct_of_zero_bill": 0.11960126342963433
+ },
+ "leg": {
+  "S2": {
+   "0.0": {
+    "bill_with_leg": 16384.942092161284,
+    "bill_before_leg_credit": 16502.830730054047,
+    "internal_kwh": 4123.929456034653,
+    "import_kwh": 127387.35645923043,
+    "export_kwh": 43228.892432503664,
+    "sharing_share_of_import": 0.03237314573958125,
+    "zero_bill": 19510.17744322244,
+    "zero_bill_with_leg": 19366.485518262198,
+    "zero_internal_kwh": 4607.472238600097,
+    "zero_import_kwh": 157879.6377031951,
+    "gain_chf_per_kwh_mean": 0.02774477680100466
+   },
+   "0.2": {
+    "bill_with_leg": 16326.550823085261,
+    "bill_before_leg_credit": 16539.363813757507,
+    "internal_kwh": 5030.729902555523,
+    "import_kwh": 127387.77601957129,
+    "export_kwh": 43226.16458918756,
+    "sharing_share_of_import": 0.03949146503493886,
+    "zero_bill": 19510.17744322244,
+    "zero_bill_with_leg": 19304.50121570588,
+    "zero_internal_kwh": 4607.472238600097,
+    "zero_import_kwh": 157879.6377031951,
+    "gain_chf_per_kwh_mean": 0.03938293184153441
+   },
+   "0.4": {
+    "bill_with_leg": 16259.198807972314,
+    "bill_before_leg_credit": 16563.907985902308,
+    "internal_kwh": 5466.55245853605,
+    "import_kwh": 127602.47827147655,
+    "export_kwh": 43439.65804147354,
+    "sharing_share_of_import": 0.04284048815185127,
+    "zero_bill": 19510.17744322244,
+    "zero_bill_with_leg": 19242.516913149564,
+    "zero_internal_kwh": 4607.472238600097,
+    "zero_import_kwh": 157879.6377031951,
+    "gain_chf_per_kwh_mean": 0.05102108688206416
+   }
+  },
+  "S2_with_flexible_ev": {
+   "0.0": {
+    "bill_with_leg": 16733.773836274635,
+    "bill_before_leg_credit": 16845.704522385346,
+    "internal_kwh": 3905.4001011638125,
+    "import_kwh": 129190.02980561093,
+    "export_kwh": 42412.94740525542,
+    "sharing_share_of_import": 0.030229887763321767,
+    "zero_bill": 19888.084573010852,
+    "zero_bill_with_leg": 19747.903437227036,
+    "zero_internal_kwh": 4495.556310057131,
+    "zero_import_kwh": 159995.63465632807,
+    "gain_chf_per_kwh_mean": 0.02774477680100466
+   },
+   "0.2": {
+    "bill_with_leg": 16677.489650860363,
+    "bill_before_leg_credit": 16883.898588017215,
+    "internal_kwh": 4854.493569548304,
+    "import_kwh": 129191.13543431547,
+    "export_kwh": 42410.17944677869,
+    "sharing_share_of_import": 0.03757605777848798,
+    "zero_bill": 19888.084573010852,
+    "zero_bill_with_leg": 19687.43554768656,
+    "zero_internal_kwh": 4495.556310057131,
+    "zero_import_kwh": 159995.63465632807,
+    "gain_chf_per_kwh_mean": 0.03938293184153441
+   },
+   "0.4": {
+    "bill_with_leg": 16611.887570589803,
+    "bill_before_leg_credit": 16908.872020747935,
+    "internal_kwh": 5305.857896038815,
+    "import_kwh": 129413.95547229289,
+    "export_kwh": 42632.25927332336,
+    "sharing_share_of_import": 0.04099911695516317,
+    "zero_bill": 19888.084573010852,
+    "zero_bill_with_leg": 19626.967658146084,
+    "zero_internal_kwh": 4495.556310057131,
+    "zero_import_kwh": 159995.63465632807,
+    "gain_chf_per_kwh_mean": 0.05102108688206416
+   }
+  }
+ }
+}

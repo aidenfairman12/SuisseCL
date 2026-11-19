@@ -4,7 +4,7 @@ A Swiss residential district energy simulation built on [CityLearn](https://gith
 (https://suisse-cl.vercel.app/). The aim is a research-quality, auditable simulation of a Swiss district (heat pumps, thermal storage, Swiss tariff and weather)
 and an environment for evaluating and training district energy controllers.
 
-**Status.** Phase A (hourly heating baseline, six representative buildings, four stock controllers, validation) is implemented and approved (2026-11-18, D-031). Phase B (PV, batteries, export prices, thermal model, richer tariff scenarios, 15-minute resolution, EVs) is authorised and follows `docs/phases/phase_b_plan.md`; Phase C (future climate, cooling) has not started.
+**Status.** Phase A (hourly heating baseline, six representative buildings, four stock controllers, validation) is implemented and approved (2026-11-18, D-031). Phase B (assumed PV, battery, export price, RC thermal model, scenario tariffs incl. day-ahead, 15-minute environment, LEG and EV scenarios, exact ceilings, RL on the cluster) is implemented and awaits the owner's review: `docs/phases/phase_b_completion_report.md`; Phase C (future climate, cooling) has not started and has an updated proposal in `docs/phases/phase_c_proposal_updated.md`.
 Everything is documented for audit: sources and licences, transformations, assumptions, decisions, open issues and validation limits (`docs/`).
 The six buildings are a **constructed composite** of representative models from two datasets (three HEAPO houses, three ETH/EKZ apartment-building heat-pump
 meters); they are not neighbours. Thermal storage is synthetic and heat timing is unvalidated.
@@ -39,7 +39,7 @@ cd web && npm ci && npm run dev                                         # dashbo
 ```
 
 ## Where to read first
-- `docs/phases/phase_b_plan.md`: **authoritative Phase B specification** (start here if you are implementing).
+- `docs/phases/phase_b_plan.md`: Phase B specification (implemented); `docs/phases/phase_b_completion_report.md`: what was built and found.
 - `docs/phases/phase_a_completion_report.md`: what was built, acceptance criteria, limitations.
 - `docs/experiments/validation_reports/mechanism_check_phase_a.md`: what the controller results do and do not show.
 - `docs/dashboard/data_contract_v1.md`: the simulation-to-dashboard data contract (draft v1).

@@ -1,6 +1,6 @@
 # Phase B plan — authoritative implementation specification
 
-Date: 2026-11-18 (order of step 7 changed by D-037) · Status: **approved by the owner on 2026-11-18 (D-031, D-032). This file is the single source of truth for Phase B.**
+Date: 2026-11-18 (order of step 7 changed by D-037) · Status: **approved by the owner on 2026-11-18 (D-031, D-032); implemented 2026-11-18/19, see `phase_b_completion_report.md`. This file was the single source of truth for Phase B.**
 It supersedes the task order and the "Phase B is not authorized" wording of `master_plan.md` section 7; the task definitions B1 to B9 and the acceptance criteria
 (plan 7.2 and 7.3) still apply unchanged. If this file and `master_plan.md` section 7 disagree, **this file wins**. If this file and a decision in
 `docs/decisions/decision_log.md` disagree, the decision log (newer row) wins and you must report the conflict.
