@@ -39,7 +39,7 @@ export function SystemFlowDiagram(){
    <p className="mt-2 max-w-4xl text-sm text-muted-foreground">{active.description}</p><p className="mt-2 text-xs text-muted-foreground">Present in: {active.present_in}{active.source_ids.length?` · Sources: ${active.source_ids.join(", ")}`:""}</p>
    {active.variables.length>0&&<p className="mt-1 text-xs text-muted-foreground">Contract variables: {active.variables.join(", ")}</p>}
   </section>}
-  <section className="space-y-2"><div><h3 className="font-semibold">Planned beyond Phase A</h3><p className="text-sm text-muted-foreground">Explicitly not modeled in the current simulation.</p></div><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+  <section className="space-y-2"><div><h3 className="font-semibold">Planned beyond Phase A</h3><p className="text-sm text-muted-foreground">Not modeled in the Phase A simulation shown here. Phase B examines some of them as labelled scenarios (see the Scenarios and Controllers pages).</p></div><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
    {components.filter(c=>c.status==="not_modeled").map(c=><button key={c.id} onClick={()=>setSelected(c.id)} className={`rounded-xl border p-3 text-left hover:bg-muted/50 ${selected===c.id?"border-foreground/50 bg-muted/40":"bg-card"}`}><div className="flex items-center justify-between gap-2"><span className="text-sm font-medium">{c.label}</span><span className="text-[10px] text-muted-foreground">Phase {c.phase_available}</span></div><p className="mt-1 text-xs text-muted-foreground">{c.description}</p></button>)}
   </div></section>
  </div>;

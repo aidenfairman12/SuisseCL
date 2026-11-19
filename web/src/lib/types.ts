@@ -196,3 +196,46 @@ export type StoryData = {
     next: { title: string; source_note: string; phases: Phase[] };
   };
 };
+
+// ---- scenarios.json and controllers.json (Phase B pages; built by swiss/dashboard/phase_b.py from committed result files)
+export type PbLadder = { id: string; name: string; adds: string; classes: string[]; nodes: string[]; zero_bill_year_chf: number; saving_year_pct: number; saving_week_pct: number | null };
+export type PbTariff = { id: string; label: string; spread_rp: number; mean_rp: number; S0: number; S1: number; S2: number; S3: number };
+export type ScenariosData = {
+  ladder: PbLadder[];
+  ceilings: Record<string, { week: number | null; year: number }>;
+  export_sweep: Record<string, { S1: number; S2: number; S3: number }>;
+  bands: { s3_band_20_24: number; s3_band_21_24: number; s3_no_flex: number };
+  tariffs: PbTariff[];
+  resolution: { name: string; hourly_pct: number; q15_pct: number }[];
+  ev: { name: string; zero_bill: number; saving_pct: number }[];
+  leg: { discount: number; bill_with_leg: number; bill_before_leg_credit: number; zero_bill_with_leg: number; internal_kwh: number; sharing_share_of_import: number }[];
+  metrics: { name: string; import_kwh: number; peak_kw: number; pv_self_consumption: number | null; self_sufficiency: number | null; battery_cycles: number | null; bill_chf: number; emissions_index: number | null }[];
+  gate_pct: number;
+  export_price_rp: number;
+  sources: string[];
+  prose: Record<string, string>;
+};
+export type PbRow = {
+  id: string; group: string; label: string; saving_pct: number | null; corrected_pct?: number | null; share_of_ceiling_pct?: number | null; peak_kw?: number | null;
+  peak_vs_zero_pct?: number | null; weekly_peak_kw?: number | null; comfort_kh?: number | null; n?: number | null; spread_pct?: number | null; steps_trained?: number; note?: string;
+  mode?: string; horizon?: number; level?: number; peak_w?: number; rc_perturb?: number; rc_margin?: number; rc_correct?: boolean; scenarios?: number; share?: number; err_scale?: number;
+};
+export type PbTradeoffPoint = { peak_w: number; saving_pct: number; peak_kw: number; weekly_peak_kw: number; comfort_kh: number };
+export type ControllersData = {
+  scenarios: Record<string, { name: string; ceiling_pct: number; reference: { label: string; bill_chf: number; peak_kw: number; weekly_peak_kw: number }; rows: PbRow[] }>;
+  rl_curves: { scenario: string; kind: string; seed: number; steps: number[]; bill_change_pct: number[] }[];
+  forecast_quality: {
+    scenario: string; ceiling_pct: number;
+    synthetic: { x: number; saving_pct: number; kind: string; label: string }[];
+    history_only: { x: number; saving_pct: number; label: string };
+    weather_conditioned: { saving_pct: number; label: string; error_stored: boolean };
+    measured_error: Record<string, Record<string, number>>;
+  };
+  peak_tradeoff: Record<string, { series: Record<string, PbTradeoffPoint[]>; zero_peak_kw: number; pv_rule: { saving_pct: number; peak_kw: number } }>;
+  model_error_s3: { label: string; rc_perturb: number; rc_margin: number; rc_correct: boolean; peak_w: number; saving_pct: number; comfort_kh: number; peak_kw: number }[];
+  stochastic: { label: string; scenarios: number; share: number; err_scale: number; horizon: number; saving_pct: number; peak_kw: number }[];
+  deterministic_reference: { saving_pct: number; peak_kw: number; horizon: number };
+  limitations: { id: string; kind: string; title: string; summary: string | null; status: string | null }[];
+  sources: string[];
+  prose: Record<string, string | string[]>;
+};

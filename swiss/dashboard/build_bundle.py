@@ -67,7 +67,7 @@ QC_REPORTS = {  # placeholder namespace -> (json file, markdown twin or None, ti
 # Builder code is an input too: a changed builder means a stale bundle.
 BUILDER_FILES = ['swiss/dashboard/build_bundle.py', 'swiss/dashboard/parse_registries.py', 'swiss/dashboard/bundle_io.py',
                  'swiss/dashboard/figures.py', 'swiss/dashboard/story.py', 'swiss/pipeline/select_buildings.py', 'swiss/experiments/run_baselines.py',
-                 'swiss/experiments/run_sensitivity.py', 'swiss/datasets/swiss_district_2023/pricing.csv']
+                 'swiss/experiments/run_sensitivity.py', 'swiss/datasets/swiss_district_2023/pricing.csv', 'swiss/dashboard/phase_b.py']
 
 _read_files = set()
 
@@ -619,6 +619,8 @@ def main():
     story_obj = story_mod.build_story(ui, data, derived, g.nodes, phases, lambda t, errs, where: fill(t, data, errs, where), errors)
     # KPI nodes for every results column without a ui_map entry are NOT created: lint requires an entry.
     finalise(g)
+    from swiss.dashboard import phase_b
+    scenarios_obj, controllers_obj, data['pb'] = phase_b.build(sys.modules[__name__], ui, errors, g.nodes)
     for f in BUILDER_FILES:
         _read_files.add(f)
     counts = {}
@@ -645,6 +647,8 @@ def main():
     emit('series_inputs', clean(series))
     emit('figures', clean(figs))
     emit('results', clean(results))
+    emit('scenarios', clean(scenarios_obj))
+    emit('controllers', clean(controllers_obj))
     for f in os.listdir(BUNDLE):
         if f.startswith('trace_'):
             os.remove(os.path.join(BUNDLE, f))

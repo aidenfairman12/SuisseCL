@@ -1,4 +1,4 @@
-# SuisseCL Phase A — audit dashboard (web UI)
+# SuisseCL — audit dashboard (web UI)
 
 Next.js static export that shows where every number of the Swiss Phase A simulation comes from. It holds no facts of
 its own: it only reads `public/bundle/*.json`, which the Python side generates from the repository's registries, QC
@@ -16,7 +16,8 @@ npm run dev      # http://localhost:3000
 npm run build    # static site in web/out (type-check included); npm run lint
 ```
 
-- Pages: Story (home, with the illustrated district), Inputs, Model, Results, Audit, Glossary. The audit card opens as a side sheet; `?node=ID` deep-links to a card.
+- Pages: Overview (home), District, Results (Phase A controllers), **Scenarios** and **Controllers** (Phase B: the solar/battery/building-model ladder, exact ceilings, RL learners and the receding-horizon planner on the held-out weeks), Inputs, Model, Audit, Glossary. The audit card opens as a side sheet; `?node=ID` deep-links to a card.
+- Phase B pages read two extra bundle files, `scenarios.json` and `controllers.json`, written by `swiss/dashboard/phase_b.py` (called from `build_bundle.py`) from committed result files only (`swiss/experiments/oracle_results`, `rl_results`, `mpc_results`). Their prose lives in the `_phase_b` section of `ui_map.yaml`; numbers in it come from `{pb.*}` placeholders and `lint.py` checks them like the story prose. Phase C pages can add another `build_*` function and bundle file the same way.
 - Two data sources: the audit bundle (`public/bundle/*.json`, built by `swiss/dashboard/build_bundle.py`) and the **data contract v1** (`public/bundle/sim/`, built by `swiss/contract/export_v1.py`; types and hooks in `src/lib/contract/`, spec in `docs/dashboard/data_contract_v1.md`).
 - Hand-written mapping of UI elements to registry nodes: `swiss/dashboard/ui_map.yaml`. `lint.py` fails if the UI opens a
   card that has no entry there, names an unknown figure or KPI column, or if the bundle is older than its inputs.

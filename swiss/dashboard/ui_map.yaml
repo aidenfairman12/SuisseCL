@@ -25,7 +25,7 @@
 _settings:
   # tokens with digits that may appear in prose without a placeholder (years, version strings, unit names)
   prose_allowed_tokens: ['2023', '2016', '2017', '2016-17', '3.3.0', 'CO2', 'CO2eq', 'kWh_th', 'kW²', 'ALG-001..004',
-                         '24-hour', 'AR5', 'A.III.2', 'Building_1', 'Building_6', 'SPF_SH']
+                         '24-hour', 'AR5', 'A.III.2', 'Building_1', 'Building_6', 'SPF_SH', 'S0', 'S1', 'S2', 'S3']
   classification_colours:
     measured: '#2b6cb0'
     derived: '#2f855a'
@@ -75,7 +75,141 @@ _pages:           # the question each Explore page answers
   model: How do the measured inputs become heat demand, storage and electricity use?
   results: What does each control rule do to the bill, the highest grid draw and the electricity bought, and when in the year?
   audit: Where does every number come from, and what is still open?
+  scenarios: Which solar, battery, building and price assumptions does Phase B add, and how much of the bill could an ideal controller save at each step?
+  controllers: How much of that ideal saving do real controllers reach, and what do forecasts, peaks and model errors change?
   glossary: What do the technical terms on this site mean?
+
+# ---------------------------------------------------------------- Phase B pages (Scenarios, Controllers), WP5a. Agent's draft wording: the interpretation
+# sentences are for the owner's review. Numbers only through {pb.*} placeholders (namespace filled by swiss/dashboard/phase_b.py); no registry IDs in prose.
+_phase_b:
+  scenarios:
+    intro: >
+      Phase A simulated heating and hot water only. Phase B adds solar panels, a battery, a building thermal model and richer
+      prices, one rung at a time, and asks the same question at each rung: how much of the electricity bill could an ideal
+      controller with perfect foresight save? Every solar size, battery size, export price and building parameter on this page
+      is an assumption, not a measurement of these buildings.
+    gate: >
+      The project rule is to add learning only where the exact optimum saves at least {pb.gate_pct:.0f} % of the bill. The
+      bare Phase A district ({pb.ceil.s0.year:.1f} %) does not pass; S1, S2 and S3 do.
+    ceilings: >
+      The saving is measured on the eight test weeks used for every controller and on the full year. The two differ a little because
+      the test weeks are not a typical sample of the year.
+    mass: >
+      Letting the building store heat in its own walls adds {pb.mass_points:.1f} percentage points on top of the tanks and the
+      battery (S3 with a comfort band against S3 with the building held at the thermostat path). Under a wider comfort band the
+      ceiling is {pb.bands.s3_band_20_24:.1f} %.
+    export: >
+      The export price matters most: the S2 ceiling is {pb.sweep.0.S2:.1f} % when exports earn nothing and {pb.sweep.12.S2:.1f} % at the
+      highest price tested.
+    tariffs: >
+      Richer price structures raise the ceilings: across all tariff variants, including the stylised ones, the S2 ceiling
+      ranges from {pb.tariff_s2_min:.1f} % to {pb.tariff_s2_max:.1f} %. Pilot and day-ahead structures were applied outside the period they
+      come from, and the stylised spreads are what-ifs, not tariffs that exist.
+    resolution: >
+      Simulating in quarter-hours instead of hours changes the S2 ceiling by {pb.q15_gain_s2:+.1f} percentage points; the weather stays hourly information.
+    peaks: >
+      The bill-optimal schedule is not a grid-friendly schedule. On S2 the highest hour of the district rises from
+      {pb.peak.s2_zero_kw:.0f} kW to {pb.peak.s2_opt_kw:.0f} kW ({pb.peak.s2_rise_pct:+.0f} %), on S3 by {pb.peak.s3_rise_pct:+.0f} %, because
+      the battery and tanks all charge in the cheapest hours.
+    evleg: >
+      Electric-vehicle charging and a local electricity community are labelled what-ifs on S2. Making the vehicles' charging
+      flexible is worth {pb.ev_value_chf:.0f} CHF a year ({pb.ev_value_pct:.2f} % of the bill); the community gain depends on the grid-fee discount assumed.
+    ladder:
+      - id: S0
+        name: Heating and hot water only
+        adds: >
+          The Phase A district on the standard two-tier tariff. The heat-pump tanks are the only flexible devices. An ideal
+          controller saves {pb.ceil.s0.year:.1f} % of the yearly bill.
+        classes: [measured, derived, synthetic]
+        nodes: [D-036]
+      - id: S1
+        name: Assumed solar panels
+        adds: >
+          Rooftop solar on every building, sized from the building's own yearly use (south facing, tilted, pvlib model), and an
+          assumed export price. Surplus sun can be stored in the tanks. An ideal controller saves {pb.ceil.s1.year:.1f} % of the year
+          and {pb.ceil.s1.week:.1f} % of the eight test weeks.
+        classes: [assumption, modeled]
+        nodes: [M-003, A-013, A-015, D-033]
+      - id: S2
+        name: Assumed solar panels and battery
+        adds: >
+          S1 plus a battery per building, one kilowatt-hour per kilowatt of solar, with assumed efficiency and power. An ideal
+          controller saves {pb.ceil.s2.year:.1f} % of the year and {pb.ceil.s2.week:.1f} % of the eight test weeks.
+        classes: [assumption, modeled]
+        nodes: [M-004, A-016, A-017, D-035]
+      - id: S3
+        name: Assumed solar, battery and building thermal model
+        adds: >
+          S2 plus a single-node model of each building's heat balance with a comfort band around the thermostat setpoint, so the
+          walls can store heat; the thermostat is the reference. An ideal controller saves {pb.ceil.s3.year:.1f} % of the year and
+          {pb.ceil.s3.week:.1f} % of the eight test weeks.
+        classes: [assumption, modeled, synthetic]
+        nodes: [M-005, A-018, A-019, A-020, D-038, D-039]
+  controllers:
+    intro: >
+      Every controller on this page is judged on the same eight held-out weeks, against the same reference (doing nothing, or the
+      thermostat on S3), and next to the exact optimum with perfect foresight, which no real controller can reach.
+    findings:
+      - >
+        Reinforcement learning did not beat the reference on any rung. The central learner saves
+        {pb.rl.s1.sac_central:+.1f} % (S1), {pb.rl.s2.sac_central:+.1f} % (S2) and {pb.rl.s3.sac_central:+.1f} % (S3) of the bill, where a negative
+        number is a loss; on S3 it also lets the buildings get cold.
+      - >
+        A planner that re-solves the optimisation every hour with the true future reaches the ideal saving: {pb.mpc.s2.perfect:.1f} % on S2
+        against a ceiling of {pb.ceil.s2.week:.1f} %. The gap to the ceiling is therefore the cost of not knowing the future, not of the method.
+      - >
+        With forecasts that use the weather the same planner reaches {pb.mpc.s1.weather:.1f} % (S1), {pb.mpc.s2.weather:.1f} % (S2) and
+        {pb.mpc.s3.weather:.1f} % (S3), against {pb.mpc.s1.rule:.1f} %, {pb.mpc.s2.rule:.1f} % and {pb.mpc.s3.rule:.1f} % for the hand-set solar rule.
+        That is {pb.share_of_ceiling_s2:.0f} % and {pb.share_of_ceiling_s3:.0f} % of the ceiling on S2 and S3. The weather is taken as known in these runs.
+      - >
+        Forecasts that only look at the past are not enough: copying the same hour of last week gives {pb.mpc.s2.naive:.1f} % on S2,
+        less than the solar rule.
+      - >
+        The household load is the forecast that limits everything. With the true load instead of a forecast the S2 saving rises
+        from {pb.mpc.s2.weather:.1f} % to {pb.mpc.s2.true_load:.1f} %. The load of these buildings is a constructed composite, so this
+        limit may differ for real houses.
+      - >
+        The planner that only minimises the bill raises the highest hour of the district from {pb.mpc.s2.zero_kw:.0f} kW to {pb.mpc.s2.weather_kw:.0f} kW. A small
+        peak weight keeps the saving ({pb.mpc.s2.weather_peak01:.1f} %) and brings the highest hour to {pb.mpc.s2.weather_peak01_kw:.0f} kW.
+      - >
+        On S3, if the planner's room model is wrong by a fifth, comfort is violated for {pb.mpc.s3.x08_cold:.0f} K·h over the eight weeks.
+        Online correction of the model plus a small comfort margin brings that to {pb.mpc.s3.x08_corr_m02_cold:.0f} K·h at a saving of
+        {pb.mpc.s3.x08_corr_m02:.1f} %.
+      - >
+        Planning against error scenarios of the measured size did worse than planning against one forecast ({pb.stoch.min:.1f} % to
+        {pb.stoch.max:.1f} % against {pb.stoch.det:.1f} %). The cause is not identified.
+    rl_note: >
+      The learners were trained for a short budget with a reward whose weights were set by hand and not tuned. This is a negative
+      result for these settings, not a proof that learning cannot work here.
+    forecast_note: >
+      Error is expressed as a multiple of the standard deviation of each series. The synthetic points add that much random error to
+      the true future. The history-only forecaster was measured against the real series; the error of the weather-conditioned
+      forecaster is not stored in a result file, so it appears as a level only.
+    tradeoff_note: >
+      Each point is one peak weight in the planner. The weight is a tuning knob in the optimisation, not a tariff. The highest hour
+      is the largest district grid draw in the eight test weeks.
+    model_error_note: >
+      The planner believes the building has a different heat loss and heat capacity than the simulated one. Comfort is the sum of
+      temperature shortfalls below the setpoint over all buildings and hours, in kelvin-hours.
+    curves_note: >
+      Bill change against the reference during training, evaluated on the test weeks; a positive number is a loss. Each line is one
+      training run.
+    stochastic_note: >
+      Several error scenarios per decision, with the first steps shared by all scenarios. At the measured error size every variant is
+      worse than the single forecast; with the sampled errors scaled down to a fraction the result returns to the single-forecast level.
+    limitations_title: What limits how far these results can be read
+    limitations_intro: >
+      These open issues and assumptions come from the project registers and affect how the numbers above should be read.
+  limitations:
+    - ISS-032
+    - ISS-034
+    - ISS-040
+    - ISS-041
+    - ISS-042
+    - A-028
+    - A-029
+    - A-030
+    - A-031
 
 _glossary:
   - {id: heat_pump, term: Heat pump, definition: "An electric machine that moves heat from outdoor air into a building. It delivers several units of heat for each unit of electricity it uses."}
@@ -94,6 +228,10 @@ _glossary:
   - {id: modeled, term: Modeled, definition: "Produced by a model rather than observed. The carbon curve is an example, so its level is an estimate."}
   - {id: synthetic, term: Constructed (synthetic), definition: "Built for this study because no real data exists, such as the tank sizes and the apartment loads. Always shown hatched or labelled as assumed."}
   - {id: counterfactual, term: Conventional counterfactual, definition: "The reference CityLearn compares against: the same buildings without storage control. A value of one means no change from it; lower is better."}
+  - {id: exact_optimum, term: Exact optimum (ceiling), definition: "The best possible bill if the whole future were known, found with a linear program and replayed in the simulator to confirm it. It is an upper reference that no real controller can reach.", node: D-036}
+  - {id: mpc, term: Receding-horizon planner (MPC), definition: "A controller that plans the next day or two with forecasts every hour, applies only the first step, and plans again with the newest information.", node: ALG-011}
+  - {id: held_out_weeks, term: Held-out weeks, definition: "Eight weeks of the year kept aside for testing. Learners never train on them, and every controller is scored on them.", node: EXP-017}
+  - {id: peak_weight, term: Peak weight, definition: "A penalty on the district's highest grid draw added to the planner's bill objective. A larger weight gives up some saving for a lower peak.", node: EXP-019}
 
 _story:
   hero:

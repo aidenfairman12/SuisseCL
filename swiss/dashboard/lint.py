@@ -238,6 +238,15 @@ def lint(check_fresh_flag=False):
 
     # plain-language layer (story page): prose rules, display names, glossary terms used in the UI
     errs += story_mod.check_prose(ui, prose_digits)
+    # Phase B pages: every registry node named in `_phase_b` (ladder nodes, limitations) must exist in the bundle
+    pbm = ui.get('_phase_b') or {}
+    for e in (pbm.get('scenarios', {}).get('ladder') or []):
+        for x in e.get('nodes', []):
+            if x not in nodes:
+                errs.append(f'phase_b: ladder {e.get("id")} references {x}, which does not exist')
+    for x in pbm.get('limitations', []) or []:
+        if x not in nodes:
+            errs.append(f'phase_b: limitation {x} does not exist')
     headline = set()
     for rel, text in web_sources():
         for arr in re.findall(r'(?:HEADLINE|KPIS)\s*=\s*\[([^\]]*)\]', text):

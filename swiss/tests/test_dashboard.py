@@ -514,3 +514,54 @@ def test_every_role_in_the_bundle_has_a_plain_name_and_group(story, series):
     for k in ('cleaner', 'dirtier', 'typical', 'missing', 'sub'):
         assert story['carbon_relative'][k]
     assert '{pct}' in story['carbon_relative']['cleaner'] and '{pct}' in story['carbon_relative']['dirtier']
+
+
+# ---------------------------------------------------------------- Phase B pages (scenarios.json, controllers.json; WP5a)
+@pytest.fixture(scope='module')
+def scen():
+    return read_bundle_file(os.path.join(BUNDLE, 'scenarios.json'))
+
+
+@pytest.fixture(scope='module')
+def ctrl():
+    return read_bundle_file(os.path.join(BUNDLE, 'controllers.json'))
+
+
+def test_phase_b_bundle_is_small_and_prose_is_filled(scen, ctrl):
+    for name in ('scenarios.json', 'controllers.json'):
+        assert os.path.getsize(os.path.join(BUNDLE, name)) < 500_000
+    texts = list(scen['prose'].values()) + [x for v in ctrl['prose'].values() for x in (v if isinstance(v, list) else [v])] + [e['adds'] for e in scen['ladder']]
+    assert all(isinstance(t, str) and t.strip() for t in texts)
+    assert not any('{' in t or '}' in t for t in texts), 'unresolved placeholder in Phase B prose'
+
+
+def test_phase_b_ceilings_equal_the_result_files(scen):
+    ref = json.load(open(p('swiss/experiments/oracle_results/rl_reference.json')))['scenarios']
+    for s in ('s1', 's2', 's3'):
+        assert scen['ceilings'][s]['week'] == pytest.approx(ref[s]['saving_pct'])
+        assert scen['ceilings'][s]['year'] == pytest.approx(ref[s]['year_saving_pct'])
+    assert [e['id'] for e in scen['ladder']] == ['S0', 'S1', 'S2', 'S3']
+
+
+def test_phase_b_mpc_rows_recomputed_from_a_result_file(ctrl):
+    d = json.load(open(p('swiss/experiments/mpc_results/mpc_s2_weather_H48_L0_tv1.json')))
+    ref = json.load(open(p('swiss/experiments/mpc_results/mpc_s2_perfect_H48_L0_tv1.json')))['reference']
+    row = next(r for r in ctrl['scenarios']['s2']['rows'] if r['id'] == 'mpc_s2_weather_H48_L0_tv1')
+    assert row['saving_pct'] == pytest.approx(100 * (ref['cost_chf'] - d['mpc']['cost_chf']) / ref['cost_chf'])
+    assert row['share_of_ceiling_pct'] == pytest.approx(100 * row['saving_pct'] / ctrl['scenarios']['s2']['ceiling_pct'])
+
+
+def test_phase_b_rl_rows_and_limitations(ctrl):
+    s = json.load(open(p('swiss/experiments/rl_results/phase_b_summary.json')))
+    row = next(r for r in ctrl['scenarios']['s2']['rows'] if r['id'] == 'rl_sac_central')
+    assert row['n'] == s['s2_sac_central']['n'] and row['saving_pct'] == pytest.approx(-sum(s['s2_sac_central']['bill raw']) / len(s['s2_sac_central']['bill raw']))
+    assert next(r for r in ctrl['scenarios']['s2']['rows'] if r['id'] == 'rl_marlisa')['saving_pct'] is None      # three S2 MARLISA runs ran out of memory
+    assert [x['id'] for x in ctrl['limitations']] == ['ISS-032', 'ISS-034', 'ISS-040', 'ISS-041', 'ISS-042', 'A-028', 'A-029', 'A-030', 'A-031']
+    assert all(x['title'] for x in ctrl['limitations'])
+
+
+def test_phase_b_pages_are_wired_into_the_site():
+    header = open(os.path.join(ROOT, 'web', 'src', 'components', 'site-header.tsx'), encoding='utf-8').read()
+    assert '/scenarios/' in header and '/controllers/' in header
+    for route in ('scenarios', 'controllers'):
+        assert os.path.exists(os.path.join(ROOT, 'web', 'src', 'app', route, 'page.tsx'))
