@@ -22,5 +22,11 @@ $PY -I swiss/citylearn_build/build_dataset.py --carbon-file data/canonical/carbo
 $PY -I swiss/pipeline/fit_rc_params.py >/dev/null                       # DER-015 (diagnostics)
 $PY -I swiss/pipeline/build_rc_params.py >/dev/null                     # DER-015
 $PY -I swiss/citylearn_build/build_dataset.py --carbon-file data/canonical/carbon_intensity_citylearn_2023.csv --pv-ratio 1.0 --battery-kwh-per-kwp 1.0 --rc --out-name swiss_rc_2023 >/dev/null   # DER-016
-(cd data/canonical && find . -type f ! -name MANIFEST.sha256 | sort | xargs shasum -a 256 > MANIFEST.sha256)
+$PY -I swiss/pipeline/build_dayahead.py >/dev/null                         # DER-018 (needs data/raw/energy_charts/dayahead_ch_2023.json)
+$PY -I swiss/pipeline/build_15min.py >/dev/null                           # B2: data/canonical/q15 (not in the manifest, not in git)
+for spec in "swiss_district_2023_q15" "swiss_pv_2023_q15 --pv-ratio 1.0" "swiss_pvbat_2023_q15 --pv-ratio 1.0 --battery-kwh-per-kwp 1.0" "swiss_rc_2023_q15 --pv-ratio 1.0 --battery-kwh-per-kwp 1.0 --rc"; do
+  set -- $spec; name=$1; shift
+  $PY -I swiss/citylearn_build/build_dataset.py --carbon-file data/canonical/q15/carbon_intensity_citylearn_2023_15min.csv --q15 "$@" --out-name $name >/dev/null   # DER-019 to DER-022
+done
+(cd data/canonical && find . -type f ! -name MANIFEST.sha256 ! -path './q15/*' | sort | xargs shasum -a 256 > MANIFEST.sha256)
 echo "pipeline done"

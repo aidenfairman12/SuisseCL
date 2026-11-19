@@ -151,6 +151,32 @@
     "saving_chf": 6648.785189114693,
     "saving_pct": 37.90641929840738
    }
+  },
+  "dayahead_2023": {
+   "label": "Swiss day-ahead pass-through 2023 (import: grid + spot + adder, export: spot; revenue neutral to S0)",
+   "spread_rp": 34.0206,
+   "mean_rp": 16.594592190889372,
+   "export_mean_rp": 10.441157015641057,
+   "S0": {
+    "zero_bill": 37117.75729582609,
+    "saving_chf": 783.0267763902541,
+    "saving_pct": 2.1095745902684313
+   },
+   "S1": {
+    "zero_bill": 21639.711919764708,
+    "saving_chf": 1403.7071412111873,
+    "saving_pct": 6.4867182447521685
+   },
+   "S2": {
+    "zero_bill": 21639.711919764708,
+    "saving_chf": 4336.50987558873,
+    "saving_pct": 20.03959152352654
+   },
+   "S3": {
+    "zero_bill": 23291.490357337258,
+    "saving_chf": 4834.621127073209,
+    "saving_pct": 20.757027793844944
+   }
   }
  }
 }

@@ -36,13 +36,14 @@ def _losses_fraction():
     return pvsystem.pvwatts_losses() / 100.0
 
 
-def specific_yield_kwh_per_kwp(ts_start_utc, ghi_wm2, dhi_wm2, temp_c, params=None):
-    """AC energy per kWp (DC nameplate) per hour (kWh/kWp) for the hour starting at ts_start_utc. Zero when the sun is below the horizon."""
+def specific_yield_kwh_per_kwp(ts_start_utc, ghi_wm2, dhi_wm2, temp_c, params=None, step_minutes=60):
+    """Mean AC power per kWp (DC nameplate) over the interval starting at ts_start_utc, in kW/kWp; for hourly steps this equals kWh/kWp per hour.
+    Zero when the sun is below the horizon. `step_minutes` sets the interval length (60, or 15 for the 15-minute pipeline); irradiance is the mean over that interval."""
     p = dict(PARAMS, **(params or {}))
     ts = pd.DatetimeIndex(ts_start_utc)
     if ts.tz is None:
         ts = ts.tz_localize('UTC')
-    mid = ts + pd.Timedelta(minutes=30)
+    mid = ts + pd.Timedelta(minutes=step_minutes / 2.0)
     ghi = pd.Series(np.clip(np.nan_to_num(np.asarray(ghi_wm2, dtype=float)), 0, None), index=mid)
     dhi = pd.Series(np.clip(np.nan_to_num(np.asarray(dhi_wm2, dtype=float)), 0, None), index=mid)
     dhi = np.minimum(dhi, ghi)

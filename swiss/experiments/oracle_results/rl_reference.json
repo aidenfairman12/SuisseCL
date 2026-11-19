@@ -1,0 +1,24 @@
+{
+ "test_steps": 1344,
+ "export_price_chf_kwh": 0.08,
+ "scenarios": {
+  "s1": {
+   "zero_bill_test_chf": 3045.924764462176,
+   "optimum_bill_test_chf": 2878.942420318049,
+   "saving_pct": 5.482155898673733,
+   "year_saving_pct": 6.02829895418426
+  },
+  "s2": {
+   "zero_bill_test_chf": 3045.924764462176,
+   "optimum_bill_test_chf": 2602.704098227823,
+   "saving_pct": 14.55126769398761,
+   "year_saving_pct": 15.596976780755444
+  },
+  "s3": {
+   "zero_bill_test_chf": 3177.273838185644,
+   "optimum_bill_test_chf": 2708.7202687263643,
+   "saving_pct": 14.747031364688516,
+   "year_saving_pct": 15.961265368772525
+  }
+ }
+}

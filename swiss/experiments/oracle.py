@@ -37,8 +37,10 @@ OUT = os.path.join(ROOT, 'swiss', 'experiments', 'oracle_results')
 
 
 def tank_inputs(env):
-    """Per tank: capacity, demand, COP, maximum heat-pump output, efficiency terms (all read from the built environment)."""
-    T = np.asarray(env.buildings[0].weather.outdoor_dry_bulb_temperature, dtype=float)[:N]
+    """Per tank: capacity, demand, COP, maximum heat-pump output per step, efficiency terms (all read from the built environment; any step length)."""
+    n = env.time_steps - 1
+    dt_h = env.seconds_per_time_step / 3600.0
+    T = np.asarray(env.buildings[0].weather.outdoor_dry_bulb_temperature, dtype=float)[:n]
     out = []
     for bi, b in enumerate(env.buildings):
         for kind, act in (('heating', 0), ('dhw', 1)):
@@ -47,15 +49,15 @@ def tank_inputs(env):
             if cap <= 0:
                 continue
             cop = np.array([dev.get_cop(t, heating=True) for t in T])
-            out.append({'building': bi, 'kind': kind, 'action_index': act, 'cap': cap, 'cop': cop, 'maxout': float(dev.nominal_power) * cop,
-                        'demand': np.asarray(getattr(b, f'{kind}_demand'), dtype=float)[:N], 'rho': float(tank.round_trip_efficiency),
+            out.append({'building': bi, 'kind': kind, 'action_index': act, 'cap': cap, 'cop': cop, 'maxout': float(dev.nominal_power) * dt_h * cop, 'dt_h': dt_h,
+                        'demand': np.asarray(getattr(b, f'{kind}_demand'), dtype=float)[:n], 'rho': float(tank.round_trip_efficiency),
                         'loss': float(tank.loss_coefficient), 'e0': float(tank.initial_soc) * cap})
     return out
 
 
 def solve_tank(t, price, scale=1.0):
     """LP for one tank; returns (a, d, E, objective) where objective = change of the bill in CHF (negative = saving)."""
-    n, cap, rho, lam = N, t['cap'] * scale, t['rho'], t['loss']
+    n, cap, rho, lam = len(price), t['cap'] * scale, t['rho'], t['loss']
     cost = price / t['cop']
     c = np.concatenate([cost, -cost, np.zeros(n)])                                  # variables: a (n), d (n), E (n)
     main = sp.identity(n, format='csr')
@@ -66,7 +68,8 @@ def solve_tank(t, price, scale=1.0):
     # the heat pump's output is shared between direct supply (demand - d) and charging (a): (demand - d) + a <= maximum output
     A_ub = sp.hstack([main, -main, sp.csr_matrix((n, n))], format='csr')
     b_ub = t['maxout'] - t['demand']
-    bounds = ([(0.0, float(min(cap, m))) for m in t['maxout']] + [(0.0, float(min(cap, dm))) for dm in t['demand']] + [(0.0, cap)] * n)
+    rate = cap * t.get('dt_h', 1.0)      # a tank action is a fraction of capacity per HOUR: at most capacity x step length moves per step (checked at 15 min)
+    bounds = ([(0.0, float(min(rate, m))) for m in t['maxout']] + [(0.0, float(min(rate, dm))) for dm in t['demand']] + [(0.0, cap)] * n)
     r = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds, method='highs')
     if r.status != 0:
         raise RuntimeError(f'LP failed: {r.message}')
@@ -79,8 +82,8 @@ def baseline_arrays(env):
     return imp
 
 
-def zero_action_import():
-    env = CityLearnEnv(rl.SCHEMA, central_agent=True, reward_function=SwissDistrictReward)
+def zero_action_import(schema=None):
+    env = CityLearnEnv(schema or rl.SCHEMA, central_agent=True, reward_function=SwissDistrictReward)
     from citylearn.agents.baseline import ZeroActionBaselineAgent
     ag, (obs, _) = ZeroActionBaselineAgent(env), env.reset()
     while not env.terminated:

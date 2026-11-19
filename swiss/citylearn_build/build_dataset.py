@@ -34,16 +34,22 @@ def buffer_kwh(role):
     return litres * WH_PER_L_K * 10.0 / 1000.0
 
 
-def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_eff=TANK_EFF, thermal_subdir='thermal', pv_ratio=None, battery_kwh_per_kwp=None, rc=False):
+def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_eff=TANK_EFF, thermal_subdir='thermal', pv_ratio=None, battery_kwh_per_kwp=None, rc=False, q15=False):
     out_dir = os.path.join(ROOT, 'swiss', 'datasets', out_name)
     os.makedirs(out_dir, exist_ok=True)
     params = json.load(open(os.path.join(CAN, thermal_subdir, 'thermal_params.json')))
-    w = pd.read_csv(os.path.join(CAN, 'weather_klo_2023_hourly.csv'), index_col='timestamp_utc', parse_dates=True)
-    tar = pd.read_csv(os.path.join(CAN, 'tariff_ekz_standard_2023_hourly.csv'), index_col='timestamp_utc', parse_dates=True)
+    # B2: q15 = 900 s steps from the 15-minute pipeline (data/canonical/q15, swiss/pipeline/build_15min.py); the default stays the hourly dataset
+    dt_h = 0.25 if q15 else 1.0
+    qd = os.path.join(CAN, 'q15')
+    w = pd.read_csv(os.path.join(qd, 'weather_klo_2023_15min.csv') if q15 else os.path.join(CAN, 'weather_klo_2023_hourly.csv'), index_col='timestamp_utc', parse_dates=True)
+    tar = pd.read_csv(os.path.join(qd, 'tariff_ekz_standard_2023_15min.csv') if q15 else os.path.join(CAN, 'tariff_ekz_standard_2023_hourly.csv'), index_col='timestamp_utc', parse_dates=True)
     idx = w.index
     loc = idx.tz_convert('Europe/Zurich')
     cal = pd.DataFrame({'month': loc.month, 'hour': loc.hour + 1, 'day_type': loc.dayofweek + 1,
                         'daylight_savings_status': np.array([int(t.dst().total_seconds() > 0) for t in loc])}, index=idx)
+    if q15:
+        cal['minutes'] = loc.minute
+    loss_coeff = LOSS_COEFF      # per HOUR: CityLearn's StorageDevice.loss_coefficient property rescales it to the step length itself (1 - (1 - c) ** step_hours)
 
     def ahead(s, k):  # exact future value (perfect foresight); last k hours repeat the final value
         return s.shift(-k).ffill()
@@ -69,7 +75,7 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
 
     pv_w = pv_caps = None
     if pv_ratio is not None:   # B3: assumed-PV scenario (M-003); default build is unchanged
-        pv_w = pd.read_csv(os.path.join(CAN, 'pv', 'pv_ac_w_per_kwp_2023_hourly.csv'), index_col='timestamp_utc', parse_dates=True).pv_ac_w_per_kwp
+        pv_w = pd.read_csv(os.path.join(qd, 'pv_ac_w_per_kwp_2023_15min.csv') if q15 else os.path.join(CAN, 'pv', 'pv_ac_w_per_kwp_2023_hourly.csv'), index_col='timestamp_utc', parse_dates=True).pv_ac_w_per_kwp
         assert (pv_w.index == idx).all()
         pv_caps = json.load(open(os.path.join(CAN, 'pv', 'pv_capacity_2023.json')))['buildings']
 
@@ -82,12 +88,14 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
         rc_ghi = (w.beam_horizontal_wm2.fillna(0.0).clip(lower=0) + w.diffuse_wm2.fillna(0.0).clip(lower=0)).to_numpy()
     buildings, manifest = {}, {}
     for i, role in enumerate(ROLES, 1):
-        d = pd.read_csv(os.path.join(CAN, thermal_subdir, f'{role}_2023_thermal_hourly.csv'), index_col='timestamp_utc', parse_dates=True)
+        d = pd.read_csv(os.path.join(qd, 'thermal', f'{role}_2023_thermal_15min.csv') if q15 else os.path.join(CAN, thermal_subdir, f'{role}_2023_thermal_hourly.csv'), index_col='timestamp_utc', parse_dates=True)
         assert (d.index == idx).all()
+        dh = pd.read_csv(os.path.join(CAN, thermal_subdir, f'{role}_2023_thermal_hourly.csv'), index_col='timestamp_utc', parse_dates=True)   # device sizes always from the hourly series
         name = f'Building_{i}'
         rc_q = rc_T = None
         if rc:
-            rc_q, rc_T = simulate_ideal(rc_params['buildings'][role]['effective_area_m2'], w.temp_c.to_numpy(), rc_ghi)
+            rc_q, rc_T = simulate_ideal(rc_params['buildings'][role]['effective_area_m2'], w.temp_c.to_numpy(), rc_ghi, dt_s=3600.0 * dt_h)
+            rc_q = rc_q * dt_h                      # kW -> kWh per step
         es = pd.DataFrame({
             'month': cal.month, 'hour': cal.hour, 'day_type': cal.day_type,
             'daylight_savings_status': cal.daylight_savings_status,
@@ -96,11 +104,16 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
             'cooling_demand': 0.0, 'heating_demand': d.heating_demand_kwh if rc_q is None else rc_q, 'solar_generation': 0.0 if pv_w is None else pv_w.to_numpy(),
             'indoor_dry_bulb_temperature_cooling_set_point': 26.0,
             'indoor_dry_bulb_temperature_heating_set_point': SETPOINT_C, 'hvac_mode': 2})
+        if q15:
+            es['minutes'] = cal.minutes
         es.to_csv(os.path.join(out_dir, f'{name}.csv'), index=False)
         p = params[role]
-        peak_sh = float(d.e_hp_space_heating_kwh.max()); peak_dhw = float(d.e_hp_baseline_kwh.max())
+        # device size = 1.1 x the highest power seen at the dataset's own resolution (kW): the 15-minute series has higher power peaks than the hourly one, and a device
+        # sized on hourly peaks could not supply the derived 15-minute heat demand (the 15-minute exact optimum was infeasible in that case)
+        src = d if q15 else dh
+        peak_sh = float(src.e_hp_space_heating_kwh.max() / dt_h); peak_dhw = float(src.e_hp_baseline_kwh.max() / dt_h)
         sh_cap = buffer_kwh(role) * tank_scale
-        mean_dhw_day = float(d.dhw_demand_kwh.sum() / 365.0)
+        mean_dhw_day = float(dh.dhw_demand_kwh.sum() / 365.0)
         b = {'type': 'citylearn.building.Building', 'include': True, 'energy_simulation': f'{name}.csv',
              'weather': 'weather.csv', 'carbon_intensity': carbon_ref, 'pricing': 'pricing.csv',
              'inactive_observations': [], 'inactive_actions': [],
@@ -111,7 +124,7 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
                             'attributes': {'nominal_power': round(max(peak_dhw * 1.1, 0.01), 4), 'efficiency': round(p['eta_dhw'], 6),
                                            'target_heating_temperature': p['T_sup_dhw_c'], 'target_cooling_temperature': 8.0}},
              'heating_storage': {'type': 'citylearn.energy_model.StorageTank', 'autosize': False,
-                                 'attributes': {'capacity': round(sh_cap, 4), 'efficiency': tank_eff, 'loss_coefficient': LOSS_COEFF}}}
+                                 'attributes': {'capacity': round(sh_cap, 4), 'efficiency': tank_eff, 'loss_coefficient': loss_coeff}}}
         if pv_w is not None:
             kwp = pv_caps[role]['ratios'][str(float(pv_ratio))]['kwp']
             b['pv'] = {'type': 'citylearn.energy_model.PV', 'autosize': False, 'attributes': {'nominal_power': kwp}}
@@ -129,7 +142,7 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
         if mean_dhw_day >= DHW_MIN_KWH_DAY:
             dhw_cap = mean_dhw_day * tank_scale
             b['dhw_storage'] = {'type': 'citylearn.energy_model.StorageTank', 'autosize': False,
-                                'attributes': {'capacity': round(dhw_cap, 4), 'efficiency': tank_eff, 'loss_coefficient': LOSS_COEFF}}
+                                'attributes': {'capacity': round(dhw_cap, 4), 'efficiency': tank_eff, 'loss_coefficient': loss_coeff}}
         if rc:
             b['type'] = 'swiss.citylearn_build.rc_dynamics.RCDynamicsBuilding'
             b['dynamics'] = {'type': 'swiss.citylearn_build.rc_dynamics.RCDynamics',
@@ -154,9 +167,9 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
     actions = {'heating_storage': {'active': True}, 'dhw_storage': {'active': True}, 'electrical_storage': {'active': battery_kwh_per_kwp is not None},
                'cooling_storage': {'active': False}, 'cooling_device': {'active': False}, 'heating_device': {'active': rc},
                'cooling_or_heating_device': {'active': False}}
-    schema = {'random_seed': 0, 'central_agent': True, 'simulation_start_time_step': 0, 'simulation_end_time_step': 8759,
+    schema = {'random_seed': 0, 'central_agent': True, 'simulation_start_time_step': 0, 'simulation_end_time_step': len(idx) - 1,
               'episode_time_steps': None, 'rolling_episode_split': False, 'random_episode_split': False,
-              'seconds_per_time_step': 3600.0, 'observations': observations, 'actions': actions,
+              'seconds_per_time_step': 3600.0 * dt_h, 'observations': observations, 'actions': actions,
               'reward_function': {'type': 'citylearn.reward_function.RewardFunction', 'attributes': {}},
               'buildings': buildings, 'root_directory': '.'}   # '.' = the schema's own folder (CityLearn 3.3.0 resolves it relative to schema.json), so the dataset is portable
     json.dump(schema, open(os.path.join(out_dir, 'schema.json'), 'w'), indent=1)
@@ -174,8 +187,9 @@ if __name__ == '__main__':
     ap.add_argument('--carbon-file', default=None)
     ap.add_argument('--tank-eff', type=float, default=TANK_EFF)
     ap.add_argument('--thermal-subdir', default='thermal')
+    ap.add_argument('--q15', action='store_true', help='B2: 900 s steps from data/canonical/q15 (build_15min.py)')
     ap.add_argument('--rc', action='store_true', help='B7: single-node RC thermal model per building (scenario S3)')
     ap.add_argument('--battery-kwh-per-kwp', type=float, default=None, help='B4: add an assumed battery of this many kWh per kWp of PV (needs --pv-ratio)')
     ap.add_argument('--pv-ratio', type=float, default=None, help='B3: add assumed PV with this yield-to-demand ratio (0.5, 1.0, 1.5)')
     a = ap.parse_args()
-    main(a.tank_scale, a.out_name, a.carbon_file, a.tank_eff, a.thermal_subdir, a.pv_ratio, a.battery_kwh_per_kwp, a.rc)
+    main(a.tank_scale, a.out_name, a.carbon_file, a.tank_eff, a.thermal_subdir, a.pv_ratio, a.battery_kwh_per_kwp, a.rc, a.q15)

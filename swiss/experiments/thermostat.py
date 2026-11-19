@@ -21,8 +21,9 @@ class ThermostatAgent:
                 w = b.weather
                 ghi = float(w.direct_solar_irradiance[t]) + float(w.diffuse_solar_irradiance[t])
                 dyn = b.dynamics
-                q = heat_for_target(dyn.temperature, dyn.params['setpoint_c'], float(w.outdoor_dry_bulb_temperature[t]), ghi, dyn.area_eff, p=dyn.params)
+                dt_h = b._dataset_step_hours()
+                q = heat_for_target(dyn.temperature, dyn.params['setpoint_c'], float(w.outdoor_dry_bulb_temperature[t]), ghi, dyn.area_eff, dt_s=3600.0 * dt_h, p=dyn.params) * dt_h   # kWh per step
                 maxout = b.heating_device.get_max_output_power(float(w.outdoor_dry_bulb_temperature[t]), heating=True,
-                                                               max_electric_power=b.heating_device.nominal_power)
+                                                               max_electric_power=b.heating_device.nominal_power * dt_h)
                 acts.append(float(np.clip(q / max(maxout, 1e-9), 0.0, 1.0)))
         return [acts]

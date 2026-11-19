@@ -44,16 +44,17 @@ GATE_EXPORT_RP = 8.0      # the gate is evaluated at the default assumed export 
 ROLES = ['SFH-low', 'SFH-mid', 'SFH-high', 'MFH-small', 'MFH-medium', 'MFH-large']
 
 
-def battery_spec(cap_kwh):
+def battery_spec(cap_kwh, dt_h=1.0):
     eta1 = BATTERY['efficiency'] ** 0.5
     emin = (1.0 - BATTERY['depth_of_discharge']) * cap_kwh
-    return {'cap': cap_kwh, 'power': BATTERY['c_rate'] * cap_kwh, 'eta1': eta1, 'emin': emin, 'e0': emin}
+    return {'cap': cap_kwh, 'power': BATTERY['c_rate'] * cap_kwh * dt_h, 'eta1': eta1, 'emin': emin, 'e0': emin}     # power = energy per step
 
 
 def solve_building(net0, price, p_exp, tanks, battery=None):
     """Exact optimum for one building. Returns dict with arrays and the bill; `tanks` entries as oracle.tank_inputs (sliced to len(net0))."""
     n = len(net0)
-    assert p_exp <= price.min() + 1e-12, 'export price above an import price makes the program unbounded'
+    p_exp = np.broadcast_to(np.asarray(p_exp, dtype=float), (n,))     # scalar or one price per step
+    assert (p_exp <= price + 1e-12).all(), 'export price above an import price makes the program unbounded'
     blocks = []                      # (name, size, lower, upper, cost)
     idx = {}
 
@@ -63,8 +64,9 @@ def solve_building(net0, price, p_exp, tanks, battery=None):
 
     for k, t in enumerate(tanks):
         cap = t['cap']
-        add(f'a{k}', 0.0, np.minimum(cap, t['maxout']), 0.0)
-        add(f'd{k}', 0.0, np.minimum(cap, t['demand']), 0.0)
+        rate = cap * t.get('dt_h', 1.0)      # at most capacity x step length moves per step (action space of CityLearn)
+        add(f'a{k}', 0.0, np.minimum(rate, t['maxout']), 0.0)
+        add(f'd{k}', 0.0, np.minimum(rate, t['demand']), 0.0)
         add(f'E{k}', 0.0, cap, 0.0)
     if battery is not None:
         add('c', 0.0, battery['power'], 0.0)
@@ -112,27 +114,34 @@ def solve_building(net0, price, p_exp, tanks, battery=None):
 
 
 def zero_bill(net0, price, p_exp):
-    return float((price * np.maximum(net0, 0)).sum() - p_exp * np.maximum(-net0, 0).sum())
+    return float((price * np.maximum(net0, 0)).sum() - (np.asarray(p_exp, dtype=float) * np.maximum(-net0, 0)).sum())
 
 
 class Inputs:
     """Everything the programs need, read once: S0 zero-action net per building, tank inputs, PV per kWp and kWp per building and ratio."""
 
-    def __init__(self):
-        self.env0, _ = oracle.zero_action_import()
-        self.N = oracle.N
-        self.price = rl.PRICE[:self.N]
+    def __init__(self, resolution='h'):
+        """resolution 'h' = hourly datasets (Phase A and B), 'q15' = the 15-minute datasets of B2 (swiss/datasets/*_q15)."""
+        self.resolution = resolution
+        sfx = '_q15' if resolution == 'q15' else ''
+        self.sfx = sfx
+        self.env0, _ = oracle.zero_action_import(os.path.join(DS, f'swiss_district_2023{sfx}', 'schema.json'))
+        self.N = self.env0.time_steps - 1
+        self.dt_h = self.env0.seconds_per_time_step / 3600.0
+        self.price = pd.read_csv(os.path.join(DS, f'swiss_district_2023{sfx}', 'pricing.csv')).electricity_pricing.to_numpy()[:self.N]
         self.net_s0 = [np.asarray(b.net_electricity_consumption, dtype=float)[:self.N] for b in self.env0.buildings]
         allt = oracle.tank_inputs(self.env0)
         self.tanks = [[t for t in allt if t['building'] == bi] for bi in range(len(self.env0.buildings))]
-        self.pv_per_kwp = pd.read_csv(os.path.join(CAN, 'pv', 'pv_ac_w_per_kwp_2023_hourly.csv')).pv_ac_w_per_kwp.to_numpy()[:self.N] / 1000.0
+        pvf = os.path.join(CAN, 'q15', 'pv_ac_w_per_kwp_2023_15min.csv') if resolution == 'q15' else os.path.join(CAN, 'pv', 'pv_ac_w_per_kwp_2023_hourly.csv')
+        self.pv_per_kwp = pd.read_csv(pvf).pv_ac_w_per_kwp.to_numpy()[:self.N] / 1000.0 * self.dt_h        # kWh per kWp per step
         meta = json.load(open(os.path.join(CAN, 'pv', 'pv_capacity_2023.json')))
         self.kwp = {r: [meta['buildings'][role]['ratios'][str(r)]['kwp'] for role in ROLES] for r in (0.5, 1.0, 1.5)}
 
     def scenario(self, pv_ratio, battery_kwh_per_kwp, p_exp_rp, n=None, with_solution=False):
         """District result for one scenario. pv_ratio None = no PV (S0); battery_kwh_per_kwp None = no battery."""
         n = n or self.N
-        p_exp = p_exp_rp / 100.0
+        p_exp = np.asarray(p_exp_rp, dtype=float) / 100.0                  # scalar or per-step series (Rp/kWh in)
+        p_exp = p_exp if p_exp.ndim == 0 else p_exp[:n]
         price = self.price[:n]
         tot = {'zero_bill': 0.0, 'opt_bill': 0.0, 'zero_import_cost': 0.0, 'opt_import_cost': 0.0, 'opt_export_kwh': 0.0, 'zero_export_kwh': 0.0,
                'opt_import_kwh': 0.0}
@@ -140,7 +149,7 @@ class Inputs:
         for bi in range(len(self.net_s0)):
             kwp = 0.0 if pv_ratio is None else self.kwp[pv_ratio][bi]
             net0 = self.net_s0[bi][:n] - kwp * self.pv_per_kwp[:n]
-            bat = None if battery_kwh_per_kwp is None else battery_spec(kwp * battery_kwh_per_kwp)
+            bat = None if battery_kwh_per_kwp is None else battery_spec(kwp * battery_kwh_per_kwp, self.dt_h)
             tanks = [{**t, **{k: t[k][:n] for k in ('cop', 'maxout', 'demand')}} for t in self.tanks[bi]]
             s = solve_building(net0, price, p_exp, tanks, bat)
             tot['zero_bill'] += zero_bill(net0, price, p_exp)
@@ -151,11 +160,11 @@ class Inputs:
             sols.append(s)
         tot['saving_chf'] = tot['zero_bill'] - tot['opt_bill']
         tot['saving_pct'] = 100.0 * tot['saving_chf'] / tot['zero_bill']
-        tot['export_price_rp'] = p_exp_rp
+        tot['export_price_rp'] = float(np.mean(p_exp_rp))
         return (tot, sols) if with_solution else tot
 
 
-def schedule(env, tanks, sols, battery_caps, n_total):  # battery_caps in kWh
+def schedule(env, tanks, sols, battery_caps, n_total, dt_h=1.0):  # battery_caps in kWh; actions are fractions of capacity x step length (tanks) or nominal power x step length (battery)
     """Action matrix (steps x action slots, central agent) that realises the solutions; slots follow each building's active_actions."""
     cols = []
     for bi, b in enumerate(env.buildings):
@@ -168,9 +177,9 @@ def schedule(env, tanks, sols, battery_caps, n_total):  # battery_caps in kWh
             kind = 'heating' if nm == 'heating_storage' else 'dhw'
             for k, t in enumerate(tanks[bi]):
                 if t['kind'] == kind:
-                    act[:m, j] = np.clip((s['a'][k] - s['d'][k]) / t['cap'], -1, 1)
+                    act[:m, j] = np.clip((s['a'][k] - s['d'][k]) / (t['cap'] * dt_h), -1, 1)
         elif nm == 'electrical_storage' and s['c'] is not None:
-            act[:m, j] = np.clip((s['c'] - s['u']) / (BATTERY['c_rate'] * battery_caps[bi]), -1, 1)   # CityLearn battery action is a fraction of NOMINAL POWER (checked), tanks use capacity
+            act[:m, j] = np.clip((s['c'] - s['u']) / (BATTERY['c_rate'] * battery_caps[bi] * dt_h), -1, 1)   # CityLearn battery action is a fraction of NOMINAL POWER (checked), tanks use capacity
     return act
 
 
@@ -180,8 +189,8 @@ def replay(inp, pv_ratio, battery_kwh_per_kwp, p_exp_rp, schema_name, n=None):
     tot, sols = inp.scenario(pv_ratio, battery_kwh_per_kwp, p_exp_rp, n=n, with_solution=True)
     kwp = inp.kwp[pv_ratio]
     caps = [k * (battery_kwh_per_kwp or 0.0) for k in kwp]
-    env = CityLearnEnv(os.path.join(DS, schema_name, 'schema.json'), central_agent=True, reward_function=SwissDistrictReward)
-    act = schedule(env, inp.tanks, sols, caps, inp.N)
+    env = CityLearnEnv(os.path.join(DS, schema_name + inp.sfx, 'schema.json'), central_agent=True, reward_function=SwissDistrictReward)
+    act = schedule(env, inp.tanks, sols, caps, inp.N, inp.dt_h)
     ag = oracle.Replay(act)
     obs, _ = env.reset()
     while not env.terminated:

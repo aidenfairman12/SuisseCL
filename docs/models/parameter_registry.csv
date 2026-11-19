@@ -56,3 +56,8 @@ M-005,Indoor setpoint,setpoint_c,21.0,C,D-018,assumption
 M-005,Comfort band,comfort_lower_c / comfort_upper_c,"20 / 24",C,judgement (A-020),assumption
 M-005,Floor area per apartment unit,floor_area_per_mfh_unit_m2,80,m2,A-014,assumption
 M-005,Effective area per building,effective_area_m2,"297, 355, 532, 548, 1072, 834",m2,calibrated to the derived annual heat (rc_params_2023.json),derived
+M-003,Exchange rate for the day-ahead scenario,fx_chf_per_eur,0.97,CHF/EUR,assumption A-021,assumption
+M-003,Clear-sky shape used to redistribute hourly irradiance in 15 minutes,irradiance_shape_model,haurwitz,-,assumption A-022 (pvlib clearsky.haurwitz),assumption
+M-001,Device size factor at 900 s,device_size_factor_q15,1.1 x max 15-minute power,-,assumption A-024,assumption
+M-005,RL comfort weight and scale,comfort_weight / comfort_scale,"3 / 1 K",-,assumption A-025,assumption
+M-004,RL export price in the bill reward,export_price_reward,0.08,CHF/kWh,assumption A-015 / A-025,assumption

@@ -42,10 +42,10 @@ UPPER_BY = {'band 20-24': 24.0, 'band 21-24': 24.0, 'no thermal flexibility': 21
 
 
 class RCInputs(Inputs):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, resolution='h'):
+        super().__init__(resolution)
         import pandas as pd
-        w = pd.read_csv(os.path.join(CAN, 'weather_klo_2023_hourly.csv'))
+        w = pd.read_csv(os.path.join(CAN, 'q15', 'weather_klo_2023_15min.csv') if resolution == 'q15' else os.path.join(CAN, 'weather_klo_2023_hourly.csv'))
         self.ta = w.temp_c.to_numpy()[:self.N]
         self.ghi = (w.beam_horizontal_wm2.fillna(0).clip(lower=0) + w.diffuse_wm2.fillna(0).clip(lower=0)).to_numpy()[:self.N]
         self.derived_heat = []
@@ -56,13 +56,13 @@ class RCInputs(Inputs):
         self.priors_default = dict(PRIORS)
 
     def area(self, bi, p):
-        return calibrate_area(float(self.derived_heat[bi].sum()), self.ta, self.ghi, p)
+        return calibrate_area(float(self.derived_heat[bi].sum()), self.ta, self.ghi, p, dt_s=3600.0 * self.dt_h)
 
 
 def thermostat(inp, bi, area, p, n):
     ht = inp.heat_tank[bi]
-    q, T = simulate_ideal(area, inp.ta[:n], inp.ghi[:n], p, q_max=ht['maxout'][:n])
-    return q, T
+    q, T = simulate_ideal(area, inp.ta[:n], inp.ghi[:n], p, dt_s=3600.0 * inp.dt_h, q_max=ht['maxout'][:n] / inp.dt_h)
+    return q * inp.dt_h, T          # heat per step in kWh (simulate_ideal returns kW)
 
 
 def solve_rc_building(inp, bi, p, p_exp, lower, kwp, bat_kwh_per_kwp, n, band_name='band 21-24'):
@@ -73,7 +73,8 @@ def solve_rc_building(inp, bi, p, p_exp, lower, kwp, bat_kwh_per_kwp, n, band_na
     cop = ht['cop'][:n]
     q_th, T_th = thermostat(inp, bi, A, p, n)
     base = inp.net_s0[bi][:n] - inp.derived_heat[bi][:n] / cop - kwp * inp.pv_per_kwp[:n]
-    bat = None if bat_kwh_per_kwp is None else battery_spec(kwp * bat_kwh_per_kwp)
+    dt_h = inp.dt_h
+    bat = None if bat_kwh_per_kwp is None else battery_spec(kwp * bat_kwh_per_kwp, dt_h)
     blocks, idx = [], {}
 
     def add(name, lo, hi, cost):
@@ -81,14 +82,18 @@ def solve_rc_building(inp, bi, p, p_exp, lower, kwp, bat_kwh_per_kwp, n, band_na
         blocks.append((name, n, np.broadcast_to(lo, (n,)), np.broadcast_to(hi, (n,)), np.broadcast_to(cost, (n,))))
 
     caph = ht['cap']
-    add('a', 0.0, np.minimum(caph, ht['maxout'][:n]), 0.0); add('d', 0.0, caph, 0.0); add('E', 0.0, caph, 0.0)
+    rate_h = caph * inp.dt_h             # at most capacity x step length moves per step (action space of CityLearn)
+    add('a', 0.0, np.minimum(rate_h, ht['maxout'][:n]), 0.0); add('d', 0.0, rate_h, 0.0); add('E', 0.0, caph, 0.0)
     add('Q', 0.0, ht['maxout'][:n], 0.0)
     upper_t = np.maximum(UPPER_BY[band_name], T_th)
     add('T', np.minimum(lower, T_th), upper_t, 0.0)      # the baseline path is always feasible (the heat pump cannot always reach 21 C in extreme cold)
     if wt is not None:
-        add('a2', 0.0, np.minimum(wt['cap'], wt['maxout'][:n]), 0.0); add('d2', 0.0, np.minimum(wt['cap'], wt['demand'][:n]), 0.0); add('E2', 0.0, wt['cap'], 0.0)
+        rate_w = wt['cap'] * inp.dt_h
+        add('a2', 0.0, np.minimum(rate_w, wt['maxout'][:n]), 0.0); add('d2', 0.0, np.minimum(rate_w, wt['demand'][:n]), 0.0); add('E2', 0.0, wt['cap'], 0.0)
     if bat is not None:
         add('c', 0.0, bat['power'], 0.0); add('u', 0.0, bat['power'], 0.0); add('Eb', bat['emin'], bat['cap'], 0.0)
+    p_exp = np.broadcast_to(np.asarray(p_exp, dtype=float), (n,))
+    assert (p_exp <= price + 1e-12).all(), 'export price above an import price makes the program unbounded'
     add('i', 0.0, np.inf, price); add('x', 0.0, np.inf, -p_exp)
     names = [b[0] for b in blocks]
     cvec = np.concatenate([b[4] for b in blocks]); lo = np.concatenate([b[2] for b in blocks]); hi = np.concatenate([b[3] for b in blocks]).astype(float)
@@ -119,10 +124,10 @@ def solve_rc_building(inp, bi, p, p_exp, lower, kwp, bat_kwh_per_kwp, n, band_na
         ub.append(row([('a2', I), ('d2', -I)])); bub.append(wt['maxout'][:n] - wt['demand'][:n])
     # RC: T_t - e T_{t-1} - (1-e) 1000 Q_t / H = (1-e) (T_amb + (g A I + L A) / H);  T_{-1} = setpoint
     Hh = p['H_w_per_k_m2'] * A
-    e = float(np.exp(-3600.0 * p['H_w_per_k_m2'] / p['C_j_per_k_m2']))
+    e = float(np.exp(-3600.0 * dt_h * p['H_w_per_k_m2'] / p['C_j_per_k_m2']))
     rhs = (1 - e) * (ta + (p['g'] * A * ghi + p['L_internal_w_m2'] * A) / Hh)
     rhs = rhs.copy(); rhs[0] += e * p['setpoint_c']
-    eq.append(row([('T', I + sp.diags([np.full(n - 1, -e)], [-1], shape=(n, n), format='csr')), ('Q', -(1 - e) * 1000.0 / Hh * I)])); beq.append(rhs)
+    eq.append(row([('T', I + sp.diags([np.full(n - 1, -e)], [-1], shape=(n, n), format='csr')), ('Q', -(1 - e) * 1000.0 / (Hh * dt_h) * I)])); beq.append(rhs)
     if bat is not None:
         eq.append(row([('c', -bat['eta1'] * I), ('u', I / bat['eta1']), ('Eb', I + sub(0.0))]))
         b = np.zeros(n); b[0] = bat['e0']; beq.append(b)
@@ -140,8 +145,8 @@ def solve_rc_building(inp, bi, p, p_exp, lower, kwp, bat_kwh_per_kwp, n, band_na
     get = lambda nm: x[idx[nm]: idx[nm] + n]   # noqa: E731
     imp, exp = get('i'), get('x')
     # thermostat baseline bill (tanks and battery idle)
-    net_base = base + q_th / cop
-    zero = float((price * np.maximum(net_base, 0)).sum() - p_exp * np.maximum(-net_base, 0).sum())
+    net_base = base + q_th / cop                      # q_th is heat per step (kWh)
+    zero = float((price * np.maximum(net_base, 0)).sum() - (np.broadcast_to(np.asarray(p_exp, dtype=float), (n,)) * np.maximum(-net_base, 0)).sum())
     sol = {'bill': float(r.fun), 'zero_bill': zero, 'imp': imp, 'exp': exp, 'Q': get('Q'), 'a': get('a'), 'd': get('d'), 'T': get('T'), 'area': A,
            'a2': get('a2') if wt is not None else None, 'd2': get('d2') if wt is not None else None,
            'c': get('c') if bat is not None else None, 'u': get('u') if bat is not None else None, 'T_thermostat': T_th, 'q_thermostat': q_th,
@@ -156,13 +161,14 @@ def scenario(inp, p_over, band_name, p_exp_rp, pv_ratio=1.0, bat=1.0, n=None, wi
     tot = {'zero_bill': 0.0, 'opt_bill': 0.0, 'opt_import_kwh': 0.0, 'opt_export_kwh': 0.0}
     sols = []
     for bi in range(len(inp.net_s0)):
-        s = solve_rc_building(inp, bi, p, p_exp_rp / 100.0, lower, inp.kwp[pv_ratio][bi], bat, n, band_name)
+        pe = np.asarray(p_exp_rp, dtype=float) / 100.0
+        s = solve_rc_building(inp, bi, p, pe if pe.ndim == 0 else pe[:n], lower, inp.kwp[pv_ratio][bi], bat, n, band_name)
         tot['zero_bill'] += s['zero_bill']; tot['opt_bill'] += s['bill']
         tot['opt_import_kwh'] += s['import_kwh']; tot['opt_export_kwh'] += s['export_kwh']
         sols.append(s)
     tot['saving_chf'] = tot['zero_bill'] - tot['opt_bill']
     tot['saving_pct'] = 100.0 * tot['saving_chf'] / tot['zero_bill']
-    tot['export_price_rp'] = p_exp_rp; tot['band'] = band_name
+    tot['export_price_rp'] = float(np.mean(p_exp_rp)); tot['band'] = band_name
     return (tot, sols) if with_solution else tot
 
 
@@ -173,13 +179,13 @@ def schedule(env, inp, sols, n_total, kwp, bat_kwh_per_kwp):
     for j, (bi, nm) in enumerate(cols):
         s = sols[bi]; m = len(s['imp']); ht = inp.heat_tank[bi]
         if nm == 'heating_storage':
-            act[:m, j] = np.clip((s['a'] - s['d']) / ht['cap'], -1, 1)
+            act[:m, j] = np.clip((s['a'] - s['d']) / (ht['cap'] * inp.dt_h), -1, 1)
         elif nm == 'dhw_storage' and s['a2'] is not None:
-            wt = inp.dhw_tank[bi]; act[:m, j] = np.clip((s['a2'] - s['d2']) / wt['cap'], -1, 1)
+            wt = inp.dhw_tank[bi]; act[:m, j] = np.clip((s['a2'] - s['d2']) / (wt['cap'] * inp.dt_h), -1, 1)
         elif nm == 'heating_device':
             act[:m, j] = np.clip(s['Q'] / ht['maxout'][:m], 0, 1)
         elif nm == 'electrical_storage' and s['c'] is not None:
-            act[:m, j] = np.clip((s['c'] - s['u']) / (BATTERY['c_rate'] * kwp[bi] * bat_kwh_per_kwp), -1, 1)
+            act[:m, j] = np.clip((s['c'] - s['u']) / (BATTERY['c_rate'] * kwp[bi] * bat_kwh_per_kwp * inp.dt_h), -1, 1)
     return act
 
 
@@ -187,7 +193,7 @@ def replay(inp, p_over, band_name, p_exp_rp, n=None):
     n = n or inp.N
     tot, sols = scenario(inp, p_over, band_name, p_exp_rp, n=n, with_solution=True)
     kwp = inp.kwp[1.0]
-    env = CityLearnEnv(os.path.join(DS, 'swiss_rc_2023', 'schema.json'), central_agent=True, reward_function=SwissDistrictReward)
+    env = CityLearnEnv(os.path.join(DS, 'swiss_rc_2023' + inp.sfx, 'schema.json'), central_agent=True, reward_function=SwissDistrictReward)
     ag = oracle.Replay(schedule(env, inp, sols, inp.N, kwp, 1.0))
     obs, _ = env.reset()
     while not env.terminated:

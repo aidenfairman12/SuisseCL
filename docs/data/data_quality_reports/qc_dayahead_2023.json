@@ -1,0 +1,16 @@
+{
+ "hours": 8760,
+ "da_eur_mwh_mean": 107.46735616438355,
+ "da_min": -142.88,
+ "da_max": 268.8,
+ "negative_hours": 76,
+ "fx_chf_per_eur_assumed": 0.97,
+ "adder_chf_kwh": 0.0034695749034319157,
+ "import_rp_mean": 16.59338186135658,
+ "import_rp_min": 0.0,
+ "import_rp_max": 34.02055749034319,
+ "export_rp_mean": 10.4400719086758,
+ "hours_import_floored_at_zero": 8,
+ "s0_mean_rp": 16.593378995433785,
+ "licence": "CC BY 4.0 from Bundesnetzagentur | SMARD.de (Energy-Charts API documentation)"
+}

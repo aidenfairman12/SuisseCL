@@ -20,3 +20,13 @@ Known weaknesses: equal weights are arbitrary; peak² surrogate emphasises winte
 | `cost` | 1 | 0.1 | 0.1 | 0 | cost-dominant: tests whether a learner finds bill savings; the small peak and ramp weights discourage spikes |
 Which preset is the primary one is the owner's confirmation under D-023 (pending). Both are scored on all metrics (cost raw and corrected, import, highest hour, mean daily peak, high-tariff share, relative carbon, reward). The exact cost optimum bounds the bill saving of any controller at 0.84 % at the assumed tank sizes, so the cost term alone gives a very weak learning signal; peak and ramp have more relative headroom (the night-charging rule improves the highest hour by 6 % and the ramp term by 2 %).
 
+
+## R-002 `swiss.experiments.rewards.SwissBillReward` (Phase B RL block, D-044, A-025)
+Used for the scenarios s1 (assumed PV), s2 (+ battery) and s3 (+ RC thermal model). CityLearn 3.3.0 prices only imports (D-034), so the cost term here is the **bill**: import cost minus export revenue at 8 Rp/kWh (assumed, A-015).
+| Term | Definition | Unit | Weight (preset `bill`) | Scale |
+|---|---|---|---|---|
+| bill cost | Σ_b [max(net_b,0) x price - max(-net_b,0) x 0.08] | CHF per step | 1 | mean per-step value under the scenario's reference controller (zero action in s1 and s2, thermostat in s3), `results/reward_scales_<scenario>.json` |
+| peak | (max(district net,0))² | kW² | 0.1 | same |
+| ramp | \|district net(t) - district net(t-1)\| | kW | 0.1 | same |
+| comfort | Σ_b max(21 C - indoor temperature_b, 0), only where the indoor temperature is observed (s3) | K per step | 3 | 1 K (the cold side only: the model has no cooling, A-020) |
+ `rl.py` preset `bill` = these weights. Evaluation (held-out weeks, warm-up from empty tanks, battery, building heat) is unchanged and reports the bill, import, export, highest hour and comfort degree-hours, raw and corrected for stored energy, next to the zero-action / thermostat and PV-rule baselines and the exact optimum on the same weeks (`oracle_results/rl_reference.json`).

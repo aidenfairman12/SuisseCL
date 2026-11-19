@@ -42,12 +42,32 @@ from citylearn.agents.marlisa import MARLISA  # noqa: E402
 from citylearn.agents.sac import SAC  # noqa: E402
 from citylearn.citylearn import CityLearnEnv  # noqa: E402
 
-from swiss.experiments.rewards import SwissDistrictReward  # noqa: E402
+from swiss.experiments.rewards import SwissBillReward, SwissDistrictReward  # noqa: E402
 
 SCHEMA = os.path.join(ROOT, 'swiss', 'datasets', 'swiss_district_2023', 'schema.json')
 OUT = os.path.join(ROOT, 'swiss', 'experiments', 'rl_results')
 PRICE = pd.read_csv(os.path.join(ROOT, 'swiss', 'datasets', 'swiss_district_2023', 'pricing.csv')).electricity_pricing.to_numpy()
 HIGH = PRICE > PRICE.min() + 1e-9
+# Phase B scenarios (RL block, D-044): s0 = Phase A district; s1 = + assumed PV and export price; s2 = + assumed battery; s3 = + RC thermal model with comfort
+SCENARIOS = {'s0': 'swiss_district_2023', 's1': 'swiss_pv_2023', 's2': 'swiss_pvbat_2023', 's3': 'swiss_rc_2023'}
+SCENARIO = 's0'
+EXPORT_PRICE = 0.08          # CHF/kWh, assumed (A-015); used by the bill reward and by the scoring of s1 to s3
+SETPOINT = 21.0
+RESULTS = os.path.join(ROOT, 'swiss', 'experiments', 'results')
+
+
+def use_scenario(name):
+    """Point the module at one scenario's dataset (schema and price); every function below reads these module variables at call time."""
+    global SCENARIO, SCHEMA, PRICE, HIGH
+    SCENARIO = name
+    SCHEMA = os.path.join(ROOT, 'swiss', 'datasets', SCENARIOS[name], 'schema.json')
+    PRICE = pd.read_csv(os.path.join(ROOT, 'swiss', 'datasets', SCENARIOS[name], 'pricing.csv')).electricity_pricing.to_numpy()
+    HIGH = PRICE > PRICE.min() + 1e-9
+
+
+def scales_path(name=None):
+    n = name or SCENARIO
+    return os.path.join(RESULTS, 'reward_scales.json' if n == 's0' else f'reward_scales_{n}.json')
 WEEK = 168
 N_WEEKS = 52
 QUARTER = 13 * WEEK
@@ -55,7 +75,8 @@ LAST_STEP = 8758
 WARM = 96                                          # steps run before an evaluation window so that it starts in a realistic tank state
 TEST_WEEKS = [3, 10, 16, 23, 29, 36, 42, 49]
 REWARDS = {'r001': {'cost': 1.0, 'peak': 1.0, 'ramp': 1.0, 'carbon': 0.0},
-           'cost': {'cost': 1.0, 'peak': 0.1, 'ramp': 0.1, 'carbon': 0.0}}
+           'cost': {'cost': 1.0, 'peak': 0.1, 'ramp': 0.1, 'carbon': 0.0},
+           'bill': {'cost': 1.0, 'peak': 0.1, 'ramp': 0.1, 'carbon': 0.0, 'comfort': 3.0}}     # bill = import cost - export revenue; comfort only exists in s3
 PRESETS = {'default': {}, 'challenge': dict(hidden_dimension=[256, 256], discount=0.9, lr=0.001, batch_size=512, alpha=1.0)}
 KINDS = {'sac_central': True, 'sac_decentral': False, 'marlisa': False}
 
@@ -88,7 +109,12 @@ def train_windows(tests, episode_weeks=4):
 
 def make_env(central, reward, windows, seed=None):
     """windows: one (start, end) tuple = simulation window (evaluation); a list of tuples = random training episodes drawn from these windows."""
-    kw = dict(central_agent=central, reward_function=SwissDistrictReward, reward_function_kwargs={'weights': REWARDS[reward]})
+    if reward == 'bill':
+        scales = json.load(open(scales_path())) if os.path.exists(scales_path()) else None
+        kw = dict(central_agent=central, reward_function=SwissBillReward,
+                  reward_function_kwargs={'weights': REWARDS[reward], 'scales': scales, 'export_price': EXPORT_PRICE, 'setpoint': SETPOINT})
+    else:
+        kw = dict(central_agent=central, reward_function=SwissDistrictReward, reward_function_kwargs={'weights': REWARDS[reward]})
     if isinstance(windows, tuple):
         kw.update(simulation_start_time_step=windows[0], simulation_end_time_step=windows[1])
     else:
@@ -136,7 +162,33 @@ def window_metrics(env, rewards, s0, s, e):
             d_e += de
             for k, p in (('low', PRICE.min()), ('mean', float(price.mean())), ('high', PRICE.max())):
                 value[k] += de / cop * p                    # electricity the net stored heat will avoid later, at the window's COP and a price
-    return {'import_kwh': float(imp.sum()), 'cost_chf': float((imp * price).sum()), 'peak_kw': float(net.max()),
+    # Phase B: export revenue, battery and thermal-mass terminal values, comfort (all zero in s0)
+    export = np.sum([np.maximum(-x, 0) for x in net_b], axis=0)
+    export_price = EXPORT_PRICE if SCENARIO != 's0' else 0.0
+    cold_kh, pv_gen, d_batt = 0.0, 0.0, 0.0
+    for b in env.buildings:
+        dt_h = b.seconds_per_time_step / 3600.0
+        pv_gen += float(-np.asarray(b.solar_generation, dtype=float)[i0:i1 + 1].sum())
+        bat = b.electrical_storage
+        if float(bat.capacity) > 0:
+            soc = np.asarray(bat.soc, dtype=float); cap = float(bat.capacity)
+            de = soc[i1] * cap - (soc[i0 - 1] * cap if i0 > 0 else float(bat.initial_soc) * cap)
+            d_batt += de
+            for k, p in (('low', PRICE.min()), ('mean', float(price.mean())), ('high', PRICE.max())):
+                value[k] += de * p                           # stored battery energy valued at the grid energy it will avoid (efficiency ignored)
+        dyn = getattr(b, 'dynamics', None)
+        if dyn is not None and hasattr(dyn, 'area_eff'):
+            tin = np.asarray(b.energy_simulation.indoor_dry_bulb_temperature, dtype=float)
+            cold_kh += float(np.maximum(SETPOINT - tin[i0:i1 + 1], 0).sum() * dt_h)
+            c_kwh_k = dyn.params['C_j_per_k_m2'] * dyn.area_eff / 3.6e6
+            dT = tin[i1] - (tin[i0 - 1] if i0 > 0 else SETPOINT)
+            cop_h = float(np.mean([b.heating_device.get_cop(t, heating=True) for t in T[i0:i1 + 1]]))
+            for k, p in (('low', PRICE.min()), ('mean', float(price.mean())), ('high', PRICE.max())):
+                value[k] += dT * c_kwh_k / cop_h * p         # heat stored in (or taken from) the building mass, valued like tank heat
+    import_cost = float((imp * price).sum())
+    return {'import_kwh': float(imp.sum()), 'cost_chf': import_cost - export_price * float(export.sum()), 'import_cost_chf': import_cost,
+            'export_kwh': float(export.sum()), 'pv_generation_kwh': pv_gen, 'comfort_cold_kh': cold_kh, 'battery_stored_change_kwh': float(d_batt),
+            'peak_kw': float(net.max()),
             'high_tariff_import_kwh': float(imp[high].sum()), 'carbon_weighted_import': float((imp * ci).sum()),
             'daily_peaks_kw': [float(net[i:i + 24].max()) for i in range(0, n, 24)], 'steps': int(n),
             'stored_change_kwh_th': float(d_e), 'terminal_value_chf': value, 'reward': float(np.sum(rewards[i0:i1 + 1]))}
@@ -166,7 +218,9 @@ def aggregate(rows):
             'stored_change_kwh_th': sum(r['stored_change_kwh_th'] for r in rows), 'highest_hour_kw': max(r['peak_kw'] for r in rows),
             'mean_weekly_peak_kw': float(np.mean([r['peak_kw'] for r in rows])), 'mean_daily_peak_kw': float(np.mean(daily)),
             'high_tariff_import_share': sum(r['high_tariff_import_kwh'] for r in rows) / imp,
-            'carbon_weighted_import': sum(r['carbon_weighted_import'] for r in rows), 'reward_sum': sum(r['reward'] for r in rows), 'windows': len(rows)}
+            'carbon_weighted_import': sum(r['carbon_weighted_import'] for r in rows), 'reward_sum': sum(r['reward'] for r in rows), 'windows': len(rows),
+            'export_kwh': sum(r['export_kwh'] for r in rows), 'pv_generation_kwh': sum(r['pv_generation_kwh'] for r in rows),
+            'comfort_cold_kh': sum(r['comfort_cold_kh'] for r in rows), 'import_cost_chf': sum(r['import_cost_chf'] for r in rows)}
 
 
 def vs_reference(agg, ref):
@@ -195,18 +249,67 @@ def evaluate(agent, central, reward, windows):
     return {'aggregate': aggregate(rows), 'windows': rows}
 
 
-def baselines_zero(reward, windows):
+def reference_agent(env):
+    """The "no control" reference of a scenario: zero action (s0 to s2) or the thermostat (s3, where zero heating would let the house cool down)."""
+    if SCENARIO == 's3':
+        from swiss.experiments.thermostat import ThermostatAgent
+        return ThermostatAgent(env)
     from citylearn.agents.baseline import ZeroActionBaselineAgent
-    return aggregate([play(lambda e: ZeroActionBaselineAgent(e), True, reward, w) for w in windows])
+    return ZeroActionBaselineAgent(env)
+
+
+class PVRule:
+    """Simple tuned-by-hand rule for s1 to s3 (a baseline for the learners, not an optimum): tanks charge (rate r of capacity) in the PV hours 10:00 to 16:00 local and
+    discharge (rate r) from 17:00 to 22:00, the battery absorbs the PV surplus over the household load of the current step and covers the deficit, the heat pump follows the
+    thermostat (s3). Reads building internals (current PV and load), so it is a reference, not a deployable controller."""
+    def __init__(self, env, rate=0.2):
+        self.env, self.rate = env, rate
+        self.thermo = None
+        if SCENARIO == 's3':
+            from swiss.experiments.thermostat import ThermostatAgent
+            self.thermo = ThermostatAgent(env)
+
+    def predict(self, observations):
+        env = self.env
+        t = env.time_step
+        out = self.thermo.predict(observations)[0] if self.thermo is not None else None
+        acts, k = [], 0
+        for b in env.buildings:
+            hour = int(b.energy_simulation.hour[t]) - 1
+            tank = self.rate if 10 <= hour < 16 else (-self.rate if 17 <= hour < 22 else 0.0)
+            for nm in b.active_actions:
+                if nm in ('heating_storage', 'dhw_storage'):
+                    acts.append(tank)
+                elif nm == 'electrical_storage':
+                    # self-consumption rule: the battery absorbs the step's PV surplus over the household load and covers the deficit (known for the current step)
+                    dt_h = b.seconds_per_time_step / 3600.0
+                    pv = float(b.energy_simulation.solar_generation[t]) * float(b.pv.nominal_power) / 1000.0 * dt_h
+                    surplus = pv - float(b.energy_simulation.non_shiftable_load[t])
+                    acts.append(float(np.clip(surplus / max(float(b.electrical_storage.nominal_power) * dt_h, 1e-9), -1.0, 1.0)))
+                elif nm == 'heating_device':
+                    acts.append(out[k])
+                else:
+                    acts.append(0.0)
+                k += 1
+        return [acts]
+
+
+def baselines_zero(reward, windows):
+    return aggregate([play(reference_agent, True, reward, w) for w in windows])
 
 
 def baselines(reward, windows):
     from swiss.experiments.run_baselines import CONTROLLERS
     out = {}
-    for name, mk in CONTROLLERS.items():
+    if SCENARIO != 's0':
+        controllers = {'ALG-001_zero_action' if SCENARIO != 's3' else 'ALG-009_thermostat': reference_agent}
+        controllers.update({f'pv_rule_r{r}': (lambda env, r=r: PVRule(env, r)) for r in (0.05, 0.1, 0.2)})
+    else:
+        controllers = CONTROLLERS
+    for name, mk in controllers.items():
         rows = [play(mk, True, reward, w) for w in windows]
         out[name] = {'aggregate': aggregate(rows), 'windows': rows}
-    ref = out['ALG-001_zero_action']['aggregate']
+    ref = out[next(iter(out))]['aggregate']
     for name in out:
         out[name]['vs_zero'] = vs_reference(out[name]['aggregate'], ref)
     return out
@@ -215,7 +318,10 @@ def baselines(reward, windows):
 # ------------------------------------------------------------------------------------------------ training
 def git_commit():
     r = subprocess.run(['git', '-C', ROOT, 'rev-parse', '--short', 'HEAD'], capture_output=True, text=True)
-    return r.stdout.strip() or 'unknown'
+    if r.stdout.strip():
+        return r.stdout.strip()
+    f = os.path.join(ROOT, 'COMMIT')                                   # deployed copies without .git carry the commit they were copied from
+    return open(f).read().strip() if os.path.exists(f) else 'unknown'
 
 
 def protocol_tag(protocol, fold):
@@ -235,7 +341,7 @@ def train(kind, reward, seed, train_steps, explore_steps, eval_every, max_hours,
     env = make_env(central, reward, windows=trains, seed=seed)
     kwargs = dict(PRESETS[preset], standardize_start_time_step=explore_steps, end_exploration_time_step=explore_steps)
     agent = cls(env, **kwargs)
-    config = {'kind': kind, 'reward': reward, 'weights': REWARDS[reward], 'seed': seed, 'train_steps': train_steps, 'explore_steps': explore_steps,
+    config = {'scenario': SCENARIO, 'export_price_chf_kwh': EXPORT_PRICE, 'kind': kind, 'reward': reward, 'weights': REWARDS[reward], 'seed': seed, 'train_steps': train_steps, 'explore_steps': explore_steps,
               'eval_every': eval_every, 'max_hours': max_hours, 'preset': preset, 'agent_kwargs': kwargs, 'protocol': protocol, 'fold': fold,
               'test_windows': tests, 'n_train_windows': len(trains), 'episode_steps': episode_weeks * WEEK, 'warm_steps': WARM,
               'bootstrap_at_window_end': True, 'git_commit': git_commit(), 'citylearn': CL_VERSION, 'torch': torch.__version__, 'numpy': np.__version__,
@@ -278,9 +384,31 @@ def train(kind, reward, seed, train_steps, explore_steps, eval_every, max_hours,
     return final
 
 
+def compute_scales(scenario):
+    """Reward scales of a scenario = mean of every term per step under its reference controller over the full year (comfort scale stays 1 K)."""
+    env = make_env(True, 'bill', windows=(0, LAST_STEP))
+    ag = reference_agent(env)
+    obs, _ = env.reset()
+    rf = env.unwrapped.reward_function
+    tot = {k: 0.0 for k in ('cost', 'peak', 'ramp', 'carbon', 'comfort')}
+    n = 0
+    while not env.terminated:
+        obs, *_ = env.step(ag.predict(obs))
+        for k in tot:
+            tot[k] += rf.last_terms[k]
+        n += 1
+    sc = {k: (v / n if v > 0 else 1.0) for k, v in tot.items()}
+    sc['comfort'] = 1.0
+    os.makedirs(RESULTS, exist_ok=True)
+    json.dump(sc, open(scales_path(scenario), 'w'), indent=1)
+    print(scenario, sc)
+    return sc
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument('kind', choices=list(KINDS) + ['baselines'])
+    ap.add_argument('kind', choices=list(KINDS) + ['baselines', 'scales'])
+    ap.add_argument('--scenario', choices=list(SCENARIOS), default='s0', help='s0 Phase A; s1 + PV; s2 + battery; s3 + RC thermal model (Phase B)')
     ap.add_argument('--reward', choices=list(REWARDS), default='r001')
     ap.add_argument('--protocol', choices=['weeks', 'quarter'], default='weeks')
     ap.add_argument('--fold', type=int, default=1, help='held-out quarter 1..4 (protocol quarter)')
@@ -293,11 +421,14 @@ def main(argv=None):
     ap.add_argument('--preset', choices=list(PRESETS), default='default')
     ap.add_argument('--out', default=OUT)
     a = ap.parse_args(argv)
+    use_scenario(a.scenario)
     tests = test_windows(a.protocol, a.fold)
+    if a.kind == 'scales':
+        return compute_scales(a.scenario)
     if a.kind == 'baselines':
         os.makedirs(a.out, exist_ok=True)
         res = baselines(a.reward, tests)
-        json.dump(res, open(os.path.join(a.out, f'baselines_{protocol_tag(a.protocol, a.fold)}_{a.reward}.json'), 'w'), indent=1)
+        json.dump(res, open(os.path.join(a.out, f'baselines_{a.scenario}_{protocol_tag(a.protocol, a.fold)}_{a.reward}.json' if a.scenario != 's0' else f'baselines_{protocol_tag(a.protocol, a.fold)}_{a.reward}.json'), 'w'), indent=1)
         for name, v in res.items():
             z = v['vs_zero']
             print(f'{name:32s} cost raw {z["cost_chf_vs_zero_pct"]:+6.2f}%  corrected {z["cost_corrected_vs_zero_pct"]:+6.2f}% '
@@ -305,7 +436,7 @@ def main(argv=None):
                   f'reward {v["aggregate"]["reward_sum"]:.0f}')
         return res
     return train(a.kind, a.reward, a.seed, a.train_steps, a.explore_steps, a.eval_every, a.max_hours, a.preset,
-                 os.path.join(a.out, f'{a.kind}_{a.reward}_{protocol_tag(a.protocol, a.fold)}_s{a.seed}'), a.protocol, a.fold, a.episode_weeks)
+                 os.path.join(a.out, (f'{a.scenario}_' if a.scenario != 's0' else '') + f'{a.kind}_{a.reward}_{protocol_tag(a.protocol, a.fold)}_s{a.seed}'), a.protocol, a.fold, a.episode_weeks)
 
 
 if __name__ == '__main__':
