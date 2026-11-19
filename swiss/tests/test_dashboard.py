@@ -66,7 +66,7 @@ def test_md_parser_pipe_in_code_span_and_short_row():
 @pytest.mark.parametrize('path,n', [
     ('docs/data/data_source_registry.csv', 33),
     ('docs/models/parameter_registry.csv', 67),
-    ('docs/experiments/experiment_registry.csv', 18),
+    ('docs/experiments/experiment_registry.csv', 20),
 ])
 def test_csv_row_counts_and_alignment(path, n):
     hdr, rows = parse_csv_registry(p(path), anchor_col='classification')
