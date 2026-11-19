@@ -115,7 +115,7 @@ Findings:
 3. **A weather-conditioned forecast beats the PV rule by about 3.2 points** (8.8 % against 5.65 %), recovering 61 % of the ceiling. PV is easy once irradiance is known (test-week nRMSE 0.07). **The binding forecast is the electrical load** (nRMSE 0.68, which weather and lags barely improve): with the true load the saving is 86 to 87 % of the ceiling; with true PV and tank demand but forecast load it stays at 64 %.
 4. **Peaks get worse.** The highest district hour rises from 66 kW to 117 to 121 kW, as the exact optimum does, and the mean weekly peak rises by 17 to 40 %. No peak term was tested, so the bill-versus-peak trade-off is still open.
 
-Assumptions and limits (labelled):
+Assumptions and limits (labelled; registered as A-028 to A-031, decisions D-046 and D-047, experiments EXP-019 and EXP-020: A-M1 and A-M3 = A-028, A-M2 = A-029, A-M4 = A-030, synthetic errors = A-031):
 - A-M1 / A-M3: outdoor temperature (heat-pump COP and maximum output) and irradiance are taken as KNOWN over the horizon, a day-ahead weather forecast with no error. A real weather forecast will have errors; PV nRMSE 0.07 is therefore an optimistic bound. The synthetic-error curve gives the sensitivity.
 - A-M2: stored energy at the end of the horizon is credited at the lowest tariff price (battery times eta1, tank heat divided by COP times round-trip efficiency). Not tuned; horizon 24, 48 and 72 h agree, which suggests it is not critical here.
 - The comparison uses the raw bill. The version corrected for the stored energy at the end of the window (`cost_corrected`) is 0.3 to 0.9 points higher for MPC and is printed by `mpc_report.py`.
