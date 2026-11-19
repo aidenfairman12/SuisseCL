@@ -1,0 +1,266 @@
+{
+ "gwl3.0_hw99_high|scenario": {
+  "saving_pct": 12.58023686863289,
+  "share_of_ceiling": 0.7522310694878969,
+  "comfort_cold_kh": 0.0,
+  "degree_hours_above_26": 17228.331216812134,
+  "cooling_electricity_kwh": 621.3413885444623,
+  "highest_hour_kw": 155.45049381256104
+ },
+ "gwl3.0_hw99_high|trained_hist": {
+  "saving_pct": 12.68758725296493,
+  "share_of_ceiling": 0.7586500499299402,
+  "comfort_cold_kh": 0.0,
+  "degree_hours_above_26": 17228.216735839844,
+  "cooling_electricity_kwh": 622.0762938177336,
+  "highest_hour_kw": 155.59359455108643
+ },
+ "gwl3.0_hw99_high|T-2": {
+  "saving_pct": 11.621157816855751,
+  "share_of_ceiling": 0.694883257330195,
+  "comfort_cold_kh": 0.2572669982910156,
+  "degree_hours_above_26": 17236.700565338135,
+  "cooling_electricity_kwh": 612.1504231140801,
+  "highest_hour_kw": 155.18423175811768
+ },
+ "gwl3.0_hw99_high|T-1": {
+  "saving_pct": 12.104415103390222,
+  "share_of_ceiling": 0.723779465667419,
+  "comfort_cold_kh": 3.5064430236816406,
+  "degree_hours_above_26": 17231.229782104492,
+  "cooling_electricity_kwh": 618.2048518098759,
+  "highest_hour_kw": 155.63586711883545
+ },
+ "gwl3.0_hw99_high|T+1": {
+  "saving_pct": 12.379240008026441,
+  "share_of_ceiling": 0.7402125292174282,
+  "comfort_cold_kh": 96.53825187683105,
+  "degree_hours_above_26": 17227.79598236084,
+  "cooling_electricity_kwh": 647.6106319896102,
+  "highest_hour_kw": 155.60845947265625
+ },
+ "gwl3.0_hw99_high|T+2": {
+  "saving_pct": 12.409628576738227,
+  "share_of_ceiling": 0.7420296035524329,
+  "comfort_cold_kh": 202.8877944946289,
+  "degree_hours_above_26": 17227.239408493042,
+  "cooling_electricity_kwh": 665.899308817533,
+  "highest_hour_kw": 155.75703811645508
+ },
+ "gwl3.0_hw99_high|T0n1": {
+  "saving_pct": 12.341794780688861,
+  "share_of_ceiling": 0.7379735043324838,
+  "comfort_cold_kh": 28.404693603515625,
+  "degree_hours_above_26": 17228.919301986694,
+  "cooling_electricity_kwh": 626.7772478111622,
+  "highest_hour_kw": 155.60192394256592
+ },
+ "gwl3.0_hw99_high|G30": {
+  "saving_pct": 11.108178783433411,
+  "share_of_ceiling": 0.6642098470466182,
+  "comfort_cold_kh": 9.559394836425781,
+  "degree_hours_above_26": 17228.002405166626,
+  "cooling_electricity_kwh": 618.0050123867161,
+  "highest_hour_kw": 155.38543891906738
+ },
+ "gwl3.0_hw99_high|T+2G30": {
+  "saving_pct": 11.144040829674013,
+  "share_of_ceiling": 0.6663542061456791,
+  "comfort_cold_kh": 202.52112770080566,
+  "degree_hours_above_26": 17227.1469707489,
+  "cooling_electricity_kwh": 659.3989924031235,
+  "highest_hour_kw": 155.68314170837402
+ },
+ "gwl3.0_hw99_high|T-2G30": {
+  "saving_pct": 10.214336849087502,
+  "share_of_ceiling": 0.6107628665765898,
+  "comfort_cold_kh": 0.7710475921630859,
+  "degree_hours_above_26": 17235.637454986572,
+  "cooling_electricity_kwh": 612.6654236476536,
+  "highest_hour_kw": 155.1063928604126
+ },
+ "gwl3.0_hw99_high|T+2corr": {
+  "saving_pct": 11.40272779478433,
+  "share_of_ceiling": 0.6818223069818963,
+  "comfort_cold_kh": 1.3165359497070312,
+  "degree_hours_above_26": 17230.927967071533,
+  "cooling_electricity_kwh": 646.7369733795776,
+  "highest_hour_kw": 155.75703811645508
+ },
+ "gwl2.0_hw99_high|scenario": {
+  "saving_pct": 12.445557543039312,
+  "share_of_ceiling": 0.7671656492308311,
+  "comfort_cold_kh": 0.0,
+  "degree_hours_above_26": 14404.119720458984,
+  "cooling_electricity_kwh": 482.1765542968978,
+  "highest_hour_kw": 155.54851913452148
+ },
+ "gwl2.0_hw99_high|trained_hist": {
+  "saving_pct": 12.474571313510394,
+  "share_of_ceiling": 0.7689541081233401,
+  "comfort_cold_kh": 0.0,
+  "degree_hours_above_26": 14404.119720458984,
+  "cooling_electricity_kwh": 482.3264248990003,
+  "highest_hour_kw": 155.67559623718262
+ },
+ "gwl2.0_hw99_high|T-2": {
+  "saving_pct": 11.448469380517638,
+  "share_of_ceiling": 0.7057034138190366,
+  "comfort_cold_kh": 0.2788829803466797,
+  "degree_hours_above_26": 14411.85012435913,
+  "cooling_electricity_kwh": 477.4057154501023,
+  "highest_hour_kw": 155.00265502929688
+ },
+ "gwl2.0_hw99_high|T-1": {
+  "saving_pct": 11.8776097336138,
+  "share_of_ceiling": 0.7321563659230824,
+  "comfort_cold_kh": 3.490489959716797,
+  "degree_hours_above_26": 14407.266544342041,
+  "cooling_electricity_kwh": 483.57511895752765,
+  "highest_hour_kw": 155.7210178375244
+ },
+ "gwl2.0_hw99_high|T+1": {
+  "saving_pct": 12.295341193275833,
+  "share_of_ceiling": 0.7579060541429566,
+  "comfort_cold_kh": 100.9615249633789,
+  "degree_hours_above_26": 14403.875768661499,
+  "cooling_electricity_kwh": 505.0162812269318,
+  "highest_hour_kw": 155.68930435180664
+ },
+ "gwl2.0_hw99_high|T+2": {
+  "saving_pct": 12.319867227113281,
+  "share_of_ceiling": 0.759417881203086,
+  "comfort_cold_kh": 213.11351585388184,
+  "degree_hours_above_26": 14403.306161880493,
+  "cooling_electricity_kwh": 519.702713906765,
+  "highest_hour_kw": 155.73549842834473
+ },
+ "gwl2.0_hw99_high|T0n1": {
+  "saving_pct": 12.229073407550521,
+  "share_of_ceiling": 0.7538211934460181,
+  "comfort_cold_kh": 29.501047134399414,
+  "degree_hours_above_26": 14404.829538345337,
+  "cooling_electricity_kwh": 488.01270035093836,
+  "highest_hour_kw": 155.6900577545166
+ },
+ "gwl2.0_hw99_high|G30": {
+  "saving_pct": 10.98707448423425,
+  "share_of_ceiling": 0.6772622359983606,
+  "comfort_cold_kh": 10.591333389282227,
+  "degree_hours_above_26": 14404.624156951904,
+  "cooling_electricity_kwh": 483.33545297497324,
+  "highest_hour_kw": 155.53141975402832
+ },
+ "gwl2.0_hw99_high|T+2G30": {
+  "saving_pct": 10.974384898964722,
+  "share_of_ceiling": 0.6764800280588527,
+  "comfort_cold_kh": 213.1195945739746,
+  "degree_hours_above_26": 14403.21287727356,
+  "cooling_electricity_kwh": 519.9009210914373,
+  "highest_hour_kw": 155.64372539520264
+ },
+ "gwl2.0_hw99_high|T-2G30": {
+  "saving_pct": 10.122239755199073,
+  "share_of_ceiling": 0.6239523305093361,
+  "comfort_cold_kh": 1.0842170715332031,
+  "degree_hours_above_26": 14410.935716629028,
+  "cooling_electricity_kwh": 479.17870080546544,
+  "highest_hour_kw": 155.03000926971436
+ },
+ "gwl2.0_hw99_high|T+2corr": {
+  "saving_pct": 11.208347421860214,
+  "share_of_ceiling": 0.6909018818128606,
+  "comfort_cold_kh": 3.4305038452148438,
+  "degree_hours_above_26": 14407.290599822998,
+  "cooling_electricity_kwh": 506.77612286712974,
+  "highest_hour_kw": 155.73549461364746
+ },
+ "hist_hw99_high|scenario": {
+  "saving_pct": 11.858360893670989,
+  "share_of_ceiling": 0.7731082599163437,
+  "comfort_cold_kh": 0.0,
+  "degree_hours_above_26": 9866.490154266357,
+  "cooling_electricity_kwh": 315.04173730543886,
+  "highest_hour_kw": 155.67917919158936
+ },
+ "hist_hw99_high|trained_hist": {
+  "saving_pct": 11.858360893670989,
+  "share_of_ceiling": 0.7731082599163437,
+  "comfort_cold_kh": 0.0,
+  "degree_hours_above_26": 9866.490154266357,
+  "cooling_electricity_kwh": 315.04173730543886,
+  "highest_hour_kw": 155.67917919158936
+ },
+ "hist_hw99_high|T-2": {
+  "saving_pct": 10.959425123791469,
+  "share_of_ceiling": 0.7145019588381707,
+  "comfort_cold_kh": 0.28504371643066406,
+  "degree_hours_above_26": 9873.649166107178,
+  "cooling_electricity_kwh": 326.71656251759634,
+  "highest_hour_kw": 155.5649356842041
+ },
+ "hist_hw99_high|T-1": {
+  "saving_pct": 11.387289635619172,
+  "share_of_ceiling": 0.7423966730558512,
+  "comfort_cold_kh": 3.848245620727539,
+  "degree_hours_above_26": 9869.265474319458,
+  "cooling_electricity_kwh": 322.117026610397,
+  "highest_hour_kw": 155.66221237182617
+ },
+ "hist_hw99_high|T+1": {
+  "saving_pct": 11.757017284509889,
+  "share_of_ceiling": 0.7665011426229243,
+  "comfort_cold_kh": 105.97134017944336,
+  "degree_hours_above_26": 9866.108192443848,
+  "cooling_electricity_kwh": 332.76511023746394,
+  "highest_hour_kw": 155.7202787399292
+ },
+ "hist_hw99_high|T+2": {
+  "saving_pct": 11.812489174995605,
+  "share_of_ceiling": 0.7701176438503892,
+  "comfort_cold_kh": 223.49847793579102,
+  "degree_hours_above_26": 9865.395910263062,
+  "cooling_electricity_kwh": 346.86106755372043,
+  "highest_hour_kw": 155.84593391418457
+ },
+ "hist_hw99_high|T0n1": {
+  "saving_pct": 11.625738811181987,
+  "share_of_ceiling": 0.7579424157475114,
+  "comfort_cold_kh": 30.828882217407227,
+  "degree_hours_above_26": 9867.050249099731,
+  "cooling_electricity_kwh": 326.2315938489539,
+  "highest_hour_kw": 155.57309341430664
+ },
+ "hist_hw99_high|G30": {
+  "saving_pct": 10.561986699702388,
+  "share_of_ceiling": 0.6885908796235555,
+  "comfort_cold_kh": 11.393472671508789,
+  "degree_hours_above_26": 9866.944967269897,
+  "cooling_electricity_kwh": 314.33950222677095,
+  "highest_hour_kw": 155.69567394256592
+ },
+ "hist_hw99_high|T+2G30": {
+  "saving_pct": 10.564277847565823,
+  "share_of_ceiling": 0.68874025147636,
+  "comfort_cold_kh": 227.8454132080078,
+  "degree_hours_above_26": 9865.414463043213,
+  "cooling_electricity_kwh": 346.1621720896352,
+  "highest_hour_kw": 155.85690307617188
+ },
+ "hist_hw99_high|T-2G30": {
+  "saving_pct": 9.718742018890309,
+  "share_of_ceiling": 0.6336153704691428,
+  "comfort_cold_kh": 1.1101913452148438,
+  "degree_hours_above_26": 9872.48088645935,
+  "cooling_electricity_kwh": 329.3275164638307,
+  "highest_hour_kw": 155.60034084320068
+ },
+ "hist_hw99_high|T+2corr": {
+  "saving_pct": 10.690679346837959,
+  "share_of_ceiling": 0.696981023032339,
+  "comfort_cold_kh": 2.7705764770507812,
+  "degree_hours_above_26": 9870.473114013672,
+  "cooling_electricity_kwh": 337.2914475386208,
+  "highest_hour_kw": 155.84593391418457
+ }
+}
