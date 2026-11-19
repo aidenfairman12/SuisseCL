@@ -381,20 +381,24 @@ def build_registry_nodes(g):
         g.mentions_from(c['ID'], c.values())
     _read_files.add(P['alg_registry'])
     read_text(P['controller_doc'])
-    # --- R-001
+    # --- R-001, R-002 (one node per "## R-nnn" heading of the reward documentation)
     rdoc = read_text(P['reward_doc'])
-    m = re.search(r'^## (R-\d{3})\s+(.*)$', rdoc, re.M)
-    rid = m.group(1)
-    formula = re.search(r'^reward_t = .*$', rdoc, re.M)
-    terms = [r_['cells'] for r_ in parse_md_registry(_abs(P['reward_doc']), id_col='Term')]
-    g.add(rid, 'reward', m.group(2).strip(), fields={'formula': formula.group(0) if formula else None, 'terms': terms},
-          source_ref={'file': P['reward_doc'], 'line': rdoc[:m.start()].count('\n') + 1, 'raw': m.group(0)},
-          summary=first_sentence(formula.group(0) if formula else m.group(2)),
-          code=[code_excerpt(P['rewards_py']), code_excerpt(P['rewards_py'], 'SwissDistrictReward.terms'),
-                code_excerpt(P['rewards_py'], 'SwissDistrictReward.calculate')])
-    for x in extract_ids(m.group(2)):
-        g.edge(rid, 'decided_in', x)
-    g.mentions_from(rid, [rdoc])
+    heads = list(re.finditer(r'^## (R-\d{3})\s+(.*)$', rdoc, re.M))
+    terms_first = [r_['cells'] for r_ in parse_md_registry(_abs(P['reward_doc']), id_col='Term')]
+    for k, m in enumerate(heads):
+        rid = m.group(1)
+        end = heads[k + 1].start() if k + 1 < len(heads) else len(rdoc)
+        section = rdoc[m.start():end]
+        formula = re.search(r'^reward_t = .*$', section, re.M)
+        cls = re.search(r'`swiss\.experiments\.rewards\.(\w+)`', m.group(2))
+        cname = cls.group(1) if cls else 'SwissDistrictReward'
+        g.add(rid, 'reward', m.group(2).strip(), fields={'formula': formula.group(0) if formula else None, 'terms': terms_first[:4] if k == 0 else terms_first[4:]},
+              source_ref={'file': P['reward_doc'], 'line': rdoc[:m.start()].count('\n') + 1, 'raw': m.group(0)},
+              summary=first_sentence(formula.group(0) if formula else section.split('\n', 1)[1].strip().split('\n')[0]),
+              code=[code_excerpt(P['rewards_py']), code_excerpt(P['rewards_py'], f'{cname}.terms'), code_excerpt(P['rewards_py'], f'{cname}.calculate')])
+        for x in extract_ids(m.group(2)):
+            g.edge(rid, 'decided_in', x)
+        g.mentions_from(rid, [section])
     # --- EXP
     hdr, rows = parse_csv_registry(_abs(P['exp_registry']))
     _read_files.add(P['exp_registry'])
