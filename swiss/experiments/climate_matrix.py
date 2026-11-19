@@ -20,14 +20,21 @@ import time
 import traceback
 import warnings
 
+for _v in ('OMP_NUM_THREADS', 'MKL_NUM_THREADS', 'OPENBLAS_NUM_THREADS'):       # one thread per worker (the WP3 run showed a load average of 35 on 12 cores)
+    os.environ[_v] = '1'
+ARCH = sys.argv[sys.argv.index('--arch') + 1] if '--arch' in sys.argv else os.environ.get('CLIMATE_ARCH', 'central')    # 'central' = archetype A, 'ru' = archetype B (room units)
+os.environ['CLIMATE_ARCH'] = ARCH                                                 # inherited by the spawned workers
+
 import numpy as np
 
 warnings.filterwarnings('ignore')
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.insert(0, ROOT)
 
-RES = os.path.join(ROOT, 'swiss', 'experiments', 'climate_results')
-REPORT = os.path.join(ROOT, 'docs', 'experiments', 'validation_reports', 'climate_matrix.md')
+RES_A = os.path.join(ROOT, 'swiss', 'experiments', 'climate_results')
+RES = os.path.join(ROOT, 'swiss', 'experiments', 'climate_results_ru') if ARCH == 'ru' else RES_A
+SUMMARY = os.path.join(RES, 'climate_summary_ru.json' if ARCH == 'ru' else 'climate_summary.json')
+REPORT = os.path.join(ROOT, 'docs', 'experiments', 'validation_reports', 'climate_matrix_ru.md' if ARCH == 'ru' else 'climate_matrix.md')
 SCENARIOS = ('hist', 'hist_hw99', 'gwl2.0', 'gwl2.0_hw99', 'gwl3.0', 'gwl3.0_hw99')
 ADOPTION = ('none', 'low', 'medium', 'high')
 CTRLS = ('thermostat', 'pv_rule', 'mpc', 'mpc_peak0.1')
@@ -36,26 +43,40 @@ WEEK29 = (4872, 5040)
 
 
 def all_cells():
+    if ARCH == 'ru':                                            # archetype B: low, medium, high x six scenarios at the default cooled fraction + the two sensitivities
+        from swiss.pipeline import build_climate_datasets as bcd
+        return [bcd.cell_name(s, a, fr) for s, a, fr in bcd.ru_cells()]
     cells = [f'{s}_{a}' for s in SCENARIOS for a in ADOPTION]
     cells += ['gwl3.0_high_alt', 'gwl3.0_hw99_high_alt']
     return cells
 
 
-def split_cell(cell):
+def parse_cell(cell):
+    """(scenario, adoption, cooled fraction or None) of a cell name; archetype B cells end in _ru (default fraction), _ru0.2, _ru0.6."""
+    from swiss.pipeline import build_climate_datasets as bcd
+    frac = None
+    if '_ru' in cell:
+        cell, suffix = cell.rsplit('_ru', 1)
+        frac = bcd.RU_FRACTION if suffix == '' else float(suffix)
     for a in ('high_alt',) + ADOPTION[::-1]:
         if cell.endswith('_' + a):
-            return cell[:-(len(a) + 1)], a
+            return cell[:-(len(a) + 1)], a, frac
     raise ValueError(cell)
+
+
+def split_cell(cell):
+    sc, ad, _ = parse_cell(cell)
+    return sc, ad
 
 
 def ensure_datasets(cells):
     from swiss.pipeline import build_climate_datasets as bcd
     for c in cells:
-        sc, ad = split_cell(c)
-        d = bcd.cell_dir(sc, ad)
+        sc, ad, fr = parse_cell(c)
+        d = bcd.cell_dir(sc, ad, fr)
         if not (os.path.exists(os.path.join(d, 'schema.json')) and os.path.exists(os.path.join(d, 'build_manifest.json'))):
             print('building cell dataset', c, flush=True)
-            bcd.build_cell(sc, ad)
+            bcd.build_cell(sc, ad, fraction=fr)
 
 
 def jsonable(x):
@@ -115,7 +136,7 @@ def task_year(cell):
     from swiss.experiments import climate_controllers as cc, oracle, oracle_climate as oc
     inp = oc.ClimateInputs(cell)
     n = inp.N
-    res = {'cell': cell, 'cooled': [r for r, c in zip(inp.roles, inp.cooled) if c]}
+    res = {'cell': cell, 'cooled': [r for r, c in zip(inp.roles, inp.cooled) if c], 'cooled_fraction': next((f for f, c in zip(inp.frac, inp.cooled) if c), None)}
     sols_band = None
     t0 = time.time()
     for band in ('band', 'pinned'):
@@ -211,7 +232,7 @@ def aggregate():
         yr = load(c, 'year')
         if yr is None:
             continue
-        rec = {'cooled': yr['cooled'], 'ceiling_year_pct': yr['band']['saving_pct'], 'pinned_year_pct': yr['pinned']['saving_pct'], 'mass_value_pts': yr['mass_value_pts'],
+        rec = {'cooled': yr['cooled'], 'cooled_fraction': yr.get('cooled_fraction'), 'ceiling_year_pct': yr['band']['saving_pct'], 'pinned_year_pct': yr['pinned']['saving_pct'], 'mass_value_pts': yr['mass_value_pts'],
                'ceiling_weeks_pct': yr['band']['test_weeks']['saving_pct'], 'pinned_weeks_pct': yr['pinned']['test_weeks']['saving_pct'],
                'zero_bill_chf': yr['band']['zero_bill_chf'], 'opt_bill_chf': yr['band']['opt_bill_chf'],
                'cooling_kwh': yr['band']['cooling_electricity_kwh'], 'heating_kwh': yr['band']['heating_electricity_kwh'],
@@ -236,10 +257,13 @@ def aggregate():
                 e['share_of_ceiling'] = e['saving_pct'] / ceil if ceil > 1e-9 else None
             rec['controllers'][k] = e
         S['cells'][c] = rec
-    # difference-method pairs against the 'none' cell of the same scenario
+    # difference-method pairs against the 'none' cell of the same scenario (archetype B: the heating-only cell of archetype A, read-only: the heating-only district is identical)
+    base_cells = S['cells']
+    if ARCH == 'ru':
+        base_cells = json.load(open(os.path.join(RES_A, 'climate_summary.json')))['cells']
     for c, rec in S['cells'].items():
         sc, ad = split_cell(c)
-        base = S['cells'].get(f'{sc}_none')
+        base = base_cells.get(f'{sc}_none')
         if base is None or ad == 'none':
             continue
         d = {}
@@ -251,7 +275,7 @@ def aggregate():
                       'peak_kw': a['peak_net_kw'] - b['peak_net_kw'], 'degree_hours_above_26': a['degree_hours_above'] - b['degree_hours_above'],
                       'emissions_kg': rec[key]['emissions_kg'] - base[key]['emissions_kg']}
         rec['difference_vs_none'] = d
-    json.dump(jsonable(S), open(os.path.join(RES, 'climate_summary.json'), 'w'))
+    json.dump(jsonable(S), open(SUMMARY, 'w'))
     write_report(S)
     return S
 
@@ -262,8 +286,10 @@ def f1(x, nd=1):
 
 def write_report(S):
     C = S['cells']
-    L = ['# Phase C scenario matrix: climate x cooling adoption (WP3)', '',
-         'Generated by `swiss/experiments/climate_matrix.py aggregate` from `swiss/experiments/climate_results/`. Nothing here is typed by hand. Every cell is an S3 district '
+    L = ['# Phase C scenario matrix: climate x cooling adoption (WP3)' if ARCH != 'ru' else '# Phase C scenario matrix, archetype B (room units): climate x cooling adoption (WP2b)', '',
+         ('' if ARCH != 'ru' else 'ARCHETYPE B: in a cooled building only a fraction of the floor area (default 0.4, assumption A-058, no source) is cooled by room units (two independent zones, capacity proportional); '
+          'the rest of the building floats. Cell names end in `_ru` (`_ru0.2`, `_ru0.6` sensitivities). The difference-method rows compare with the heating-only cell of archetype A. ')
+         + 'Generated by `swiss/experiments/climate_matrix.py aggregate' + (' --arch ru' if ARCH == 'ru' else '') + '` from `' + os.path.relpath(RES, ROOT) + '/`. Nothing here is typed by hand. Every cell is an S3 district '
          '(assumed PV, battery, RC building; export 8 Rp/kWh) with cooling in the cooled buildings; climate scenarios are CH2025 delta-change years built on observed 2023 weather '
          '(`climate_scenarios.md`); `*_hw99` = the 99th-percentile heat-wave week inserted in week 29. Cooling demand, COP, device and adoption are modelled or assumed (see the registry '
          'drafts), none is measured. Reference = thermostat (heat to 21 C, cool to 26 C where a cooling device exists). Year ceilings are perfect-foresight exact optima (comfort band 21 to 24 '
@@ -329,11 +355,22 @@ def write_report(S):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('cmd', choices=['run', 'aggregate', 'robust'])
+    ap.add_argument('cmd', choices=['run', 'aggregate', 'robust', 'build', 'cells', 'one'])
+    ap.add_argument('--cell', default=None, help='one: the cell')
+    ap.add_argument('--task', default=None, help='one: year | weeks:thermostat | weeks:pv_rule | weeks:mpc | weeks:mpc_peak0.1')
+    ap.add_argument('--arch', choices=['central', 'ru'], default='central', help='central = archetype A (results in climate_results/), ru = archetype B room units (climate_results_ru/)')
     ap.add_argument('--workers', type=int, default=11)
     ap.add_argument('--cells', nargs='*')
     a = ap.parse_args()
-    if a.cmd == 'run':
+    if a.cmd == 'cells':                                         # for swiss/hpc/submit_climate_matrix.sh: the cell list of the architecture, one per line
+        print('\n'.join(all_cells()))
+    elif a.cmd == 'build':                                       # build the cell datasets of the architecture (cluster prerequisite job)
+        ensure_datasets(all_cells())
+    elif a.cmd == 'one':                                         # one (cell, task), cached like the pool workers (cluster task job)
+        os.makedirs(RES, exist_ok=True)
+        ensure_datasets([a.cell])
+        print(worker((a.cell, a.task)), flush=True)
+    elif a.cmd == 'run':
         run(a.workers, a.cells)
     elif a.cmd == 'aggregate':
         aggregate()

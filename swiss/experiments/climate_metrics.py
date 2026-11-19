@@ -61,8 +61,19 @@ def series_from_env(env, i0=0, i1=None):
         if dyn is not None and hasattr(dyn, 'area_eff'):
             d['temp'] = np.asarray(b.energy_simulation.indoor_dry_bulb_temperature, dtype=float)[sl]
             d['area'] = float(dyn.area_eff)
+            if getattr(dyn, 'cooled_fraction', 1.0) < 1.0 and hasattr(b, 'zone_temperature'):     # archetype B (room units): the two zone temperatures
+                d['temp_cooled'], d['temp_uncooled'], d['frac'] = b.zone_temperature[0][sl].copy(), b.zone_temperature[1][sl].copy(), float(dyn.cooled_fraction)
         out.append(d)
     return out
+
+
+def degree_hours(s, limit=26.0, dt_h=1.0):
+    """Degree-hours above `limit` of a building series: (building value, cooled zone, uncooled zone). Single-node buildings: the building value from `temp`, zones None.
+    Room-unit buildings (archetype B): the building value is the area-weighted sum of the zone values, f x cooled zone + (1 - f) x uncooled zone."""
+    if 'temp_cooled' in s:
+        c = float(np.nansum(np.maximum(s['temp_cooled'] - limit, 0.0)) * dt_h); u = float(np.nansum(np.maximum(s['temp_uncooled'] - limit, 0.0)) * dt_h)      # nansum: the last step of a year has no zone value
+        return s['frac'] * c + (1.0 - s['frac']) * u, c, u
+    return float(np.maximum(s['temp'] - limit, 0.0).sum() * dt_h), None, None
 
 
 def building_metrics(s, months, priority='default', temp_limit=26.0, dt_h=1.0, units=1.0):
@@ -87,7 +98,9 @@ def building_metrics(s, months, priority='default', temp_limit=26.0, dt_h=1.0, u
         r['self_sufficiency'] = 1.0 - grid_loads / total if total > 1e-9 else None      # share of the four loads not bought from the grid
         res[tag] = r
     if 'temp' in s:
-        res['degree_hours_above'] = float(np.maximum(s['temp'] - temp_limit, 0.0).sum() * dt_h)
+        res['degree_hours_above'], dh_c, dh_u = degree_hours(s, temp_limit, dt_h)
+        if dh_c is not None:
+            res['degree_hours_above_cooled_zone'], res['degree_hours_above_uncooled_zone'] = dh_c, dh_u
     res['peak_net_kw'] = float((net / dt_h).max())
     return res, al, net
 

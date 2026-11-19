@@ -38,25 +38,47 @@ def files(scenario):
     return (w, p) if os.path.exists(w) and os.path.exists(p) else None
 
 
-def cell_dir(scenario, adoption):
-    return os.path.join(ROOT, 'swiss', 'datasets', 'climate', f'{scenario}_{adoption}')
+RU_FRACTION = 0.4                                  # archetype B default cooled fraction (assumption A-058, no source); sensitivity 0.2 and 0.6
+RU_SENSITIVITY = ((('gwl3.0_hw99', 'high'), (0.2, 0.6)),)
 
 
-def build_cell(scenario, adoption, quiet=True):
+def ru_suffix(fraction):
+    """Cell-name suffix of archetype B: `_ru` for the default fraction, `_ru0.2` and `_ru0.6` for the sensitivities."""
+    return '_ru' if abs(fraction - RU_FRACTION) < 1e-9 else f'_ru{fraction:g}'
+
+
+def cell_name(scenario, adoption, fraction=None):
+    return f'{scenario}_{adoption}' + ('' if fraction is None else ru_suffix(fraction))
+
+
+def cell_dir(scenario, adoption, fraction=None):
+    return os.path.join(ROOT, 'swiss', 'datasets', 'climate', cell_name(scenario, adoption, fraction))
+
+
+def ru_cells():
+    """(scenario, adoption, fraction) of every archetype B cell of the matrix: low, medium, high x the six scenarios at the default fraction + the two sensitivities."""
+    out = [(s, a, RU_FRACTION) for s in MATRIX_SCENARIOS for a in ('low', 'medium', 'high')]
+    for (s, a), fr in RU_SENSITIVITY:
+        out += [(s, a, f) for f in fr]
+    return out
+
+
+def build_cell(scenario, adoption, quiet=True, fraction=None):
     f = files(scenario)
     if f is None:
         raise FileNotFoundError(f'scenario files for {scenario} not found in data/canonical/climate')
-    out = f'climate/{scenario}_{adoption}'
+    out = f'climate/{cell_name(scenario, adoption, fraction)}'
+    fr = 1.0 if fraction is None else fraction
     if quiet:
         import contextlib
         import io
         with contextlib.redirect_stdout(io.StringIO()):
             build_dataset.main(out_name=out, carbon_file=CARBON, pv_ratio=1.0, battery_kwh_per_kwp=1.0, rc=True, weather_file=f[0], pv_file=f[1],
-                               cooled_buildings=ADOPTION[adoption], climate_scenario=scenario)
+                               cooled_buildings=ADOPTION[adoption], climate_scenario=scenario, cooled_fraction=fr)
     else:
         build_dataset.main(out_name=out, carbon_file=CARBON, pv_ratio=1.0, battery_kwh_per_kwp=1.0, rc=True, weather_file=f[0], pv_file=f[1],
-                           cooled_buildings=ADOPTION[adoption], climate_scenario=scenario)
-    return cell_dir(scenario, adoption)
+                           cooled_buildings=ADOPTION[adoption], climate_scenario=scenario, cooled_fraction=fr)
+    return cell_dir(scenario, adoption, fraction)
 
 
 if __name__ == '__main__':
@@ -65,10 +87,15 @@ if __name__ == '__main__':
     ap.add_argument('--adoption', choices=list(ADOPTION))
     ap.add_argument('--all', action='store_true', help='the matrix scenarios whose files exist x every adoption level')
     ap.add_argument('--all-extra', action='store_true', help='also the sensitivity scenarios (gwl1.5, p95 heat waves)')
+    ap.add_argument('--fraction', type=float, default=None, help='archetype B (room units): cooled fraction of the floor area of the cooled buildings (cell name suffix _ru, _ru0.2, ...)')
+    ap.add_argument('--all-ru', action='store_true', help='every archetype B cell of the matrix (18 at the default fraction + 2 sensitivities)')
     a = ap.parse_args()
-    cells = [(s, ad) for s in (SCENARIOS if a.all_extra else MATRIX_SCENARIOS) for ad in ADOPTION] if (a.all or a.all_extra) else [(a.scenario, a.adoption)]
-    for s, ad in cells:
+    if a.all_ru:
+        cells = ru_cells()
+    else:
+        cells = [(s, ad, a.fraction) for s in (SCENARIOS if a.all_extra else MATRIX_SCENARIOS) for ad in ADOPTION] if (a.all or a.all_extra) else [(a.scenario, a.adoption, a.fraction)]
+    for s, ad, fr in cells:
         if files(s) is None:
-            print(f'skip {s}_{ad}: scenario files missing')
+            print(f'skip {cell_name(s, ad, fr)}: scenario files missing')
             continue
-        print('built', build_cell(s, ad))
+        print('built', build_cell(s, ad, fraction=fr))

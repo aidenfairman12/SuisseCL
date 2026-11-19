@@ -35,7 +35,7 @@ def buffer_kwh(role):
 
 
 def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_eff=TANK_EFF, thermal_subdir='thermal', pv_ratio=None, battery_kwh_per_kwp=None, rc=False, q15=False,
-         weather_file=None, pv_file=None, cooled_buildings=(), climate_scenario=None):
+         weather_file=None, pv_file=None, cooled_buildings=(), climate_scenario=None, cooled_fraction=1.0):
     out_dir = os.path.join(ROOT, 'swiss', 'datasets', out_name)
     os.makedirs(out_dir, exist_ok=True)
     params = json.load(open(os.path.join(CAN, thermal_subdir, 'thermal_params.json')))
@@ -151,6 +151,8 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
                                 'attributes': {'capacity': round(dhw_cap, 4), 'efficiency': tank_eff, 'loss_coefficient': loss_coeff}}
         if role in cooled_buildings:   # Phase C: reversible heat pump = a cooling device of the same rating, efficiency and supply temperature as the heating device (A-040)
             b['cooling_device'] = {'type': 'citylearn.energy_model.HeatPump', 'autosize': False, 'attributes': dict(b['heating_device']['attributes'])}
+            if cooled_fraction < 1.0:   # archetype B (room units, WP2b, A-058): the units cover a fraction of the floor area, so their capacity is proportional to it
+                b['cooling_device']['attributes']['nominal_power'] = round(b['heating_device']['attributes']['nominal_power'] * cooled_fraction, 6)
             b['inactive_actions'] = ['heating_device']          # cooled buildings use the combined action: negative = cooling, positive = heating (CityLearn forbids both)
         elif cooled_buildings:
             b['inactive_actions'] = ['cooling_or_heating_device']
@@ -158,6 +160,8 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
             b['type'] = 'swiss.citylearn_build.rc_dynamics.RCDynamicsBuilding'
             b['dynamics'] = {'type': 'swiss.citylearn_build.rc_dynamics.RCDynamics',
                              'attributes': {'area_eff': rc_params['buildings'][role]['effective_area_m2'], 'filename': 'rc_params.json'}}
+            if role in cooled_buildings and cooled_fraction < 1.0:   # archetype B: two independent zones (swiss/citylearn_build/rc_dynamics.py); omitted for archetype A so its datasets stay identical
+                b['dynamics']['attributes']['cooled_fraction'] = cooled_fraction
         buildings[name] = b
         manifest[name] = {'role': role, 'heating_tank_kwh_th': round(sh_cap, 3), 'dhw_tank_kwh_th': round(dhw_cap, 3),
                           'hp_sh_nominal_kw': b['heating_device']['attributes']['nominal_power'],
@@ -166,6 +170,8 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
             manifest[name]['cooled'] = role in cooled_buildings
             if role in cooled_buildings:
                 manifest[name]['cooling_device_nominal_kw'] = b['cooling_device']['attributes']['nominal_power']
+                if cooled_fraction < 1.0:
+                    manifest[name]['cooled_fraction'] = cooled_fraction
         if pv_w is not None:
             manifest[name]['pv_kwp'] = b['pv']['attributes']['nominal_power']
         if battery_kwh_per_kwp is not None:
@@ -192,7 +198,8 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
     if climate_scenario is not None or weather_file or pv_file or cooled_buildings:   # Phase C: what this dataset is made of (kept outside build_manifest.json, which lists buildings only)
         json.dump({'climate_scenario': climate_scenario, 'weather_file': os.path.relpath(weather_file, ROOT) if weather_file else None,
                    'pv_file': os.path.relpath(pv_file, ROOT) if pv_file else None, 'cooled_buildings': list(cooled_buildings), 'pv_ratio': pv_ratio,
-                   'battery_kwh_per_kwp': battery_kwh_per_kwp, 'rc': rc, 'cooling_set_point_c': 26.0, 'cooling_device_supply_c': 8.0},
+                   'battery_kwh_per_kwp': battery_kwh_per_kwp, 'rc': rc, 'cooling_set_point_c': 26.0, 'cooling_device_supply_c': 8.0,
+                   'archetype': 'room units' if cooled_fraction < 1.0 else 'central', 'cooled_fraction': cooled_fraction},
                   open(os.path.join(out_dir, 'build_meta.json'), 'w'), indent=1)
     if rc:
         json.dump(rc_params, open(os.path.join(out_dir, 'rc_params.json'), 'w'), indent=1)
@@ -215,5 +222,6 @@ if __name__ == '__main__':
     ap.add_argument('--pv-file', default=None, help='Phase C: hourly per-kWp PV csv with the column of data/canonical/pv/pv_ac_w_per_kwp_2023_hourly.csv')
     ap.add_argument('--cooled-buildings', nargs='*', default=[], help='Phase C: roles with a cooling device (needs --rc), e.g. MFH-small')
     ap.add_argument('--climate-scenario', default=None, help='label recorded in build_meta.json')
+    ap.add_argument('--cooled-fraction', type=float, default=1.0, help='Phase C archetype B (room units): fraction of the floor area of a cooled building that is cooled (two independent zones, cooling capacity proportional); 1 = archetype A, central')
     a = ap.parse_args()
-    main(a.tank_scale, a.out_name, a.carbon_file, a.tank_eff, a.thermal_subdir, a.pv_ratio, a.battery_kwh_per_kwp, a.rc, a.q15, a.weather_file, a.pv_file, a.cooled_buildings, a.climate_scenario)
+    main(a.tank_scale, a.out_name, a.carbon_file, a.tank_eff, a.thermal_subdir, a.pv_ratio, a.battery_kwh_per_kwp, a.rc, a.q15, a.weather_file, a.pv_file, a.cooled_buildings, a.climate_scenario, a.cooled_fraction)

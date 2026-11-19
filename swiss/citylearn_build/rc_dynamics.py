@@ -15,15 +15,21 @@ from swiss.models.rc_building import COOLING_MIN_OUTDOOR_C, PRIORS, step_tempera
 
 
 class RCDynamics(Dynamics):
-    def __init__(self, area_eff, filepath=None, **params):
+    """Single-node RC state of a building. Phase C archetype B (room units, WP2b): cooled_fraction < 1 splits the building into two independent nodes with the same per-m2
+    parameters, a cooled zone (area f A) and an uncooled zone ((1 - f) A); `temperature` is then the AREA-WEIGHTED MEAN (the quantity the observations and the
+    Phase B/C code read), `t_cooled` and `t_uncooled` are the zone temperatures. With cooled_fraction = 1 (default) nothing changes."""
+    def __init__(self, area_eff, filepath=None, cooled_fraction=1.0, **params):
         super().__init__()
         self.filepath = filepath                            # CityLearn's loader always passes a file path (LSTM weights); here it only documents the parameters
         self.area_eff = float(area_eff)
+        self.cooled_fraction = float(cooled_fraction)
         self.params = {**PRIORS, **{k: v for k, v in params.items() if k in PRIORS}}
         self.temperature = self.params['setpoint_c']
+        self.t_cooled = self.t_uncooled = self.params['setpoint_c']
 
     def reset(self):
         self.temperature = self.params['setpoint_c']
+        self.t_cooled = self.t_uncooled = self.params['setpoint_c']
 
 
 class RCDynamicsBuilding(DynamicsBuilding):
@@ -68,9 +74,23 @@ class RCDynamicsBuilding(DynamicsBuilding):
         ghi = float(w.direct_solar_irradiance[t]) + float(w.diffuse_solar_irradiance[t])
         q_kw = (float(self.energy_simulation.heating_demand[t]) - float(self.energy_simulation.cooling_demand[t])) / self._dataset_step_hours()    # cooling removes heat (zero in Phase B datasets)
         dyn = self.dynamics
-        T = step_temperature(dyn.temperature, float(w.outdoor_dry_bulb_temperature[t]), ghi, q_kw, dyn.area_eff,
-                             dt_s=3600.0 * self._dataset_step_hours(), p=dyn.params)
-        dyn.temperature = float(T)
+        if dyn.cooled_fraction < 1.0:                          # archetype B: two independent zones; heat Q is split by area, cooling acts on the cooled zone only
+            f, dt_s, t_out = dyn.cooled_fraction, 3600.0 * self._dataset_step_hours(), float(w.outdoor_dry_bulb_temperature[t])
+            heat_kw = float(self.energy_simulation.heating_demand[t]) / self._dataset_step_hours()
+            cool_kw = float(self.energy_simulation.cooling_demand[t]) / self._dataset_step_hours()
+            dyn.t_cooled = float(step_temperature(dyn.t_cooled, t_out, ghi, f * heat_kw - cool_kw, f * dyn.area_eff, dt_s=dt_s, p=dyn.params))
+            dyn.t_uncooled = float(step_temperature(dyn.t_uncooled, t_out, ghi, (1.0 - f) * heat_kw, (1.0 - f) * dyn.area_eff, dt_s=dt_s, p=dyn.params))
+            T = f * dyn.t_cooled + (1.0 - f) * dyn.t_uncooled
+            dyn.temperature = float(T)
+            n_t = self.energy_simulation.indoor_dry_bulb_temperature.shape[0]
+            if not hasattr(self, 'zone_temperature') or self.zone_temperature.shape[1] != n_t or t == 0:
+                self.zone_temperature = np.full((2, n_t), np.nan)    # rows: cooled zone, uncooled zone (end of each step), for the metrics of WP2b
+            self.zone_temperature[0, t], self.zone_temperature[1, t] = dyn.t_cooled, dyn.t_uncooled
+        else:
+            T = step_temperature(dyn.temperature, float(w.outdoor_dry_bulb_temperature[t]), ghi, q_kw, dyn.area_eff,
+                                 dt_s=3600.0 * self._dataset_step_hours(), p=dyn.params)
+            dyn.temperature = float(T)
+            dyn.t_cooled = dyn.t_uncooled = dyn.temperature
         series = self.energy_simulation.indoor_dry_bulb_temperature
         series[t] = T
         if t + 1 < series.shape[0]:

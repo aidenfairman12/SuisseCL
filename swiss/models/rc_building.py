@@ -113,3 +113,37 @@ def simulate_thermostat(area_eff, t_amb, ghi, p=None, dt_s=3600.0, q_heat_max=No
         T = step_temperature(T, t_amb[k], ghi[k], q[k] - qc[k], area_eff, dt_s, p)
         temp[k] = T
     return q, qc, temp
+
+
+# ----------------------------------------------------------------------------------------------------------------- Phase C: room-unit archetype (WP2b, M-007)
+# Archetype B ("room units", docs/phases/phase_c_proposal_updated.md section 10): a building with cooled fraction f is two INDEPENDENT RC nodes with the same per-m2
+# parameters (assumption: no heat exchange between the zones): a cooled zone of area f A and an uncooled zone of area (1 - f) A. Heating is one action whose heat is split in
+# proportion to area (both zones get Q / A per m2); cooling (room units, capacity proportional to f) removes heat from the cooled zone only. Because the model is linear and the
+# parameters are per m2, the AREA-WEIGHTED MEAN temperature follows the single-node equation with net heat Q - Qc (exactly): the zones differ only through the cooling.
+DEFAULT_COOLED_FRACTION = 0.4     # assumption without a source (sensitivity 0.2 and 0.6)
+
+
+def simulate_thermostat_zones(area_eff, frac, t_amb, ghi, p=None, dt_s=3600.0, q_heat_max=None, q_cool_max=None, cool_setpoint=COOL_SETPOINT_C, t0=None):
+    """Thermostat of a building with a cooled fraction `frac` (room units). Heating: one thermostat on the area-weighted mean temperature (as simulate_thermostat on the
+    whole building); cooling: the room unit cools its zone to cool_setpoint when the free temperature of the cooled zone would exceed it, never at the same step as heating,
+    limited by q_cool_max (kW thermal, device capacity proportional to frac). Returns (heat kW total, cool kW removed from the cooled zone, T cooled zone, T uncooled zone, T mean).
+    With frac = 1 the mean equals the single-node simulate_thermostat result."""
+    p = {**PRIORS, **(p or {})}
+    t_start = p['setpoint_c'] if t0 is None else t0
+    n = len(t_amb)
+    a1, a2 = frac * area_eff, (1.0 - frac) * area_eff
+    T1 = T2 = t_start
+    q = np.zeros(n); qc = np.zeros(n); t1 = np.zeros(n); t2 = np.zeros(n); tm = np.zeros(n)
+    for k in range(n):
+        Tm = frac * T1 + (1.0 - frac) * T2
+        q[k] = max(heat_for_target(Tm, p['setpoint_c'], t_amb[k], ghi[k], area_eff, dt_s, p), 0.0)
+        if q_heat_max is not None:
+            q[k] = min(q[k], q_heat_max[k])
+        if q_cool_max is not None and q[k] <= 0.0 and a1 > 0.0:
+            t_free = step_temperature(T1, t_amb[k], ghi[k], 0.0, a1, dt_s, p)
+            if t_free > cool_setpoint:
+                qc[k] = min(max(-heat_for_target(T1, cool_setpoint, t_amb[k], ghi[k], a1, dt_s, p), 0.0), q_cool_max[k])
+        T1 = step_temperature(T1, t_amb[k], ghi[k], frac * q[k] - qc[k], a1, dt_s, p) if a1 > 0.0 else T1
+        T2 = step_temperature(T2, t_amb[k], ghi[k], (1.0 - frac) * q[k], a2, dt_s, p) if a2 > 0.0 else T2
+        t1[k], t2[k], tm[k] = T1, T2, frac * T1 + (1.0 - frac) * T2
+    return q, qc, t1, t2, tm

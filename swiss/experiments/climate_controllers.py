@@ -47,6 +47,8 @@ class ThermostatAgentCool:
         heat_share = float(np.clip(q_kw * dt_h / max(maxout, 1e-9), 0.0, 1.0))
         cool_share = 0.0
         if 'cooling_or_heating_device' in b.active_actions and heat_share <= 0.0:
+            if getattr(dyn, 'cooled_fraction', 1.0) < 1.0:                 # archetype B: the room units cool their own zone (temperature and area of the cooled zone)
+                T, A = dyn.t_cooled, dyn.cooled_fraction * dyn.area_eff
             t_free = step_temperature(T, t_out, ghi, 0.0, A, dt_s=3600.0 * dt_h, p=p)
             if t_free > COOL_SETPOINT_C:
                 need = max(-heat_for_target(T, COOL_SETPOINT_C, t_out, ghi, A, dt_s=3600.0 * dt_h, p=p), 0.0) * dt_h
@@ -218,8 +220,11 @@ class MPCClimate(mpc.MPCAgent):
         self.wv = view if view is not None else WeatherView(inp)
         self.p_low = float(inp.price.min())
         self.Tth = {bi: oc.thermostat(inp, bi, inp.N)[2] for bi in range(len(env.buildings))}
+        self.Tth_zones = {bi: oc.thermostat_zones(inp, bi, inp.N)[2:4] for bi in range(len(env.buildings)) if inp.two_zone[bi]}      # archetype B: (cooled zone, uncooled zone) thermostat paths
 
     def _lp(self, bi, b, t, g, fcst=None):
+        if self.inp.two_zone[bi]:
+            return self._lp_zones(bi, b, t, g, fcst)
         import scipy.sparse as sp
         inp, wv = self.inp, self.wv
         h = min(self.H, inp.N - g)
@@ -316,10 +321,110 @@ class MPCClimate(mpc.MPCAgent):
               'qc0': float(wv.qc_max[bi][g]) if cooled else 0.0}
         return lp, tanks, bat
 
+    def _lp_zones(self, bi, b, t, g, fcst=None):
+        """Archetype B horizon LP of a room-unit building: two independent zone nodes (cooled zone area f A with Qc, uncooled zone (1 - f) A), heat Q split by area, as
+        oracle_climate.solve_building_zones; zone temperatures T (cooled) and T2 (uncooled) with soft bands: cold slack 5 CHF per K h in both zones, hot slack 2.0 CHF per K h in
+        the cooled zone and 0.05 CHF per K h in the uncooled zone (the WP3 rerun fix: no free overheating, but no hard limit either). The online correction acts on the area-weighted mean."""
+        import scipy.sparse as sp
+        inp, wv = self.inp, self.wv
+        h = min(self.H, inp.N - g)
+        sl = slice(g, g + h)
+        ht, wt = inp.heat_tank[bi], inp.dhw_tank[bi]
+        p, A, f, dt_h = inp.params[bi], inp.area[bi], inp.frac[bi], inp.dt_h
+        dyn = b.dynamics
+        st = self._state(b, t)
+        base, dem = self.fc.get(bi, g, h)
+        cop, maxout = wv.cop_h[bi][sl], wv.maxout_h[bi][sl]
+        price = inp.price[sl]
+        bat = o.battery_spec(inp.kwp[bi] * 1.0, dt_h)
+        bat['e0'] = min(max(st['bat'], bat['emin']), bat['cap'])
+        Tth1, Tth2 = self.Tth_zones[bi][0][sl], self.Tth_zones[bi][1][sl]
+        blocks, idx = [], {}
+
+        def add(name, lo, hi, cost):
+            idx[name] = sum(q[1] for q in blocks)
+            blocks.append((name, h, np.broadcast_to(lo, (h,)), np.broadcast_to(hi, (h,)), np.broadcast_to(cost, (h,))))
+
+        rate_h = ht['cap'] * dt_h
+        add('a', 0.0, np.minimum(rate_h, maxout), 0.0); add('d', 0.0, rate_h, 0.0); add('E', 0.0, ht['cap'], 0.0); add('Q', 0.0, maxout, 0.0)
+        add('T', -50.0, 80.0, 0.0); add('sl', 0.0, np.inf, self.W_COLD); add('su', 0.0, np.inf, self.W_HOT_COOLED)
+        add('T2', -50.0, 80.0, 0.0); add('sl2', 0.0, np.inf, self.W_COLD); add('su2', 0.0, np.inf, self.W_HOT_FLOAT)
+        add('Qc', 0.0, wv.qc_max[bi][sl], 0.0)
+        if wt is not None:
+            rate_w = wt['cap'] * dt_h
+            add('a2', 0.0, np.minimum(rate_w, wv.maxout_w[bi][sl]), 0.0); add('d2', 0.0, np.minimum(rate_w, dem[0]), 0.0); add('E2', 0.0, wt['cap'], 0.0)
+        add('c', 0.0, bat['power'], 0.0); add('u', 0.0, bat['power'], 0.0); add('Eb', bat['emin'], bat['cap'], 0.0)
+        add('i', 0.0, np.inf, price); add('x', 0.0, np.inf, -EXPORT)
+        names = [q[0] for q in blocks]
+        cvec = np.concatenate([q[4] for q in blocks]).astype(float)
+        lo = np.concatenate([q[2] for q in blocks]).astype(float); hi = np.concatenate([q[3] for q in blocks]).astype(float)
+        nv = len(cvec)
+        I = sp.identity(h, format='csr'); Z = sp.csr_matrix((h, h))
+        sub = lambda lam: sp.diags([np.full(h - 1, -(1.0 - lam))], [-1], shape=(h, h), format='csr')   # noqa: E731
+
+        def row(entries):
+            m = [Z] * len(blocks)
+            for nm, mat in entries:
+                m[names.index(nm)] = mat
+            return sp.hstack(m, format='csr')
+
+        eq, beq, ub, bub = [], [], [], []
+        for t_, qa, qd, qe, e0 in ((ht, 'a', 'd', 'E', st['heating']), (wt, 'a2', 'd2', 'E2', st.get('dhw'))):
+            if t_ is None:
+                continue
+            rho, lam = t_['rho'], t_['loss']
+            eq.append(row([(qa, -rho * I), (qd, I / rho), (qe, I + sub(lam))]))
+            b0 = np.zeros(h); b0[0] = (1.0 - lam) * e0; beq.append(b0)
+        ub.append(row([('Q', I), ('d', -I), ('a', I)])); bub.append(maxout)
+        ub.append(row([('d', I), ('Q', -I)])); bub.append(np.zeros(h))
+        if wt is not None:
+            ub.append(row([('a2', I), ('d2', -I)])); bub.append(wv.maxout_w[bi][sl] - dem[0])
+        Hh = p['H_w_per_k_m2'] * A
+        e = float(np.exp(-3600.0 * dt_h * p['H_w_per_k_m2'] / p['C_j_per_k_m2']))
+        rhs = (1 - e) * (wv.ta[sl] + (p['g'] * A * wv.ghi[sl] + p['L_internal_w_m2'] * A) / Hh)
+        if self.correct and bi in self.pred_T:
+            r = float(np.clip(float(dyn.temperature) - self.pred_T[bi], -2.0, 2.0))
+            self.bias[bi] = 0.7 * self.bias.get(bi, 0.0) + 0.3 * r
+            rhs = rhs + self.bias[bi]
+        rhs1 = rhs.copy(); rhs1[0] += e * float(dyn.t_cooled)
+        rhs2 = rhs.copy(); rhs2[0] += e * float(dyn.t_uncooled)
+        k_q = (1 - e) * 1000.0 / (Hh * dt_h)
+        decay = sp.diags([np.full(h - 1, -e)], [-1], shape=(h, h), format='csr')
+        eq.append(row([('T', I + decay), ('Q', -k_q * I), ('Qc', (k_q / f) * I)])); beq.append(rhs1)
+        eq.append(row([('T2', I + decay), ('Q', -k_q * I)])); beq.append(rhs2)
+        upper_season = np.where(np.isin(inp.local_month[sl], COOLING_MONTHS), COOL_SETPOINT_C, UPPER_HEATING_SEASON_C)
+        for tn, sln, sun, Tth, up in (('T', 'sl', 'su', Tth1, upper_season), ('T2', 'sl2', 'su2', Tth2, np.full(h, UPPER_HEATING_SEASON_C))):
+            lower, upper = np.where(Tth < 20.99, Tth, self.LOWER), np.maximum(up, Tth)
+            ub.append(row([(tn, -I), (sln, -I)])); bub.append(-lower)
+            ub.append(row([(tn, I), (sun, -I)])); bub.append(upper)
+        eq.append(row([('c', -bat['eta1'] * I), ('u', I / bat['eta1']), ('Eb', I + sub(0.0))]))
+        b0 = np.zeros(h); b0[0] = bat['e0']; beq.append(b0)
+        ent = [('i', I), ('x', -I), ('Q', -sp.diags(1.0 / cop)), ('a', -sp.diags(1.0 / cop)), ('d', sp.diags(1.0 / cop)), ('c', -I), ('u', I),
+               ('Qc', -sp.diags(1.0 / wv.copc[bi][sl]))]
+        if wt is not None:
+            ent += [('a2', -sp.diags(1.0 / wv.cop_w[bi][sl])), ('d2', sp.diags(1.0 / wv.cop_w[bi][sl]))]
+        eq.append(row(ent)); beq.append(base)
+        if self.tv > 0:                                                         # terminal credit as MPCClimate, per zone
+            cvec[idx['E'] + h - 1] -= self.tv * self.p_low * ht['rho'] / float(cop[-1])
+            if wt is not None:
+                cvec[idx['E2'] + h - 1] -= self.tv * self.p_low * wt['rho'] / float(wv.cop_w[bi][sl][-1])
+            cvec[idx['Eb'] + h - 1] -= self.tv * self.p_low * bat['eta1']
+            kwh_per_k = p['C_j_per_k_m2'] * A / 3.6e6
+            if int(inp.local_month[g + h - 1]) in COOLING_MONTHS:
+                cvec[idx['T'] + h - 1] += self.tv * self.p_low * f * kwh_per_k / float(wv.copc[bi][sl][-1])       # stored coolness of the cooled zone only
+            else:
+                cvec[idx['T'] + h - 1] -= self.tv * self.p_low * f * kwh_per_k / float(cop[-1])
+                cvec[idx['T2'] + h - 1] -= self.tv * self.p_low * (1.0 - f) * kwh_per_k / float(cop[-1])
+        tanks = [{**ht, 'kind': 'heating'}] + ([{**wt, 'kind': 'dhw'}] if wt is not None else [])
+        lp = {'c': cvec, 'lo': lo, 'hi': hi, 'A_eq': sp.vstack(eq, format='csr'), 'b_eq': np.concatenate(beq), 'A_ub': sp.vstack(ub, format='csr'),
+              'b_ub': np.concatenate(bub), 'idx': idx, 'n': h, 'nv': nv, 'has_dhw': wt is not None, 'maxout0': float(maxout[0]), 'bi': bi, 'cooled': True,
+              'qc0': float(wv.qc_max[bi][g]), 'frac': f}
+        return lp, tanks, bat
+
     def _first_actions(self, b, x, lp, tanks, bat):
         idx, inp = lp['idx'], self.inp
         first = lambda name: float(x[idx[name]])   # noqa: E731
-        self.pred_T[lp['bi']] = first('T')
+        self.pred_T[lp['bi']] = first('T') if 'frac' not in lp else lp['frac'] * first('T') + (1.0 - lp['frac']) * first('T2')      # the mean temperature for the online correction
         out = {'tanks': {'heating': (first('a') - first('d')) / (tanks[0]['cap'] * inp.dt_h), 'dhw': 0.0},
                'heat_share': first('Q') / max(lp['maxout0'], 1e-9), 'cool_share': (first('Qc') / lp['qc0']) if lp['cooled'] and lp['qc0'] > 0 else 0.0,
                'bat': (first('c') - first('u')) / (float(b.electrical_storage.nominal_power) * inp.dt_h)}
@@ -379,7 +484,13 @@ def play_window(cell_dir, make_agent, win, warm=rl.WARM):
     ser = cm.series_from_env(env, i0, i1)
     m['cooling_electricity_kwh'] = float(sum(x['cool'].sum() for x in ser))
     m['heating_electricity_kwh'] = float(sum(x['heat'].sum() for x in ser))
-    m['degree_hours_above_26'] = float(sum(np.maximum(x['temp'] - 26.0, 0.0).sum() for x in ser))
+    dhs = [cm.degree_hours(x) for x in ser]
+    m['degree_hours_above_26'] = float(sum(d[0] for d in dhs))
+    if any(d[1] is not None for d in dhs):                                  # archetype B: zone values of the room-unit buildings (raw K h, not area-weighted)
+        m['degree_hours_above_26_cooled_zone'] = float(sum(d[1] for d in dhs if d[1] is not None))
+        m['degree_hours_above_26_uncooled_zone'] = float(sum(d[2] for d in dhs if d[2] is not None))
+        m['comfort_cold_kh_cooled_zone'] = float(sum(np.nansum(np.maximum(21.0 - x['temp_cooled'], 0.0)) for x in ser if 'temp_cooled' in x))
+        m['comfort_cold_kh_uncooled_zone'] = float(sum(np.nansum(np.maximum(21.0 - x['temp_uncooled'], 0.0)) for x in ser if 'temp_uncooled' in x))
     m['solve_seconds'] = float(getattr(agent, 'solve_s', 0.0))
     return m
 
@@ -390,5 +501,8 @@ def aggregate_windows(rows):
     agg['cooling_electricity_kwh'] = float(sum(r['cooling_electricity_kwh'] for r in rows))
     agg['heating_electricity_kwh'] = float(sum(r['heating_electricity_kwh'] for r in rows))
     agg['degree_hours_above_26'] = float(sum(r['degree_hours_above_26'] for r in rows))
+    for k in ('degree_hours_above_26_cooled_zone', 'degree_hours_above_26_uncooled_zone', 'comfort_cold_kh_cooled_zone', 'comfort_cold_kh_uncooled_zone'):
+        if k in rows[0]:
+            agg[k] = float(sum(r[k] for r in rows))
     agg['solve_seconds'] = float(sum(r['solve_seconds'] for r in rows))
     return agg
