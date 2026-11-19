@@ -67,7 +67,7 @@ QC_REPORTS = {  # placeholder namespace -> (json file, markdown twin or None, ti
 # Builder code is an input too: a changed builder means a stale bundle.
 BUILDER_FILES = ['swiss/dashboard/build_bundle.py', 'swiss/dashboard/parse_registries.py', 'swiss/dashboard/bundle_io.py',
                  'swiss/dashboard/figures.py', 'swiss/dashboard/story.py', 'swiss/pipeline/select_buildings.py', 'swiss/experiments/run_baselines.py',
-                 'swiss/experiments/run_sensitivity.py', 'swiss/datasets/swiss_district_2023/pricing.csv', 'swiss/dashboard/phase_b.py']
+                 'swiss/experiments/run_sensitivity.py', 'swiss/datasets/swiss_district_2023/pricing.csv', 'swiss/dashboard/phase_b.py', 'swiss/dashboard/phase_c.py', 'swiss/dashboard/climate_series.py']
 
 _read_files = set()
 
@@ -621,6 +621,8 @@ def main():
     finalise(g)
     from swiss.dashboard import phase_b
     scenarios_obj, controllers_obj, data['pb'] = phase_b.build(sys.modules[__name__], ui, errors, g.nodes)
+    from swiss.dashboard import phase_c
+    climate_obj, cooling_obj, explorer_obj, houses_obj, data['pc'] = phase_c.build(sys.modules[__name__], ui, errors, g.nodes, data['pb'])
     for f in BUILDER_FILES:
         _read_files.add(f)
     counts = {}
@@ -649,6 +651,10 @@ def main():
     emit('results', clean(results))
     emit('scenarios', clean(scenarios_obj))
     emit('controllers', clean(controllers_obj))
+    emit('climate', clean(climate_obj))
+    emit('cooling', clean(cooling_obj))
+    emit('explorer', clean(explorer_obj))
+    emit('houses', clean(houses_obj))
     for f in os.listdir(BUNDLE):
         if f.startswith('trace_'):
             os.remove(os.path.join(BUNDLE, f))

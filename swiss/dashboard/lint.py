@@ -247,6 +247,10 @@ def lint(check_fresh_flag=False):
     for x in pbm.get('limitations', []) or []:
         if x not in nodes:
             errs.append(f'phase_b: limitation {x} does not exist')
+    pcm = ui.get('_phase_c') or {}
+    for x in pcm.get('limitations', []) or []:
+        if x not in nodes:
+            errs.append(f'phase_c: limitation {x} does not exist')
     headline = set()
     for rel, text in web_sources():
         for arr in re.findall(r'(?:HEADLINE|KPIS)\s*=\s*\[([^\]]*)\]', text):

@@ -134,9 +134,9 @@ def check_prose(ui, prose_digits):
             for k, v in o.items():
                 yield from walk(v, f'{where}.{k}')
 
-    for sec in ('_story', '_glossary', '_pages', '_buildings', '_building_groups', '_carbon_relative', '_phase_b'):
+    for sec in ('_story', '_glossary', '_pages', '_buildings', '_building_groups', '_carbon_relative', '_phase_b', '_phase_c'):
         for where, text in walk(ui.get(sec, {}), sec):
-            if where.endswith(('.node', '.id', '.key')) or '.nodes[' in where or '.limitations[' in where or '.classes[' in where:
+            if where.endswith(('.node', '.id', '.key')) or '.nodes[' in where or '.limitations[' in where or '.pending_register[' in where and where.endswith('.title') or '.classes[' in where:
                 continue          # identifiers (registry IDs, classification names) are links, not shown prose
             for d in prose_digits(text, ui['_settings'].get('prose_allowed_tokens', [])):
                 errs.append(f'story prose: {where} has a number outside a placeholder: "{d}"')

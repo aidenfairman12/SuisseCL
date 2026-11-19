@@ -239,3 +239,53 @@ export type ControllersData = {
   sources: string[];
   prose: Record<string, string | string[]>;
 };
+
+// ---- climate.json, cooling.json, explorer.json, houses.json (Phase C pages; built by swiss/dashboard/phase_c.py from committed result files)
+export type PcArchetype = { id: string; label: string };
+export type PcSpell = { level: string; percentile: number; chain: string; model_year: number; start: string; severity_c: number; tasmax: number[]; tasmin: number[] };
+export type ClimateScenario = {
+  id: string; label: string; sensitivity: boolean; annual_mean_c: number; days_ge30: number; days_ge35: number; hottest_168h_c: number; week29_mean_c: number; week29_max_c: number;
+  ghi_kwh_m2: number; pv_kwh_kwp: number; monthly_mean_c: number[]; week29_hourly_c?: number[];
+};
+export type ClimateData = {
+  scenarios: Record<string, ClimateScenario>; order: string[]; sensitivity: string[]; spells: PcSpell[];
+  validation: { recon_all_days: number; recon_all_rmse_k: number; recon_hot_days: number; recon_hot_rmse_k: number; ensemble: { level: string; days_ge30: number | null; days_ge35: number | null; hurs_max: number | null }[] };
+  rule: string; inserted_rows: number[]; citation: string; sources: string[]; prose: Record<string, string | string[]>;
+};
+export type PcController = {
+  saving_pct: number; share_of_ceiling_pct: number; highest_hour_kw: number; weekly_peak_kw: number; comfort_cold_kh: number; dh26: number; cooling_kwh: number; heating_kwh: number;
+  import_kwh: number; export_kwh: number; cost_chf: number;
+};
+export type PcShare = { pv: number; battery: number; grid: number; cooling_kwh: number } | null;
+export type PcPair = { baseline: number; optimum: number };
+export type PcDiff = { cool_kwh: number; heat_kwh: number; import_kwh: number; export_kwh: number; summer_import_kwh: number; summer_peak_kw: number; peak_kw: number; degree_hours_above_26: number; emissions_kg: number };
+export type CoolingCell = {
+  id: string; archetype: string; scenario: string; adoption: string; cooled: string[]; ceiling_year_pct: number; pinned_year_pct: number; mass_value_pts: number; ceiling_weeks_pct: number;
+  zero_bill_chf: number; opt_bill_chf: number; cooling_kwh: PcPair; heating_kwh: PcPair; dh26: PcPair; emissions_kg: PcPair; pv_self_consumption: PcPair;
+  import_kwh: PcPair & { summer_baseline: number; summer_optimum: number }; export_kwh: PcPair & { summer_baseline: number; summer_optimum: number };
+  peak_kw: PcPair & { summer_baseline: number; summer_optimum: number }; peak_kw_note?: string;
+  pv_cooling_share: { thermostat: PcShare; optimum: PcShare; thermostat_hp_first: PcShare; optimum_hp_first: PcShare };
+  controllers: Record<string, PcController>; difference_vs_none: Record<string, PcDiff> | null;
+};
+export type PcRobust = { cell: string; case: string; label: string; saving_pct: number; share_of_ceiling_pct: number; comfort_cold_kh: number; dh26: number; cooling_kwh: number; highest_hour_kw: number; synthetic: boolean };
+export type PcLimitation = { id: string; kind: string; title: string; summary: string | null; status: string | null };
+export type CoolingData = {
+  archetypes: PcArchetype[]; scenarios: string[]; scenario_labels: Record<string, string>; adoption: string[]; adoption_labels: Record<string, string>; adoption_short: Record<string, string>;
+  controllers: string[]; controller_labels: Record<string, string>; cells: CoolingCell[]; robustness: PcRobust[]; limitations: PcLimitation[]; pending_register: { title: string; text: string }[];
+  meta: { test_weeks: number[] | null; export_price_rp: number }; sources: string[]; prose: Record<string, string | string[]>;
+};
+export type HoursSeries = { base: number[]; dhw: number[]; heat: number[]; cool: number[]; pv: number[]; batt: number[]; net: number[] };
+export type ExplorerData = {
+  archetypes: PcArchetype[]; scenarios: string[]; scenario_labels: Record<string, string>; adoption: string[]; adoption_labels: Record<string, string>; controllers: string[];
+  controller_labels: Record<string, string>; week: { steps: number[]; number: number }; hourly: Record<string, { archetype: string } & Record<string, unknown>>; hours_note_cells: string[];
+  house_groups: Record<string, string[]>; sources: string[]; prose: Record<string, string | string[]>;
+};
+export type HouseAnnual = {
+  base: number; dhw: number; heat: number; cool: number; pv: number; import: number; export: number; pv_share_of_cooling: number | null; battery_share_of_cooling: number | null;
+  grid_share_of_cooling: number | null; pv_used_onsite: number; pv_self_consumption: number | null; self_sufficiency: number | null;
+};
+export type HouseBlock = { annual: HouseAnnual; summer: HouseAnnual; peak_kw: number; dh26: number; pv_share_of_cooling_hp_first: number | null };
+export type HousesData = {
+  buildings: string[]; archetypes: PcArchetype[]; scenarios: string[]; scenario_labels: Record<string, string>; adoption: string[]; adoption_labels: Record<string, string>;
+  cells: Record<string, { archetype: string } & Record<string, unknown>>; sources: string[]; prose: Record<string, string | string[]>;
+};

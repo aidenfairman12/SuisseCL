@@ -7,6 +7,7 @@ import json
 import os
 import sys
 
+import numpy as np
 import pytest
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -565,3 +566,126 @@ def test_phase_b_pages_are_wired_into_the_site():
     assert '/scenarios/' in header and '/controllers/' in header
     for route in ('scenarios', 'controllers'):
         assert os.path.exists(os.path.join(ROOT, 'web', 'src', 'app', route, 'page.tsx'))
+
+
+# ---------------------------------------------------------------- Phase C pages (climate.json, cooling.json, explorer.json, houses.json; WP5b)
+PC_FILES = ('climate.json', 'cooling.json', 'explorer.json', 'houses.json')
+
+
+@pytest.fixture(scope='module')
+def pcb():
+    return {n[:-5]: read_bundle_file(os.path.join(BUNDLE, n)) for n in PC_FILES}
+
+
+def _flat_text(o):
+    if isinstance(o, str):
+        yield o
+    elif isinstance(o, list):
+        for x in o:
+            yield from _flat_text(x)
+    elif isinstance(o, dict):
+        for v in o.values():
+            yield from _flat_text(v)
+
+
+def test_phase_c_bundle_size_and_prose_filled(pcb):
+    total = 0
+    for n in PC_FILES:
+        sz = os.path.getsize(os.path.join(BUNDLE, n))
+        total += sz
+        assert sz < 800_000
+    assert total < 2_500_000
+    for name, b in pcb.items():
+        texts = list(_flat_text(b['prose'])) + (list(_flat_text(b['pending_register'])) if name == 'cooling' else [])
+        assert texts and all(t.strip() for t in texts)
+        assert not any('{' in t or '}' in t for t in texts), f'unresolved placeholder in Phase C prose of {name}'
+
+
+def test_phase_c_cooling_cells_equal_the_result_files(pcb):
+    R = 'swiss/experiments/climate_results/'
+    S = json.load(open(p(R + 'climate_summary.json')))
+    cells = {c['id']: c for c in pcb['cooling']['cells']}
+    assert set(cells) == set(S['cells']) and len(cells) == 26
+    assert all(c['archetype'] == 'central' for c in cells.values())
+    for cid in ('hist_none', 'gwl3.0_hw99_high', 'gwl3.0_hw99_high_alt'):
+        assert cells[cid]['ceiling_year_pct'] == pytest.approx(S['cells'][cid]['ceiling_year_pct'])
+        assert cells[cid]['mass_value_pts'] == pytest.approx(S['cells'][cid]['pinned_year_pct'] and S['cells'][cid]['ceiling_year_pct'] - S['cells'][cid]['pinned_year_pct'])
+    # controller rows recomputed from the per-cell week files: saving against the thermostat on the same weeks
+    for cid in ('gwl2.0_medium', 'gwl3.0_hw99_high'):
+        th = json.load(open(p(R + f'{cid}__weeks_thermostat.json')))['aggregate']['cost_chf']
+        for k, f in (('mpc', 'weeks_mpc'), ('pv_rule', 'weeks_pv_rule'), ('mpc_peak0.1', 'weeks_mpc_peak0.1')):
+            cost = json.load(open(p(R + f'{cid}__{f}.json')))['aggregate']['cost_chf']
+            assert cells[cid]['controllers'][k]['saving_pct'] == pytest.approx(100 * (th - cost) / th)
+    # cooling-weighted solar share of cooling electricity from the building rows of the summary
+    c = S['cells']['hist_high']['thermostat_year']['default']['buildings']
+    tot = sum(v['annual']['cool'] for v in c.values())
+    pv = sum(v['annual']['cool'] * (v['annual']['pv_share_of_cooling'] or 0) for v in c.values()) / tot
+    assert cells['hist_high']['pv_cooling_share']['thermostat']['pv'] == pytest.approx(pv)
+    assert cells['hist_none']['pv_cooling_share']['thermostat'] is None        # no cooling, no share
+
+
+def test_phase_c_robustness_rows_and_limitations(pcb):
+    R = 'swiss/experiments/climate_results/'
+    cells = {c['id']: c for c in pcb['cooling']['cells']}
+    rows = {(r['cell'], r['case']): r for r in pcb['cooling']['robustness']}
+    assert len(rows) == 33
+    cid = 'gwl3.0_hw99_high'
+    a = json.load(open(p(R + f'robust__{cid}__T+2.json')))['aggregate']
+    th = cells[cid]['controllers']['thermostat']['cost_chf']
+    assert rows[(cid, 'T+2')]['saving_pct'] == pytest.approx(100 * (th - a['cost_chf']) / th)
+    assert rows[(cid, 'T+2')]['comfort_cold_kh'] == pytest.approx(a['comfort_cold_kh']) and rows[(cid, 'T+2')]['synthetic'] is True
+    assert rows[(cid, 'scenario')]['synthetic'] is False
+    assert [x['id'] for x in pcb['cooling']['limitations']] == ['ISS-032', 'ISS-034', 'ISS-040', 'A-028', 'A-029', 'A-030', 'A-031']
+    assert len(pcb['cooling']['pending_register']) >= 6
+
+
+def test_phase_c_hourly_week_series(pcb):
+    ex = pcb['explorer']
+    assert ex['week']['steps'] == [4872, 5039] and len(ex['hours_note_cells']) == 6
+    for cid, h in ex['hourly'].items():
+        assert h['archetype'] == 'central'
+        assert {'thermostat', 'optimum'} <= set(h)
+    for cid in ex['hours_note_cells']:
+        for ctrl in ('thermostat', 'pv_rule', 'mpc', 'mpc_peak0.1', 'optimum'):
+            s = ex['hourly'][cid][ctrl]
+            assert all(len(s[k]) == 168 for k in ('base', 'dhw', 'heat', 'cool', 'pv', 'batt', 'net'))
+            bal = np.array(s['base']) + np.array(s['dhw']) + np.array(s['heat']) + np.array(s['cool']) + np.array(s['batt']) - np.array(s['pv']) - np.array(s['net'])
+            assert np.abs(bal).max() < 0.05, f'{cid} {ctrl}: hourly energy balance does not close'
+    assert sum(ex['hourly']['gwl3.0_hw99_high']['mpc']['cool']) > 0 and sum(ex['hourly']['gwl3.0_hw99_none']['mpc']['cool']) == 0
+
+
+def test_phase_c_climate_statistics_recomputed_from_the_weather_files(pcb):
+    import pandas as pd
+    cl = pcb['climate']
+    w = pd.read_csv(p('data/canonical/climate/weather_klo_gwl3.0_hw99_hourly.csv'))
+    T = w['temp_c'].astype(float)
+    s = cl['scenarios']['gwl3.0_hw99']
+    assert s['annual_mean_c'] == pytest.approx(T.mean())
+    assert s['week29_max_c'] == pytest.approx(T.iloc[4872:5040].max()) and len(s['week29_hourly_c']) == 168
+    assert cl['scenarios']['hist']['annual_mean_c'] < s['annual_mean_c']
+    assert set(cl['order']) == {'hist', 'hist_hw99', 'gwl2.0', 'gwl2.0_hw99', 'gwl3.0', 'gwl3.0_hw99'}
+    rep = open(p('docs/experiments/validation_reports/climate_scenarios.md'), encoding='utf-8').read()
+    assert f"RMSE {cl['validation']['recon_all_rmse_k']:.2f} K" in rep or f"RMSE {cl['validation']['recon_all_rmse_k']:g} K" in rep
+    assert 'doi.org/10.18751/climate/scenarios/ch2025/data/1.0' in cl['citation']
+
+
+def test_phase_c_houses_difference_and_archetype_schema(pcb):
+    hs = pcb['houses']
+    assert hs['buildings'] == ['SFH-low', 'SFH-mid', 'SFH-high', 'MFH-small', 'MFH-medium', 'MFH-large']
+    cell, none = hs['cells']['gwl3.0_hw99_high'], hs['cells']['gwl3.0_hw99_none']
+    c = cell['thermostat']['buildings']['MFH-large']['annual']
+    n = none['thermostat']['buildings']['MFH-large']['annual']
+    assert n['cool'] == 0 and c['cool'] > 0
+    assert c['import'] - n['import'] == pytest.approx(pcb['cooling']['cells'][[x['id'] for x in pcb['cooling']['cells']].index('gwl3.0_hw99_high')]['difference_vs_none']['thermostat']['import_kwh'], rel=1e-3)
+    for b in pcb.values():
+        assert [a['id'] for a in b['archetypes']] == ['central'] if 'archetypes' in b else True
+
+
+def test_phase_c_pages_are_wired_into_the_site():
+    header = open(os.path.join(ROOT, 'web', 'src', 'components', 'site-header.tsx'), encoding='utf-8').read()
+    story = read_bundle_file(os.path.join(BUNDLE, 'story.json'))
+    for route in ('climate', 'cooling', 'explorer', 'houses'):
+        assert f'/{route}/' in header
+        assert os.path.exists(os.path.join(ROOT, 'web', 'src', 'app', route, 'page.tsx'))
+        assert os.path.exists(os.path.join(ROOT, 'web', 'src', 'components', 'phase-c', f'{route}-page.tsx'))
+        assert story['pages'][route]

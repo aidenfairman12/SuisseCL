@@ -25,7 +25,7 @@
 _settings:
   # tokens with digits that may appear in prose without a placeholder (years, version strings, unit names)
   prose_allowed_tokens: ['2023', '2016', '2017', '2016-17', '3.3.0', 'CO2', 'CO2eq', 'kWh_th', 'kW²', 'ALG-001..004',
-                         '24-hour', 'AR5', 'A.III.2', 'Building_1', 'Building_6', 'SPF_SH', 'S0', 'S1', 'S2', 'S3']
+                         '24-hour', 'CH2025', 'AR5', 'A.III.2', 'Building_1', 'Building_6', 'SPF_SH', 'S0', 'S1', 'S2', 'S3']
   classification_colours:
     measured: '#2b6cb0'
     derived: '#2f855a'
@@ -77,6 +77,10 @@ _pages:           # the question each Explore page answers
   audit: Where does every number come from, and what is still open?
   scenarios: Which solar, battery, building and price assumptions does Phase B add, and how much of the bill could an ideal controller save at each step?
   controllers: How much of that ideal saving do real controllers reach, and what do forecasts, peaks and model errors change?
+  climate: What weather does Phase C use for a warmer climate, how was it built from the Swiss climate scenarios, and how far can it be trusted?
+  cooling: What do warming and cooling adoption change in the district's electricity use, in what solar covers, in the grid draw and in what controllers can save?
+  explorer: What does one climate, one cooling level and one controller do to the district's energy over the year and hour by hour in a heat wave?
+  houses: What does cooling add to each kind of house, how much of it does solar cover, and what reaches the grid?
   glossary: What do the technical terms on this site mean?
 
 # ---------------------------------------------------------------- Phase B pages (Scenarios, Controllers), WP5a. Agent's draft wording: the interpretation
@@ -214,6 +218,156 @@ _phase_b:
     - A-030
     - A-031
 
+# ---------------------------------------------------------------- Phase C pages (Climate, Cooling, Explorer, Houses), WP5b. Agent's draft wording: the
+# interpretation sentences are for the owner's review. Numbers only through {pc.*} placeholders (namespace filled by swiss/dashboard/phase_c.py); no registry IDs in prose.
+_phase_c:
+  climate:
+    intro: >
+      Phase C asks what a warmer climate and cooling do to the district. The weather is the observed 2023 year at Kloten with the
+      change of the Swiss CH2025 climate scenarios added for two global warming levels. A heat-wave week taken from the same scenarios
+      can be inserted into the July test week. Everything on this page is constructed weather, not a forecast of a particular year.
+    construction:
+      - >
+        The scenario data are daily values per climate-model chain: mean, lowest and highest temperature, solar radiation and humidity, for a reference period and for
+        each warming level. For every month the middle value over all chains is compared with the reference, and that change is added to the observed 2023
+        hours: temperature by an amount that moves from the change of the daily low to the change of the daily high through the day, radiation and humidity by a ratio.
+      - >
+        The 2023 sequence of days, and the shape of a typical day, are kept. So these are typical warmer years with the weather of 2023, not new weather sequences.
+      - >
+        A heat wave is one seven-day spell chosen from the scenario chains at a stated rank among all seven-day spells of a level (the hottest one percent for the heat-wave
+        variants). Its daily values are turned into hours with the observed shape of a hot 2023 day, and it replaces the July test week.
+    stats: >
+      The annual mean temperature rises from {pc.climate.hist_mean:.1f} degrees in 2023 to {pc.climate.g2_mean:.1f} and {pc.climate.g3_mean:.1f} degrees at the two warming
+      levels. Days whose hottest hour reaches thirty degrees go from {pc.climate.hist_d30:.0f} to {pc.climate.g3_d30:.0f}, and days reaching thirty-five degrees from
+      {pc.climate.hist_d35:.0f} to {pc.climate.g3_d35:.0f}.
+    heatwave: >
+      In the inserted week the mean temperature is {pc.climate.hw_hist:.1f} degrees with today's climate and {pc.climate.hw_g3:.1f} degrees at the high warming level, with a
+      highest hour of {pc.climate.hw_g3_max:.1f} degrees; the observed 2023 week had a mean of {pc.climate.obs_w29:.1f} degrees.
+    validation: >
+      To test the step from daily values to hours, every observed 2023 day was rebuilt from only its own lowest, highest and mean temperature with a typical-day shape that does
+      not contain that day. The error is {pc.climate.rmse_all:.1f} K over all days and {pc.climate.rmse_hot:.1f} K on hot days.
+    limits:
+      - >
+        One station (Kloten) and one weather year as the base: there is no year-to-year variability and no change in how often weather types occur, except in the inserted spell.
+      - >
+        The climate-model data are bias-adjusted model output. Their highest daily temperatures at Kloten are not credible in the far tail, so spells are chosen at a stated rank, never by the single highest value.
+      - >
+        Heat waves are sequences from single model chains made hourly by a documented method; their radiation and humidity are only consistent in the daily mean.
+      - >
+        The scenario radiation is global only; the split into direct and diffuse follows the 2023 relation and a clear-sky shape, not a measurement.
+      - >
+        The milder spell variants are less hot than the hottest observed 2023 week, so they are shown only as a sensitivity.
+    citation_note: >
+      The CH2025 data are open data of MeteoSwiss and ETH Zurich and are cited as required by their terms of use.
+  cooling:
+    intro: >
+      Every cell below is the same district with solar panels, a battery and a building thermal model, in one weather scenario and one cooling level. The reference
+      is a thermostat that heats to the setpoint and cools to the cooling setpoint where a cooling device exists. Cooling is modelled, not measured: no cooling data exist
+      for these buildings.
+    archetype_note: >
+      The cooling system archetype selects how cooling is provided. Today the data hold the central archetype, in which the whole building is cooled by one reversible heat pump.
+    model_note: >
+      The cooling device is the heating heat pump run in reverse with the same electric rating. Its coefficient of performance follows the Carnot form at a supply
+      temperature of {pc.rc.cool_supply:.0f} degrees, cooling is switched off when it is colder than {pc.rc.cool_min_outdoor:.0f} degrees outside, and the cooled building is held below
+      {pc.rc.cool_setpoint:.0f} degrees in the cooling season. Buildings without cooling float. The cooling levels are by whole building: low cools the small apartment building,
+      medium the medium one, high the large one; the other high assignment cools the medium and small apartment buildings and the three houses.
+    findings:
+      - >
+        Warming lowers heating by more than cooling adds. Heating electricity of the heating-only district falls from {pc.heat.hist_mwh:.1f} MWh in 2023 weather to {pc.heat.g3_mwh:.1f} MWh
+        at the high warming level ({pc.heat.g3_drop_pct:.0f} %), about {pc.cool.g3_drop_mwh:.1f} MWh less, while cooling adds {pc.cool.min_mwh:.1f} to {pc.cool.max_mwh:.1f} MWh a year
+        across the whole range of the central cells.
+      - >
+        Building thermal mass is worth only a little more with cooling. The extra saving from using the building as storage is {pc.mass.none_min:.1f} to {pc.mass.none_max:.1f} percentage
+        points without cooling and {pc.mass.cool_min:.1f} to {pc.mass.cool_max:.1f} with it; only the other high assignment, which cools the houses, reaches {pc.mass.alt_max:.1f}.
+      - >
+        Solar covers most of the cooling electricity in the same hour. With the thermostat, solar directly supplies {pc.pvshare.thermo_min:.0f} to {pc.pvshare.thermo_max:.0f} % of it in
+        the central cells; under the exact optimum solar and the battery together supply {pc.pvshare.opt_min:.0f} to {pc.pvshare.opt_max:.0f} %. This is a bookkeeping rule, not a physical split.
+      - >
+        Cooling barely raises the summer peak. Against the heating-only district of the same weather, the largest rise of the summer peak is {pc.summerpeak.thermo_max:.1f} kW with the
+        thermostat and {pc.summerpeak.opt_max:.1f} kW under the exact optimum. The exact optimum itself raises the summer peak from {pc.summer_peak.thermo_kw:.0f} kW to
+        {pc.summer_peak.opt_kw:.0f} kW in 2023 weather, with or without cooling, because the battery and tanks charge together.
+      - >
+        What reaches the grid is small. In the high-warming heat-wave cell the cooling adds {pc.spill.import_kwh:.0f} kWh of grid import over the year with the thermostat and lowers
+        export by {pc.spill.export_kwh:.0f} kWh: most of the cooling energy comes out of solar power that would otherwise be exported.
+      - >
+        The planner reaches {pc.mpc.share_min:.0f} to {pc.mpc.share_max:.0f} % of the exact optimum on the eight test weeks in every central cell, the hand-set rule {pc.mpc.rule_min:.0f} to
+        {pc.mpc.rule_max:.0f} %. Without a peak weight the planner's highest hour is {pc.mpc.peak_mpc_min:.0f} to {pc.mpc.peak_mpc_max:.0f} kW, against {pc.mpc.thermo_peak_min:.0f} to
+        {pc.mpc.thermo_peak_max:.0f} kW for the thermostat; with a small peak weight it stays below {pc.mpc.peak01_max:.0f} kW, and its saving is at worst {pc.mpc.peak01_delta_min:+.2f} percentage points from the planner without it.
+      - >
+        Overheating of buildings without cooling is large and identical in every such building ({pc.dh26.per_uncooled_building_hist:,.0f} degree-hours above the cooling setpoint in
+        2023 weather). That is a limit of the thermal model, which has no shading, ventilation or behaviour and uses the same per-area priors for every building. Read the
+        degree-hours as an indicator, not a prediction.
+    heatmap_note: >
+      Rows are weather scenarios, columns are cooling levels. The exact optimum is the best possible bill with perfect foresight over the year; the planner and the rule are scored on
+      the eight test weeks, one of which holds the inserted heat wave in the heat-wave scenarios.
+    controllers_note: >
+      Saving is against the thermostat on the same weeks. The share of the optimum divides the saving by what the exact optimum saves on those weeks.
+    robustness_note: >
+      Robustness of the planner on the heat-wave cells with high adoption. Errors in the forecast weather (temperature bias, noise, irradiance noise) are synthetic: they were
+      added by hand and are not archived forecast errors. The planner trained on 2023 weather only is as good as the planner trained on the scenario year
+      ({pc.robust.hist_trained_share:.0f} % against {pc.robust.scen_share:.0f} % of the optimum at the high warming level), because heating and cooling come from the physical room model
+      and not from a learned forecast. A forecast that is two degrees too warm leaves {pc.robust.tp2_cold:.0f} K·h of cold; online correction with a small comfort margin brings that to
+      {pc.robust.tp2corr_cold:.0f} K·h.
+    limitations_title: What limits how far these results can be read
+    limitations_intro: >
+      These open issues and assumptions come from the project registers. The next block lists Phase C assumptions that are written in draft files and not yet registered.
+    pending_title: Phase C assumptions not yet in the registers
+  explorer:
+    intro: >
+      Choose a weather scenario, a cooling level and a controller. The annual energy stack is available for the thermostat and the exact optimum (a full-year simulation); the
+      planner and the rule were simulated for the eight test weeks, so they appear in the heat-wave-week view and in the numbers of the test weeks.
+    week_note: >
+      The heat-wave week is the July test week. The thermostat and optimum curves continue a year-long simulation; the rule and the planner start the week from empty tanks after a
+      warm-up, so the first hours can differ a little between the two groups. Values are district sums of the six buildings.
+    missing_note: >
+      This controller was not simulated for this cell. The hourly week was simulated for the heat-wave scenarios with no cooling and with high cooling.
+  houses:
+    intro: >
+      Per building: what cooling adds, what warming saves in heating, how much of the cooling electricity solar covers, and what reaches the grid. All differences compare a cell
+      with the heating-only cell of the same weather (the difference method), and heating saved by warming compares the heating-only cell in the scenario weather with the one in 2023 weather.
+    rule_note: >
+      The solar coverage uses an allocation rule: in every hour solar power serves base load and hot water first, then the heat pump, then the battery. Allocating solar to the heat
+      pump first is shown as a sensitivity. The rule is a bookkeeping choice, because the same kilowatt-hour of solar cannot be attributed to one load uniquely.
+  limitations:
+    - ISS-032
+    - ISS-034
+    - ISS-040
+    - A-028
+    - A-029
+    - A-030
+    - A-031
+  pending_register:
+    - title: Cooling device and efficiency
+      text: >
+        Cooled buildings have a reversible heat pump with the same electric rating, efficiency and supply temperature as the heating device. The cooling efficiency follows
+        the Carnot form, and cooling is switched off below {pc.rc.cool_min_outdoor:.0f} degrees outside because the formula returns an unrealistic value there.
+    - title: Comfort bands
+      text: >
+        Cooled buildings keep the room between the heating setpoint and an upper limit that is lower in the heating season and equals the cooling setpoint of {pc.rc.cool_setpoint:.0f} degrees
+        from June to September. Buildings without cooling float and are judged by degree-hours above the cooling setpoint.
+    - title: Cooling levels
+      text: >
+        Cooling levels are by whole building, set by the share of dwelling units. They were proposed by the agent from thin and partly commercial evidence and are not confirmed by the owner. A level
+        mixes the adoption share with the identity of the building that is cooled.
+    - title: Buildings and loads do not change with the climate
+      text: >
+        The thermal parameters and areas, the household load, hot-water use, solar panel size and battery size are the Phase B values in every weather scenario. Only the weather,
+        the solar production and the heat-pump efficiency respond to the climate.
+    - title: Solar allocation rule
+      text: >
+        The shares of cooling electricity covered by solar, battery or grid use a stated priority order. It is a bookkeeping rule, not a physical attribution.
+    - title: Synthetic forecast-weather errors
+      text: >
+        The robustness cases add temperature bias and noise and irradiance noise with a fixed seed. They are synthetic and not archived forecast errors. The planner uses
+        weather as known in all other cells.
+    - title: What the replay checks
+      text: >
+        The exact optimum is replayed in the simulator and agrees to the cent, but the program and the simulator share one room-model step, so the replay checks the action mapping and not the physics.
+    - title: Overheating without cooling
+      text: >
+        The thermal model has no shading, ventilation or behaviour and the same per-area parameters for every building, so degree-hours above the cooling setpoint in buildings
+        without cooling are identical and large. They are an indicator of discomfort, not a prediction.
+
 _glossary:
   - {id: heat_pump, term: Heat pump, definition: "An electric machine that moves heat from outdoor air into a building. It delivers several units of heat for each unit of electricity it uses."}
   - {id: cop, term: COP (coefficient of performance), definition: "Heat delivered divided by electricity used at one moment. It is higher on mild days and lower on cold days.", node: card:cop_model}
@@ -234,6 +388,14 @@ _glossary:
   - {id: exact_optimum, term: Exact optimum (ceiling), definition: "The best possible bill if the whole future were known, found with a linear program and replayed in the simulator to confirm it. It is an upper reference that no real controller can reach.", node: D-036}
   - {id: mpc, term: Receding-horizon planner (MPC), definition: "A controller that plans the next day or two with forecasts every hour, applies only the first step, and plans again with the newest information.", node: ALG-011}
   - {id: held_out_weeks, term: Held-out weeks, definition: "Eight weeks of the year kept aside for testing. Learners never train on them, and every controller is scored on them.", node: EXP-017}
+  - {id: warming_level, term: Global warming level, definition: "A scenario labelled by how much the global average temperature has risen above the pre-industrial level. The Swiss scenarios give the regional change for each level, which is larger than the global one."}
+  - {id: delta_change, term: Delta change, definition: "A way to build future weather by adding the scenario's change (the delta) to an observed year. It keeps the real sequence of days and a typical day shape, and it cannot create new kinds of weather."}
+  - {id: heat_wave, term: Heat wave (inserted spell), definition: "A seven-day spell of very hot weather taken from the climate-scenario chains at a stated rank among all spells and inserted into the July test week. It is constructed, not observed."}
+  - {id: degree_hours, term: Degree-hours, definition: "The sum over hours of how far the indoor temperature is above (or below) a limit. One degree for one hour is one degree-hour."}
+  - {id: adoption_level, term: Cooling level (adoption), definition: "How much of the district has cooling: none, low, medium or high, set here by which whole buildings are cooled and the share of dwelling units they hold."}
+  - {id: thermal_mass, term: Thermal mass, definition: "The heat a building's walls and floors can store. Heating or cooling a little early lets the building act as a battery, within the comfort band."}
+  - {id: pv_allocation, term: Solar allocation rule, definition: "A bookkeeping rule that assigns each hour's solar power to loads in a fixed order, to say how much of a load solar covers. It is a convention, not a physical attribution."}
+  - {id: difference_method, term: Difference method, definition: "Comparing a cell with cooling against the same cell without cooling, with the same weather and the same controller, to find what cooling adds."}
   - {id: peak_weight, term: Peak weight, definition: "A penalty on the district's highest grid draw added to the planner's bill objective. A larger weight gives up some saving for a lower peak.", node: EXP-019}
 
 _story:
