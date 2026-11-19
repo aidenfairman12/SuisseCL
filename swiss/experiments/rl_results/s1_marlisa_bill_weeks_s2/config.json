@@ -1,0 +1,70 @@
+{
+ "scenario": "s1",
+ "export_price_chf_kwh": 0.08,
+ "kind": "marlisa",
+ "reward": "bill",
+ "weights": {
+  "cost": 1.0,
+  "peak": 0.1,
+  "ramp": 0.1,
+  "carbon": 0.0,
+  "comfort": 3.0
+ },
+ "seed": 2,
+ "train_steps": 100000,
+ "explore_steps": 2000,
+ "eval_every": 25000,
+ "max_hours": 6.0,
+ "preset": "default",
+ "agent_kwargs": {
+  "standardize_start_time_step": 2000,
+  "end_exploration_time_step": 2000
+ },
+ "protocol": "weeks",
+ "fold": 1,
+ "test_windows": [
+  [
+   504,
+   671
+  ],
+  [
+   1680,
+   1847
+  ],
+  [
+   2688,
+   2855
+  ],
+  [
+   3864,
+   4031
+  ],
+  [
+   4872,
+   5039
+  ],
+  [
+   6048,
+   6215
+  ],
+  [
+   7056,
+   7223
+  ],
+  [
+   8232,
+   8399
+  ]
+ ],
+ "n_train_windows": 84,
+ "episode_steps": 672,
+ "warm_steps": 96,
+ "bootstrap_at_window_end": true,
+ "git_commit": "5f61a67",
+ "citylearn": "3.3.0",
+ "torch": "2.2.2+cpu",
+ "numpy": "1.26.4",
+ "pandas": "2.3.3",
+ "python": "3.11.3",
+ "started_utc": "2026-11-19T05:39:43Z"
+}

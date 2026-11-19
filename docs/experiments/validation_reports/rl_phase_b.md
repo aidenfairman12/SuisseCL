@@ -13,8 +13,8 @@ Exact optimum on the test weeks: saves 5.48 % of the 3046 CHF reference bill (ye
 | pv_rule_r0.1 | - | +0.20 % | +0.10 % | -0.87 % | -1.22 % | 0.0 |
 | pv_rule_r0.2 | - | -0.02 % | -0.13 % | -1.33 % | -1.44 % | 0.0 |
 | sac_central | 3 | +1.06 ± 0.05 % | +1.04 ± 0.08 % | +0.82 ± 0.07 % | -1.47 ± 2.46 % | 0.0 |
-| sac_decentral | 0 | pending (no finished run) | | | | |
-| marlisa | 0 | pending (no finished run) | | | | |
+| sac_decentral | 1 | +1.27 ± 0.00 % | +1.11 ± 0.00 % | +0.85 ± 0.00 % | +1.49 ± 0.00 % | 0.0 |
+| marlisa | 2 | +1.26 ± 0.08 % | +1.10 ± 0.04 % | +0.95 ± 0.08 % | -0.96 ± 0.67 % | 0.0 |
 
 ## S2 (+ battery)
 
@@ -26,8 +26,8 @@ Exact optimum on the test weeks: saves 14.55 % of the 3046 CHF reference bill (y
 | pv_rule_r0.05 | - | -5.37 % | -5.86 % | -11.78 % | +1.66 % | 0.0 |
 | pv_rule_r0.1 | - | -5.65 % | -5.54 % | -12.02 % | -1.81 % | 0.0 |
 | pv_rule_r0.2 | - | -5.58 % | -5.49 % | -12.11 % | -2.03 % | 0.0 |
-| sac_central | 2 | +2.86 ± 0.63 % | +2.52 ± 0.45 % | +1.56 ± 0.53 % | +5.30 ± 9.05 % | 0.0 |
-| sac_decentral | 0 | pending (no finished run) | | | | |
+| sac_central | 3 | +3.00 ± 0.55 % | +2.74 ± 0.48 % | +1.54 ± 0.43 % | +3.68 ± 7.74 % | 0.0 |
+| sac_decentral | 1 | +5.53 ± 0.00 % | +5.20 ± 0.00 % | +3.93 ± 0.00 % | +6.96 ± 0.00 % | 0.0 |
 | marlisa | 0 | pending (no finished run) | | | | |
 
 ## S3 (+ RC thermal model, comfort)
@@ -41,7 +41,7 @@ Exact optimum on the test weeks: saves 14.75 % of the 3177 CHF reference bill (y
 | pv_rule_r0.1 | - | -6.05 % | -5.48 % | -12.22 % | -9.00 % | 0.0 |
 | pv_rule_r0.2 | - | -6.00 % | -5.47 % | -12.34 % | -9.00 % | 0.0 |
 | sac_central | 3 | +59.45 ± 6.12 % | +56.88 ± 6.07 % | +35.98 ± 3.39 % | +17.11 ± 7.52 % | 782.2 |
-| sac_decentral | 0 | pending (no finished run) | | | | |
-| marlisa | 0 | pending (no finished run) | | | | |
+| sac_decentral | 1 | +88.46 ± 0.00 % | +85.86 ± 0.00 % | +56.07 ± 0.00 % | +14.36 ± 0.00 % | 654.1 |
+| marlisa | 1 | +94.21 ± 0.00 % | +91.12 ± 0.00 % | +60.62 ± 0.00 % | +14.84 ± 0.00 % | 726.6 |
 
 Notes: the learners start from random exploration; a learner that does not beat the zero-action reference shows a positive bill change. Seeds differ in network initialisation, exploration and the training windows drawn.

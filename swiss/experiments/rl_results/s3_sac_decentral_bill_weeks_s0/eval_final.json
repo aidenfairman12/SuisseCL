@@ -1,0 +1,289 @@
+{
+ "aggregate": {
+  "import_kwh": 40424.239045351744,
+  "cost_chf": 5987.306296356602,
+  "cost_corrected_chf": 5904.816455542297,
+  "cost_corrected_chf_min": 5892.628170355274,
+  "cost_corrected_chf_max": 5912.50809182537,
+  "stored_change_kwh_th": 44.81527316666926,
+  "highest_hour_kw": 72.22725033760071,
+  "mean_weekly_peak_kw": 59.83797737956047,
+  "mean_daily_peak_kw": 53.02569843828678,
+  "high_tariff_import_share": 0.28101509934690955,
+  "carbon_weighted_import": 2531.2794633732383,
+  "reward_sum": -4877.44385805754,
+  "windows": 8,
+  "export_kwh": 6886.681775286794,
+  "pv_generation_kwh": 19667.649941336364,
+  "comfort_cold_kh": 654.123254776001,
+  "import_cost_chf": 6538.2408383795455
+ },
+ "windows": [
+  {
+   "import_kwh": 8025.202961474657,
+   "cost_chf": 1325.9407638847379,
+   "import_cost_chf": 1326.3115726053265,
+   "export_kwh": 4.635109007358551,
+   "pv_generation_kwh": 213.1174011491239,
+   "comfort_cold_kh": 641.6872653961182,
+   "battery_stored_change_kwh": 45.813139002740385,
+   "peak_kw": 70.28380393981934,
+   "high_tariff_import_kwh": 2962.963172584772,
+   "carbon_weighted_import": 969.0742168311135,
+   "daily_peaks_kw": [
+    63.648409366607666,
+    68.70268321037292,
+    67.026451587677,
+    58.043166399002075,
+    68.70569372177124,
+    64.07685136795044,
+    70.28380393981934
+   ],
+   "steps": 168,
+   "stored_change_kwh_th": 8.128482828838932,
+   "terminal_value_chf": {
+    "low": 26.307865539414227,
+    "mean": 29.01315150692241,
+    "high": 33.299989270819985
+   },
+   "reward": -2556.066273740771
+  },
+  {
+   "import_kwh": 4801.441395044327,
+   "cost_chf": 677.3874917374849,
+   "import_cost_chf": 761.7371434937714,
+   "export_kwh": 1054.3706469535828,
+   "pv_generation_kwh": 3173.866717664525,
+   "comfort_cold_kh": 0.0,
+   "battery_stored_change_kwh": 8.38283175031841,
+   "peak_kw": 66.82263469696045,
+   "high_tariff_import_kwh": 978.0053384900093,
+   "carbon_weighted_import": 321.09897792757965,
+   "daily_peaks_kw": [
+    52.79307281970978,
+    53.58340036869049,
+    58.690308809280396,
+    60.74560260772705,
+    51.67928194999695,
+    66.82263469696045,
+    55.504743576049805
+   ],
+   "steps": 168,
+   "stored_change_kwh_th": 7.267297526378936,
+   "terminal_value_chf": {
+    "low": 52.17832952832356,
+    "mean": 57.54392266127883,
+    "high": 66.0463240873464
+   },
+   "reward": -337.6602583238947
+  },
+  {
+   "import_kwh": 4566.698490470648,
+   "cost_chf": 656.8407881102411,
+   "import_cost_chf": 732.2967117271272,
+   "export_kwh": 943.1990452110767,
+   "pv_generation_kwh": 3025.404475564137,
+   "comfort_cold_kh": 0.0,
+   "battery_stored_change_kwh": -40.75798631608486,
+   "peak_kw": 53.32892107963562,
+   "high_tariff_import_kwh": 1125.2147227823734,
+   "carbon_weighted_import": 308.449083593563,
+   "daily_peaks_kw": [
+    47.59195959568024,
+    47.32232117652893,
+    53.32892107963562,
+    41.828176498413086,
+    51.199134826660156,
+    50.4949586391449,
+    48.42434501647949
+   ],
+   "steps": 168,
+   "stored_change_kwh_th": 4.262100363913554,
+   "terminal_value_chf": {
+    "low": 35.78858153373926,
+    "mean": 39.468786880508844,
+    "high": 45.300496891543695
+   },
+   "reward": -322.00471826774026
+  },
+  {
+   "import_kwh": 3063.4378793239594,
+   "cost_chf": 283.8047437299489,
+   "import_cost_chf": 474.70130701196183,
+   "export_kwh": 2386.2070410251617,
+   "pv_generation_kwh": 4930.2063881754875,
+   "comfort_cold_kh": 0.0,
+   "battery_stored_change_kwh": -0.0744128537401556,
+   "peak_kw": 47.80079412460327,
+   "high_tariff_import_kwh": 341.34765434265137,
+   "carbon_weighted_import": 114.99416956806125,
+   "daily_peaks_kw": [
+    40.08430886268616,
+    44.273173570632935,
+    42.23035669326782,
+    37.60569524765015,
+    36.66278266906738,
+    41.18820559978485,
+    47.80079412460327
+   ],
+   "steps": 168,
+   "stored_change_kwh_th": -4.667369625312089,
+   "terminal_value_chf": {
+    "low": -1.446739567590517,
+    "mean": -1.5955104454474753,
+    "high": -1.8312550672823475
+   },
+   "reward": -154.34065986034767
+  },
+  {
+   "import_kwh": 3812.5119830965996,
+   "cost_chf": 528.7937485272586,
+   "import_cost_chf": 605.8605798966586,
+   "export_kwh": 963.3353921175003,
+   "pv_generation_kwh": 3005.8757050074637,
+   "comfort_cold_kh": 0.0,
+   "battery_stored_change_kwh": 11.609068234167992,
+   "peak_kw": 48.30653262138367,
+   "high_tariff_import_kwh": 801.9381610155106,
+   "carbon_weighted_import": 131.5060435137104,
+   "daily_peaks_kw": [
+    40.78808915615082,
+    41.014620304107666,
+    43.07723784446716,
+    38.69721007347107,
+    46.53891348838806,
+    43.61283206939697,
+    48.30653262138367
+   ],
+   "steps": 168,
+   "stored_change_kwh_th": 12.654004402102531,
+   "terminal_value_chf": {
+    "low": -10.019016138110922,
+    "mean": -11.049289906465942,
+    "high": -12.681877570166975
+   },
+   "reward": -261.97627783519926
+  },
+  {
+   "import_kwh": 3861.570226639509,
+   "cost_chf": 526.3406541872471,
+   "import_cost_chf": 619.1398726559131,
+   "export_kwh": 1159.990230858326,
+   "pv_generation_kwh": 3221.77767669037,
+   "comfort_cold_kh": 0.0,
+   "battery_stored_change_kwh": 12.283162062481045,
+   "peak_kw": 51.75074052810669,
+   "high_tariff_import_kwh": 949.3388386666775,
+   "carbon_weighted_import": 118.8124872343736,
+   "daily_peaks_kw": [
+    47.998332500457764,
+    45.918290972709656,
+    48.04877424240112,
+    48.923583030700684,
+    49.225982904434204,
+    41.89770483970642,
+    51.75074052810669
+   ],
+   "steps": 168,
+   "stored_change_kwh_th": -1.638007349247479,
+   "terminal_value_chf": {
+    "low": -11.178796717896722,
+    "mean": -12.328332846141121,
+    "high": -14.149905480128401
+   },
+   "reward": -259.0984662665437
+  },
+  {
+   "import_kwh": 5282.241683661938,
+   "cost_chf": 840.8644725951849,
+   "import_cost_chf": 869.3061691579519,
+   "export_kwh": 355.52120703458786,
+   "pv_generation_kwh": 1697.582542207092,
+   "comfort_cold_kh": 0.0,
+   "battery_stored_change_kwh": -16.085584151744843,
+   "peak_kw": 72.22725033760071,
+   "high_tariff_import_kwh": 1858.219894170761,
+   "carbon_weighted_import": 172.39479329283188,
+   "daily_peaks_kw": [
+    72.22725033760071,
+    54.365174889564514,
+    59.07060468196869,
+    54.96721124649048,
+    58.19002914428711,
+    59.60919642448425,
+    53.61593317985535
+   ],
+   "steps": 168,
+   "stored_change_kwh_th": 19.42379631535475,
+   "terminal_value_chf": {
+    "low": -3.6470418008741152,
+    "mean": -4.022073784827314,
+    "high": -4.6163552363223825
+   },
+   "reward": -404.5738485547878
+  },
+  {
+   "import_kwh": 7011.134425640106,
+   "cost_chf": 1147.333633584499,
+   "import_cost_chf": 1148.887481830835,
+   "export_kwh": 19.42310307919979,
+   "pv_generation_kwh": 399.81903487816453,
+   "comfort_cold_kh": 12.435989379882812,
+   "battery_stored_change_kwh": 16.4911226670295,
+   "peak_kw": 68.18314170837402,
+   "high_tariff_import_kwh": 2342.793769299984,
+   "carbon_weighted_import": 394.9496914120049,
+   "daily_peaks_kw": [
+    67.36695861816406,
+    60.52251160144806,
+    66.86909246444702,
+    59.15972638130188,
+    53.31231927871704,
+    55.83987998962402,
+    68.18314170837402
+   ],
+   "steps": 168,
+   "stored_change_kwh_th": -0.6150312953598789,
+   "terminal_value_chf": {
+    "low": -13.184977845772409,
+    "mean": -14.540813251523407,
+    "high": -16.689290894482674
+   },
+   "reward": -581.7233552082555
+  }
+ ],
+ "vs_zero": {
+  "import_kwh_vs_zero_pct": 56.06931435293887,
+  "cost_chf_vs_zero_pct": 88.45638729495302,
+  "highest_hour_kw_vs_zero_pct": 14.359486031189972,
+  "mean_daily_peak_kw_vs_zero_pct": 46.84174583566194,
+  "carbon_weighted_import_vs_zero_pct": 37.26278754800856,
+  "cost_corrected_vs_zero_pct": 85.8599379705115,
+  "cost_corrected_vs_zero_pct_min": 85.47629963968737,
+  "cost_corrected_vs_zero_pct_max": 86.10203982976942,
+  "high_tariff_share_points_vs_zero": 0.21606137000867998,
+  "reward_sum_vs_zero": -3283.039866929294
+ },
+ "stopped_by": "time",
+ "steps_trained": 92736,
+ "seconds": 21745,
+ "zero_action": {
+  "import_kwh": 25901.465136148036,
+  "cost_chf": 3177.0248715347975,
+  "cost_corrected_chf": 3193.8767774308453,
+  "cost_corrected_chf_min": 3192.30544780347,
+  "cost_corrected_chf_max": 3196.366730532686,
+  "stored_change_kwh_th": 0.0,
+  "highest_hour_kw": 63.1580753326416,
+  "mean_weekly_peak_kw": 41.633592039346695,
+  "mean_daily_peak_kw": 36.11077908160431,
+  "high_tariff_import_share": 0.27885448564682275,
+  "carbon_weighted_import": 1844.1119465739444,
+  "reward_sum": -1594.4039911282457,
+  "windows": 8,
+  "export_kwh": 12625.69026221335,
+  "pv_generation_kwh": 19667.649941336364,
+  "comfort_cold_kh": 0.0,
+  "import_cost_chf": 4187.080092511866
+ }
+}
