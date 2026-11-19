@@ -66,3 +66,10 @@ M-004,EV plug-in window,ev_plug_in_window,17:00 to 08:00 local,-,assumption A-02
 M-004,Vehicles behind the measured charging station,ev_units,5,vehicles,assumption A-026 (one per housing unit),assumption
 M-004,LEG grid-tariff discount,leg_delta,0.4 (0.2 and 0 in the sweep),-,EKZ conditions document SRC-013 (reported),literature (utility document)
 M-004,LEG internal energy price,leg_internal_price,0.09,CHF/kWh,assumption A-027,assumption
+M-006,Cooling mode of the RC model,cooling_set_point,26.0,C,agent choice (CityLearn default cooling set point); owner confirmation pending (A-042),assumption
+M-006,Cooling mode of the RC model,cooling_supply_temperature,8.0,C,"schema value of the heat pump target_cooling_temperature (Phase A builder, A-040)",assumption
+M-006,Cooling mode of the RC model,cooling_min_outdoor_temperature,15.0,C,agent guard against the Carnot COP clip (A-041),assumption
+M-006,Cooling mode of the RC model,cooling_season_months,"6,7,8,9",month,agent choice: upper comfort limit 26 C instead of 24 C (A-042),assumption
+M-006,Cooling mode of the RC model,comfort_lower,21.0,C,D-018 heating set point,assumption
+M-006,Cooling mode of the RC model,cooling_device_nominal_power,= heating device (for example MFH-large 18.53),kW electric,A-040,assumption
+M-006,Cooling mode of the RC model,overheating_threshold,26.0,C,degree-hour metric (A-043),assumption

@@ -23,6 +23,13 @@ $PY -I swiss/pipeline/fit_rc_params.py >/dev/null                       # DER-01
 $PY -I swiss/pipeline/build_rc_params.py >/dev/null                     # DER-015
 $PY -I swiss/citylearn_build/build_dataset.py --carbon-file data/canonical/carbon_intensity_citylearn_2023.csv --pv-ratio 1.0 --battery-kwh-per-kwp 1.0 --rc --out-name swiss_rc_2023 >/dev/null   # DER-016
 $PY -I swiss/pipeline/build_dayahead.py >/dev/null                         # DER-018 (needs data/raw/energy_charts/dayahead_ch_2023.json)
+# Phase C (D-049, D-050): climate scenarios and cooled cell datasets. data/raw/ch2025_klo/ is a manual download (SRC-014, docs/reproduction.md section 2); the cells are git-ignored
+if [ -d data/raw/ch2025_klo ]; then
+  $PY -I swiss/pipeline/build_climate.py >/dev/null                         # TR-018, TR-019: DER-023 to DER-026 (data/canonical/climate/, in the manifest)
+  $PY -I swiss/pipeline/build_climate_datasets.py --all >/dev/null          # TR-020: DER-027, 6 weather scenarios x 5 adoption levels (30 cells, the matrix runs 26) -> swiss/datasets/climate/ (about 25 minutes, not in git)
+else
+  echo "skipping the Phase C climate steps: data/raw/ch2025_klo is missing (SRC-014)"
+fi
 $PY -I swiss/pipeline/build_15min.py >/dev/null                           # B2: data/canonical/q15 (not in the manifest, not in git)
 for spec in "swiss_district_2023_q15" "swiss_pv_2023_q15 --pv-ratio 1.0" "swiss_pvbat_2023_q15 --pv-ratio 1.0 --battery-kwh-per-kwp 1.0" "swiss_rc_2023_q15 --pv-ratio 1.0 --battery-kwh-per-kwp 1.0 --rc"; do
   set -- $spec; name=$1; shift
