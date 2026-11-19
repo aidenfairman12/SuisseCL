@@ -1,0 +1,89 @@
+{
+ "metrics": {
+  "cell": "hist_high",
+  "steps": 8759,
+  "export_price_rp": 8.0,
+  "cooled_buildings": [
+   "MFH-large"
+  ],
+  "zero_bill_chf": 21042.24127776324,
+  "opt_bill_chf": 17666.74994541311,
+  "saving_chf": 3375.4913323501314,
+  "saving_pct": 16.04150093990815,
+  "import_kwh": {
+   "baseline": 170537.25765350094,
+   "optimum": 137027.75396718492,
+   "summer_baseline": 19832.54321317957,
+   "summer_optimum": 9446.376350565475
+  },
+  "export_kwh": {
+   "baseline": 80225.44368873363,
+   "optimum": 43696.380672935324,
+   "summer_baseline": 33111.94832599778,
+   "summer_optimum": 22439.566877708115
+  },
+  "peak_kw": {
+   "baseline": 80.12262095269841,
+   "optimum": 156.67635623182838,
+   "summer_baseline": 37.06834588224641,
+   "summer_optimum": 90.37263998038566
+  },
+  "pv_generation_kwh": 133348.77926765708,
+  "pv_self_consumption": {
+   "baseline": 0.39837886683832724,
+   "optimum": 0.6723151054481861
+  },
+  "heating_electricity_kwh": {
+   "baseline": 70401.77312854705,
+   "optimum": 70921.64680206538
+  },
+  "cooling_electricity_kwh": {
+   "baseline": 1672.976453448584,
+   "optimum": 1354.466685300602
+  },
+  "emissions_kg": {
+   "baseline": 11893.185812580341,
+   "optimum": 10808.327828070138
+  },
+  "emissions_index_optimum_vs_baseline": 0.908783230867993,
+  "degree_hours_above_26": {
+   "baseline": 41220.267276952865,
+   "optimum": 41220.26727695287,
+   "by_building_optimum": {
+    "SFH-low": 8244.053455390576,
+    "SFH-mid": 8244.053455390576,
+    "SFH-high": 8244.053455390575,
+    "MFH-small": 8244.05345539057,
+    "MFH-medium": 8244.053455390576,
+    "MFH-large": 0.0
+   },
+   "by_building_baseline": {
+    "SFH-low": 8244.053455390576,
+    "SFH-mid": 8244.053455390575,
+    "SFH-high": 8244.05345539057,
+    "MFH-small": 8244.05345539057,
+    "MFH-medium": 8244.053455390575,
+    "MFH-large": 0.0
+   }
+  },
+  "mean_indoor_c": {
+   "baseline": 23.437671992948623,
+   "optimum": 23.57844509010035
+  }
+ },
+ "band": "band",
+ "replay": {
+  "cell": "hist_high",
+  "band": "band",
+  "steps": 5100,
+  "predicted_bill_chf": 9252.32523499872,
+  "realised_bill_chf": 9252.325316657085,
+  "zero_bill_chf": 11352.002099198173,
+  "predicted_saving_chf": 2099.676864199453,
+  "realised_saving_chf": 2099.676782541088,
+  "rel_diff_saving_pct": 3.889092009994051e-06,
+  "max_temperature_difference_k": 1.8956755241106293e-06,
+  "cooling_electricity_kwh_predicted": 845.4046422508671,
+  "cooling_electricity_kwh_realised": 845.4046422876418
+ }
+}

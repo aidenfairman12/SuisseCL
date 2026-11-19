@@ -1,49 +1,67 @@
-# Phase C proposal, updated after Phase B (for the owner's approval; nothing implemented)
+# Phase C proposal, rewritten 2026-11-19 after the Phase B control study (execution started on the owner's instruction of the same day)
 
-Date: 2026-11-19 · Replaces the proposal of `phase_a_completion_report.md` section 11 and the Phase C wording of `master_plan.md` section 8. Phase C stays unauthorised until the owner approves this document.
+Replaces the earlier version of this file, `phase_a_completion_report.md` section 11 and the Phase C wording of `master_plan.md` section 8. Authorisation: the owner told the agent in chat on 2026-11-19 to rewrite and execute Phase C. Decisions the owner confirmed in chat: climate source CH2025 (MeteoSwiss) for Kloten, download of the Kloten files (done, 27 MB), heat-wave extremes instead of a smooth warming only, MPC as the controller family, a scenario explorer in the dashboard. Decisions NOT explicitly confirmed and used as labelled defaults: adoption levels 10, 30, 50 % and their building assignment (section 4), the cooling set point and the overheating threshold (section 3). Commits: the owner approved local commits at milestones for Phase C (2026-11-19); pushes still need the owner's approval.
 
-## 1. Question
-How do warmer climates and more cooling change district electricity demand (summer peaks, seasonal totals), and does that change what a controller can save? Phase B answered the heating-and-PV version: the exact ceiling is 0.84 % of the bill without PV and 6 % to 16 % with assumed PV and battery (S1 to S3), mostly from tanks, battery and PV, little from building mass. Cooling adds a summer load that coincides with PV generation, which is where the Phase B result could change.
+## 1. Questions
+1. **Ceiling (exact optimum, perfect foresight).** How do warming (+2 and +3 C global warming levels, CH2025) and cooling adoption (three levels) change the district's electricity demand, summer peaks, and the share of the bill that flexibility can save (storage, battery, PV, building mass), with and without a heat wave?
+2. **Does building mass become valuable once cooling exists?** Phase B found +1.6 points from mass under heating. In summer cooling coincides with PV, so pre-cooling may be worth far more. This is the headline hypothesis and is answered by the ceiling-first runs before any controller work.
+3. **Controllers.** How much of that ceiling do the PV rule and the receding-horizon MPC (with and without a district peak term) reach in each scenario, and does the heat-pump forecast chain stay valid under future weather?
+4. **Peaks.** Summer and coincident peaks per scenario, and the bill-versus-peak trade-off with the MPC peak weight.
 
-## 2. What Phase B changes for Phase C
-- **Method that carries over**: ceiling-first (exact optimum with replay, then RL only where the ceiling is at least 3 % of the bill); labelled assumptions; provenance classes; additive data contract.
-- **Model pieces that carry over**: PV (pvlib, any weather), battery, export accounting, metrics module, RC building model (single node, per m2 priors), thermostat baseline, scenario machinery in `rl.py`.
-- **Gaps Phase C has to close**: the RC model has no cooling (indoor temperature exceeds 24 C in about 2,700 hours a year under heating only, A-020); the CityLearn building classes needed for cooling (`cooling_device`, `cooling_storage` actions, a heat pump in cooling mode) are not yet used in the Swiss datasets; weather is hourly only (ISS-035) and has no future-climate series.
-- **Finding to respect**: cost-optimal schedules raise coincident peaks (S2 +74 %, S3 +96 %), so summer-peak questions need a peak-aware objective or a peak constraint in the ceiling (the learners' reward already has a peak term).
+## 2. What carries over from Phase B and what changes
+- Carries over: ceiling-first method with replay; exact LPs (`oracle_rc.py` for S3: tanks, battery, single-node RC room with comfort band, export 8 Rp/kWh); PV rule; MPC (`mpc.py`, `MPCAgentRC` with peak weight, comfort margin and online correction); the eight held-out weeks; registers; the audit bundle.
+- **Heating and cooling must be model-driven.** In S0 to S2 the heat demand is the measured-derived 2023 series and does not respond to weather. Only S3 (RC model) responds, so every Phase C scenario is an S3 variant (PV and battery as in S2, RC building, comfort band).
+- Gaps to close: the RC model has no cooling mode in CityLearn (`rc_dynamics.update_cooling_demand` does nothing); the LPs have no cooling variable; weather is only 2023 observations; the dataset builder and `RCInputs` read fixed 2023 weather and PV files.
+- Finding to respect: the bill optimum raises coincident peaks (S2 +74 %, S3 +96 %); every Phase C cell reports peaks and the MPC is also run with the peak weight.
+- Correction to my review: the planned "forecaster robustness under future climate" matters less than I said. In S3 the heating and cooling demands come from the RC model with known weather, not from a learned forecaster; the learned forecasts are household load (weather-independent here), PV (irradiance, in range) and DHW demand. The robustness test is kept but expected to be small; the larger risk is weather forecast error in a heat wave (A-028 stays an assumption; tested with synthetic weather error).
 
-## 3. Climate scenarios (task C2): data route to decide
-Checked by web search on 2026-11-19 (reported, not verified in the data):
-| Route | What it offers | Open points |
+## 3. Climate scenarios (WP1)
+Source: CH2025 DAILY-LOCAL for Kloten (`klo`), files in `data/raw/ch2025_klo/` (CC BY 4.0): daily mean, min, max temperature, global radiation, relative humidity for the 1991-2020 reference and global warming levels 1.5, 2.0, 3.0 C; 24 to 26 regional climate model chains, 30 model-years each, 365-day calendar (years 0001 to 0030 are anonymous), about 750 missing values per file. Delta-change construction anchored on the **observed 2023 hourly Kloten series** (`data/canonical/weather_klo_2023_hourly.csv`), so the baseline is real weather:
+1. **Typical warmed year** for each level L in {2.0, 3.0} (1.5 optional): per month (12) monthly deltas of the ensemble-median (over chains and years) between level L and the reference: tas, tasmin, tasmax (additive), rsds and hurs (ratio, humidity capped to 100 %). Hourly: temperature shifted by a delta that interpolates between the tasmin delta and the tasmax delta with the observed diurnal shape; radiation scaled by the ratio (beam and diffuse scaled equally, direct/diffuse split of 2023 kept, capped by the clear-sky value); humidity by the ratio. Outputs a hourly weather file with the same columns as the 2023 file.
+2. **Heat-wave variant.** From the CH2025 series of the same level (all chains) select hot spells: for example the hottest 7-day spell by mean tasmax, with a documented percentile rule (not the single hottest value: the reference ensemble reaches 42.7 C at Kloten, which is not credible, so spells are chosen at a stated percentile of spell severity, default after WP1: the 99th percentile of 7-day windows, files `*_hw99`; the 95th-percentile spells (`*_hw`) were milder than the hottest observed 2023 week and are kept only as a sensitivity). Daily tasmin/tasmax/rsds/hurs of the chosen spell are made hourly with the observed 2023 diurnal shape on hot days (temperature: a fixed normalised curve from 2023 summer days with tasmax at or above 27 C; radiation: clear-sky shape scaled to the daily mean), and the spell **replaces the 7 days of the 2023 July test week (week 29, steps 4872 to 5039) in the warmed year**. The same selection rule applied to the reference ensemble gives a **historical-climate heat wave**, so "heat wave in today's climate" and "heat wave at +3 C" are comparable. Labelled synthetic: spells come from model chains, not from observation.
+3. **Validation (documented, tested).** (a) Reconstruct the observed 2023 hourly temperature from its own daily min and max with the diurnal-shape method: report RMSE and monthly bias. (b) The construction at the reference level reproduces the 2023 series exactly (delta zero). (c) Monthly mean, tasmax, number of days at or above 30 C and 35 C per scenario against the CH2025 ensemble statistics. (d) Radiation never above clear sky, humidity within 0 to 100 %.
+4. **Weather-dependent inputs.** Scenario weather feeds the RC model (ambient, irradiance), heat-pump COP (CityLearn device model and `oracle.tank_inputs`), and PV (`build_pv.py` logic with the scenario temperature and irradiance; per-kWp PV series per scenario).
+Interface (fixed so work packages can proceed in parallel): `data/canonical/climate/weather_klo_<scenario>_hourly.csv` (columns of `weather_klo_2023_hourly.csv`), `data/canonical/climate/pv_ac_w_per_kwp_<scenario>_hourly.csv` (column of the 2023 PV file), scenario names `hist`, `hist_hw99`, `gwl2.0`, `gwl2.0_hw99`, `gwl3.0`, `gwl3.0_hw99` (the matrix heat waves; `*_hw` p95 variants exist as sensitivity) (`hist` is the 2023 series).
+
+## 4. Cooling model and adoption (WP2)
+- **Model**: the single-node RC model already accepts negative heat (`step_temperature`). Add a cooling mode: heat removed Qc >= 0 (kW thermal) from the room node, electricity Qc / COPc with COPc from the CityLearn heat pump model in cooling mode (Carnot fraction, outdoor-temperature dependent; same device as the heating heat pump, reversible, A-assumption), cooling capacity limited by the device (nominal power x COPc).
+- **Comfort**: cooled buildings: lower 21 C, upper 24 C in the heating season and 26 C in the cooling season (months set in the code and documented; soft constraint with slack as in the MPC); uncooled buildings float. **Metric for uncooled buildings: degree-hours above 26 C** (overheating), also reported for all buildings.
+- **Adoption** (labelled defaults, shares of the 46 dwelling units: houses 3, MFH-small 5, MFH-medium 14, MFH-large 24): **low = MFH-small cooled (10.9 %)**, **medium = MFH-medium cooled (30.4 %)**, **high = MFH-large cooled (52.2 %)**; whole buildings, one assignment per level (not nested). A sensitivity assignment for "high" (MFH-medium + MFH-small + the three houses, 47.8 %) shows that results depend on which building is cooled, since a level confounds adoption with building identity.
+- **Reference**: heating-only district (no cooling in any building) in the same climate, and the Phase B S3 result as the historical-climate heating-only anchor.
+- CityLearn integration by subclassing (`rc_dynamics.py`), no edits to CityLearn: cooling demand and cooling device action, replay-exact to the LP (stop condition: more than 0.5 % apart, as in Phase B).
+
+## 5. Evaluation (WP3 and WP4)
+**Cells.** Climate {hist, gwl2.0, gwl3.0} x spell {typical, heat wave} (six weather scenarios) x adoption {none, low, medium, high} = 24 cells, plus the high-adoption sensitivity assignment.
+1. **Ceiling-first**: exact optimum (year, S3 with cooling) per cell: bill, savings share, with and without building-mass flexibility (comfort band wide against "no thermal flexibility" band, as in Phase B), annual and summer import, coincident and summer peaks, PV self-consumption, heating and cooling energy, emissions index, degree-hours above 26 C. 3 % gate before any RL.
+2. **Controllers on the eight held-out weeks (week 29 contains the inserted spell)**: zero action / thermostat reference, PV rule, MPC with weather-known forecasts (A-028), MPC with peak weight 0.1, plus the share of the ceiling each reaches. Local runs (about 10 to 15 minutes per configuration).
+3. **Robustness**: MPC with the load/PV/demand forecasters trained on 2023 compared with forecasters retrained on the scenario weather, and with synthetic weather forecast error on temperature and irradiance (A-031 style levels), on the heat-wave cells.
+4. **RL** only on a cell where a controller study shows a gap worth closing and the gate passes; the Phase B learners are not re-run (they did not beat the reference on any rung); not planned.
+
+## 6. Work packages and order
+| WP | Content | Needs |
 |---|---|---|
-| A. CH2025 official datasets (MeteoSwiss) | 30-year **daily** series per station (DAILY-LOCAL, seven variables) and on a 1 km grid, four warming levels between 1.5 and 3.0 C plus the 1991-2020 reference; CC BY 4.0; open data (opendata.swiss, STAC collection `ch.meteoschweiz.ogd-climate-scenarios-ch2025`) | which seven variables (radiation?), whether Zurich/Kloten is a station, no hourly product found; needs our own hourly disaggregation (delta change on the KLO 2023 hourly series) and its validation (plan C2) |
-| B. SLF/EPFL hourly scenarios built on CH2018 (delta change) | hourly temperature, precipitation, humidity, wind and shortwave radiation 1990-2100 for 72 MeteoSwiss stations (extended to 116 IMIS stations), data and code free | whether KLO or a Zurich-area station is included; CH2018 not CH2025; diffuse radiation needed by the PV model may be absent |
-**Recommendation**: first check route B for Kloten and the radiation variables (a licence and metadata check, no download); if it fits, use it as the hourly source and cross-check its warming against CH2025 daily deltas; otherwise use route A with a documented delta-change disaggregation of the 2023 KLO hours. Decision needed from you: which route, and approval to download the chosen files (small).
+| 1 | Climate pipeline: scenario weather files, hot-spell selection, validation, scenario PV, tests, validation report | CH2025 files (done) |
+| 2 | Cooling in the RC model, dataset builder (weather, PV, cooled buildings), CityLearn subclass, `oracle_rc` with cooling and scenario inputs, replay check, tests | interface of WP1 (fixed above) |
+| 3 | Scenario matrix: exact optima, PV rule, MPC (extend `MPCAgentRC` with a cooling variable) | WP1, WP2 |
+| 4 | Robustness test and weather-error test | WP3 |
+| 4b | Climate impact analysis (section 9): metrics module, attribution of cooling energy to PV and grid, figures | WP3 |
+| 5 | Dashboard and contract: scenario explorer (Phase B and C scenarios, ceiling / PV rule / MPC, peaks) | WP3 results |
+| 6 | Registers, Phase C completion report, audit bundle, tests | all |
+WP1 and WP2 run in parallel on disjoint files. Registers are written once at the end (WP6) to avoid conflicts.
 
-## 4. Cooling demand and system (task C3)
-- No measured cooling exists in HEAPO or ETH/EKZ; the JASM profiles contain simulated cooling but have no licence (D-004, not usable for publication). Cooling demand will be **modeled** (labelled synthetic): extend the RC model with a cooling mode (set point 26 C as in CityLearn defaults, cooling COP from the Carnot-fraction form of CityLearn's heat pump, internal and solar gains as in M-005).
-- Compare against the Phase B representation (heating-only) as in `rc_vs_phase_a.md`; no validation against measured cooling is possible (state this as in ISS-004).
+## 7. Limits stated up front
+Cooling demand, cooling COP and cooling adoption are modelled or assumed; no measured cooling exists for these buildings. Climate deltas are for one station (Kloten) and 2023 weather. Heat waves are model-chain sequences made hourly by a documented method. The household load is a synthetic composite (ISS-040). Tank sizes are unsourced (ISS-032). The MPC uses known weather (A-028). Exact optima are perfect-foresight upper bounds.
 
-## 5. Cooling adoption levels (task C4): proposal for your approval
-Evidence found (reported): fixed air conditioning in roughly 5 to 10 % of Swiss homes (sources disagree; reversible heat pumps are not counted in that figure); sales rising sharply after the 2025 heatwaves; Empa (2021) projects that cooling demand adds about 5 TWh per year in a moderate scenario and that more than half of households could have cooling systems by mid-century. The evidence is thin and partly commercial, so the percentages below are a proposal, not a measurement:
-| Level | Share of dwelling units with cooling | Reading |
-|---|---|---|
-| low | 10 % | roughly today |
-| medium | 30 % | assumed intermediate |
-| high | 50 % | Empa's order of magnitude for later this century |
-Representation across the six buildings: apartment buildings get the share as a fraction of units (units cooled by the same heat pump or split units are an assumption to document); the houses get cooling as a whole: low none, medium SFH-high, high SFH-mid and SFH-high (a deterministic assignment, not a random draw).
+## 8. Acceptance (plan 8.3, adapted)
+1. Historical and future (2.0, 3.0 C) climates and heat-wave variants exist with documented, tested hourly construction. 2. Cooling is modelled transparently and replay-exact. 3. Three adoption levels plus heating-only. 4. Seasonal, summer, peak and overheating metrics for every cell. 5. Ceiling, PV rule and MPC compared per cell. 6. Assumptions registered (A-032 onward), data source registered (CH2025), validation limits documented. 7. Experiments reproducible from a script. 8. Dashboard shows the scenario matrix.
 
-## 6. Scenario matrix and gates (tasks C5 to C7)
-Reference: historical climate (2023 hourly) with the three adoption levels and the heating-only district; warming levels moderate (+2 C) and high (+3 C, within CH2025's 1.5 to 3.0 C range) times three adoption levels, optionally +1.5 C. For every cell compute the exact optimum (with replay) of the S3 district with cooling, report summer and annual import, coincident and summer peaks, PV self-consumption, heating and cooling energy, relative emissions, and apply the 3 % gate before any RL. Transferability (C7): evaluate the Phase B learners (if they finish and pass) on the cooling scenarios without retraining, then retrain only where the gate passes.
-
-## 7. Work packages and effort (agent time, my estimate)
-1. Climate route check and hourly weather (1 to 2 days, data decision needed)
-2. RC cooling extension, CityLearn integration, tests (2 days)
-3. Adoption representation and scenario datasets (1 day)
-4. Exact optima and metrics across the matrix, replay (2 days; the 15-minute path stays optional)
-5. RL on gated cells (cluster, hours to a day), report (1 day)
-
-## 8. Decisions needed from you
-1. Climate data route (A or B) and permission to download the chosen small files.
-2. Adoption levels 10, 30, 50 % and the building assignment of section 5, or your own.
-3. Whether the peak-aware objective is in scope for Phase C (recommended: report coincident and summer peaks in every cell, optionally add a peak constraint to the exact programs).
-4. Whether the dashboard and data contract should be extended to Phase B and Phase C scenarios (not done in Phase B).
+## 9. Climate impact analysis for the portfolio (owner request 2026-11-19)
+Question: how much does a warmer climate plus cooling add to a house's and the district's electricity use, how much of that PV covers on site, and how much reaches the grid (energy and peak)?
+Definitions (all per scenario cell, from the same controller; reported for the PV rule and the MPC, and for the zero-action/thermostat reference):
+1. **Added consumption** per building and district: annual and summer electricity of heating, cooling, DHW, base load; change against the same building in the historical climate heating-only case (decomposed into: heating saved by warming, cooling added). Also per dwelling unit and per m2 effective floor area.
+2. **Mitigation by PV**: hourly allocation of on-site PV to loads, stated rule (default: PV serves base load and DHW first, then the heat pump in proportion to its electricity, then charges the battery, the rest is exported; the alternative priority "heat pump first" as sensitivity). Reported: share of cooling electricity covered by PV in the same hour, by PV through the battery, and by the grid; PV self-consumption and self-sufficiency per cell; the effect of the controller (PV rule, MPC) on those shares.
+3. **Spill-over to the grid**: incremental annual and summer import, export, coincident and summer peak, and the hours of highest net import, relative to the heating-only case in the same climate and relative to the historical climate; for the heat-wave week: hourly district net import curve and the peak hour with and without cooling, with and without the MPC peak weight.
+4. **Overheating** (uncooled buildings): degree-hours above 26 C per building and level, to show what adoption buys.
+5. **Attribution method**: difference method (cell with cooling minus same cell without cooling, same climate and controller) for added consumption, import and peaks; hourly PV allocation only for the PV-coverage shares (a bookkeeping choice, labelled as such; marginal attribution is not unique).
+Visualisations (static figures from a script, reused by the dashboard explorer): stacked annual energy per house type and scenario (heating, cooling, DHW, base, PV self-consumed, grid import, export); heat-wave week hourly stack (loads, PV, battery, grid) and net import with the peak marked; monthly import bars across climates; cooling energy against outdoor temperature (daily); peak versus bill trade-off (MPC peak weights) per climate; heat map of cells (climate x adoption) for added import, summer peak, PV coverage of cooling and overheating degree-hours; ceiling against PV rule and MPC per cell.
+Code: `swiss/experiments/climate_metrics.py` (metrics, tested on small synthetic cases with known answers: energy balance closes, PV allocation sums to PV used), `swiss/experiments/climate_figures.py`; outputs `docs/experiments/validation_reports/climate_impact.md` (generated) and figures in the dashboard bundle.

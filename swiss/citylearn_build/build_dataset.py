@@ -34,14 +34,20 @@ def buffer_kwh(role):
     return litres * WH_PER_L_K * 10.0 / 1000.0
 
 
-def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_eff=TANK_EFF, thermal_subdir='thermal', pv_ratio=None, battery_kwh_per_kwp=None, rc=False, q15=False):
+def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_eff=TANK_EFF, thermal_subdir='thermal', pv_ratio=None, battery_kwh_per_kwp=None, rc=False, q15=False,
+         weather_file=None, pv_file=None, cooled_buildings=(), climate_scenario=None):
     out_dir = os.path.join(ROOT, 'swiss', 'datasets', out_name)
     os.makedirs(out_dir, exist_ok=True)
     params = json.load(open(os.path.join(CAN, thermal_subdir, 'thermal_params.json')))
     # B2: q15 = 900 s steps from the 15-minute pipeline (data/canonical/q15, swiss/pipeline/build_15min.py); the default stays the hourly dataset
     dt_h = 0.25 if q15 else 1.0
     qd = os.path.join(CAN, 'q15')
-    w = pd.read_csv(os.path.join(qd, 'weather_klo_2023_15min.csv') if q15 else os.path.join(CAN, 'weather_klo_2023_hourly.csv'), index_col='timestamp_utc', parse_dates=True)
+    # Phase C (WP2): scenario weather / PV files (hourly, same columns and 2023 time stamps as the canonical ones) and cooled buildings; defaults leave every Phase A and B build unchanged
+    assert weather_file is None or not q15, 'scenario weather files are hourly (Phase C)'
+    cooled_buildings = tuple(cooled_buildings)
+    assert all(r in ROLES for r in cooled_buildings), f'unknown role in {cooled_buildings}'
+    assert not cooled_buildings or rc, 'cooling needs the RC thermal model (--rc)'
+    w = pd.read_csv(weather_file if weather_file else (os.path.join(qd, 'weather_klo_2023_15min.csv') if q15 else os.path.join(CAN, 'weather_klo_2023_hourly.csv')), index_col='timestamp_utc', parse_dates=True)
     tar = pd.read_csv(os.path.join(qd, 'tariff_ekz_standard_2023_15min.csv') if q15 else os.path.join(CAN, 'tariff_ekz_standard_2023_hourly.csv'), index_col='timestamp_utc', parse_dates=True)
     idx = w.index
     loc = idx.tz_convert('Europe/Zurich')
@@ -75,7 +81,7 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
 
     pv_w = pv_caps = None
     if pv_ratio is not None:   # B3: assumed-PV scenario (M-003); default build is unchanged
-        pv_w = pd.read_csv(os.path.join(qd, 'pv_ac_w_per_kwp_2023_15min.csv') if q15 else os.path.join(CAN, 'pv', 'pv_ac_w_per_kwp_2023_hourly.csv'), index_col='timestamp_utc', parse_dates=True).pv_ac_w_per_kwp
+        pv_w = pd.read_csv(pv_file if pv_file else (os.path.join(qd, 'pv_ac_w_per_kwp_2023_15min.csv') if q15 else os.path.join(CAN, 'pv', 'pv_ac_w_per_kwp_2023_hourly.csv')), index_col='timestamp_utc', parse_dates=True).pv_ac_w_per_kwp
         assert (pv_w.index == idx).all()
         pv_caps = json.load(open(os.path.join(CAN, 'pv', 'pv_capacity_2023.json')))['buildings']
 
@@ -103,7 +109,7 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
             'non_shiftable_load': d.non_shiftable_load_kwh, 'dhw_demand': d.dhw_demand_kwh,
             'cooling_demand': 0.0, 'heating_demand': d.heating_demand_kwh if rc_q is None else rc_q, 'solar_generation': 0.0 if pv_w is None else pv_w.to_numpy(),
             'indoor_dry_bulb_temperature_cooling_set_point': 26.0,
-            'indoor_dry_bulb_temperature_heating_set_point': SETPOINT_C, 'hvac_mode': 2})
+            'indoor_dry_bulb_temperature_heating_set_point': SETPOINT_C, 'hvac_mode': 3 if role in cooled_buildings else 2})
         if q15:
             es['minutes'] = cal.minutes
         es.to_csv(os.path.join(out_dir, f'{name}.csv'), index=False)
@@ -143,6 +149,11 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
             dhw_cap = mean_dhw_day * tank_scale
             b['dhw_storage'] = {'type': 'citylearn.energy_model.StorageTank', 'autosize': False,
                                 'attributes': {'capacity': round(dhw_cap, 4), 'efficiency': tank_eff, 'loss_coefficient': loss_coeff}}
+        if role in cooled_buildings:   # Phase C: reversible heat pump = a cooling device of the same rating, efficiency and supply temperature as the heating device (A-040)
+            b['cooling_device'] = {'type': 'citylearn.energy_model.HeatPump', 'autosize': False, 'attributes': dict(b['heating_device']['attributes'])}
+            b['inactive_actions'] = ['heating_device']          # cooled buildings use the combined action: negative = cooling, positive = heating (CityLearn forbids both)
+        elif cooled_buildings:
+            b['inactive_actions'] = ['cooling_or_heating_device']
         if rc:
             b['type'] = 'swiss.citylearn_build.rc_dynamics.RCDynamicsBuilding'
             b['dynamics'] = {'type': 'swiss.citylearn_build.rc_dynamics.RCDynamics',
@@ -151,6 +162,10 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
         manifest[name] = {'role': role, 'heating_tank_kwh_th': round(sh_cap, 3), 'dhw_tank_kwh_th': round(dhw_cap, 3),
                           'hp_sh_nominal_kw': b['heating_device']['attributes']['nominal_power'],
                           'hp_dhw_nominal_kw': b['dhw_device']['attributes']['nominal_power']}
+        if cooled_buildings:
+            manifest[name]['cooled'] = role in cooled_buildings
+            if role in cooled_buildings:
+                manifest[name]['cooling_device_nominal_kw'] = b['cooling_device']['attributes']['nominal_power']
         if pv_w is not None:
             manifest[name]['pv_kwp'] = b['pv']['attributes']['nominal_power']
         if battery_kwh_per_kwp is not None:
@@ -166,7 +181,7 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
                               'heating_storage_soc', 'dhw_storage_soc', 'electrical_storage_soc']}
     actions = {'heating_storage': {'active': True}, 'dhw_storage': {'active': True}, 'electrical_storage': {'active': battery_kwh_per_kwp is not None},
                'cooling_storage': {'active': False}, 'cooling_device': {'active': False}, 'heating_device': {'active': rc},
-               'cooling_or_heating_device': {'active': False}}
+               'cooling_or_heating_device': {'active': bool(cooled_buildings)}}
     schema = {'random_seed': 0, 'central_agent': True, 'simulation_start_time_step': 0, 'simulation_end_time_step': len(idx) - 1,
               'episode_time_steps': None, 'rolling_episode_split': False, 'random_episode_split': False,
               'seconds_per_time_step': 3600.0 * dt_h, 'observations': observations, 'actions': actions,
@@ -174,6 +189,11 @@ def main(tank_scale=1.0, out_name='swiss_district_2023', carbon_file=None, tank_
               'buildings': buildings, 'root_directory': '.'}   # '.' = the schema's own folder (CityLearn 3.3.0 resolves it relative to schema.json), so the dataset is portable
     json.dump(schema, open(os.path.join(out_dir, 'schema.json'), 'w'), indent=1)
     json.dump(manifest, open(os.path.join(out_dir, 'build_manifest.json'), 'w'), indent=1)
+    if climate_scenario is not None or weather_file or pv_file or cooled_buildings:   # Phase C: what this dataset is made of (kept outside build_manifest.json, which lists buildings only)
+        json.dump({'climate_scenario': climate_scenario, 'weather_file': os.path.relpath(weather_file, ROOT) if weather_file else None,
+                   'pv_file': os.path.relpath(pv_file, ROOT) if pv_file else None, 'cooled_buildings': list(cooled_buildings), 'pv_ratio': pv_ratio,
+                   'battery_kwh_per_kwp': battery_kwh_per_kwp, 'rc': rc, 'cooling_set_point_c': 26.0, 'cooling_device_supply_c': 8.0},
+                  open(os.path.join(out_dir, 'build_meta.json'), 'w'), indent=1)
     if rc:
         json.dump(rc_params, open(os.path.join(out_dir, 'rc_params.json'), 'w'), indent=1)
     print(json.dumps(manifest, indent=1))
@@ -191,5 +211,9 @@ if __name__ == '__main__':
     ap.add_argument('--rc', action='store_true', help='B7: single-node RC thermal model per building (scenario S3)')
     ap.add_argument('--battery-kwh-per-kwp', type=float, default=None, help='B4: add an assumed battery of this many kWh per kWp of PV (needs --pv-ratio)')
     ap.add_argument('--pv-ratio', type=float, default=None, help='B3: add assumed PV with this yield-to-demand ratio (0.5, 1.0, 1.5)')
+    ap.add_argument('--weather-file', default=None, help='Phase C: hourly weather csv with the columns of data/canonical/weather_klo_2023_hourly.csv (scenario weather)')
+    ap.add_argument('--pv-file', default=None, help='Phase C: hourly per-kWp PV csv with the column of data/canonical/pv/pv_ac_w_per_kwp_2023_hourly.csv')
+    ap.add_argument('--cooled-buildings', nargs='*', default=[], help='Phase C: roles with a cooling device (needs --rc), e.g. MFH-small')
+    ap.add_argument('--climate-scenario', default=None, help='label recorded in build_meta.json')
     a = ap.parse_args()
-    main(a.tank_scale, a.out_name, a.carbon_file, a.tank_eff, a.thermal_subdir, a.pv_ratio, a.battery_kwh_per_kwp, a.rc, a.q15)
+    main(a.tank_scale, a.out_name, a.carbon_file, a.tank_eff, a.thermal_subdir, a.pv_ratio, a.battery_kwh_per_kwp, a.rc, a.q15, a.weather_file, a.pv_file, a.cooled_buildings, a.climate_scenario)

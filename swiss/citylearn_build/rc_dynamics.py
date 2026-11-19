@@ -11,7 +11,7 @@ import numpy as np
 from citylearn.building import DynamicsBuilding
 from citylearn.dynamics import Dynamics
 
-from swiss.models.rc_building import PRIORS, step_temperature
+from swiss.models.rc_building import COOLING_MIN_OUTDOOR_C, PRIORS, step_temperature
 
 
 class RCDynamics(Dynamics):
@@ -38,10 +38,22 @@ class RCDynamicsBuilding(DynamicsBuilding):
         pass
 
     def update_cooling_demand(self, action):
-        pass                                                   # no cooling device in this model (Phase C)
+        """Phase C cooling (M-006): a cooled building has the `cooling_or_heating_device` action (negative = cooling, CityLearn splits it into a cooling and a heating
+        action in the same step); the cooling demand is the heat removed from the room, action x nominal power x cooling COP. Other buildings: no cooling (as in Phase B)."""
+        if 'cooling_or_heating_device' in self.active_actions and self.simulate_dynamics:
+            if self.energy_simulation.hvac_mode[self.time_step] in [1, 3]:
+                t_out = float(self.weather.outdoor_dry_bulb_temperature[self.time_step])
+                if t_out >= COOLING_MIN_OUTDOOR_C:
+                    electric_power = float(action) * self.cooling_device.nominal_power * self._dataset_step_hours()
+                    demand = self.cooling_device.get_max_output_power(t_out, heating=False, max_electric_power=electric_power)
+                else:
+                    demand = 0.0
+            else:
+                demand = 0.0
+            self.energy_simulation.cooling_demand[self.time_step] = demand
 
     def update_heating_demand(self, action):
-        if 'heating_device' in self.active_actions and self.simulate_dynamics:
+        if ('heating_device' in self.active_actions or 'cooling_or_heating_device' in self.active_actions) and self.simulate_dynamics:
             if self.energy_simulation.hvac_mode[self.time_step] in [2, 3]:
                 electric_power = float(action) * self.heating_device.nominal_power * self._dataset_step_hours()
                 demand = self.heating_device.get_max_output_power(self.weather.outdoor_dry_bulb_temperature[self.time_step],
@@ -54,7 +66,7 @@ class RCDynamicsBuilding(DynamicsBuilding):
         t = self.time_step
         w = self.weather
         ghi = float(w.direct_solar_irradiance[t]) + float(w.diffuse_solar_irradiance[t])
-        q_kw = float(self.energy_simulation.heating_demand[t]) / self._dataset_step_hours()
+        q_kw = (float(self.energy_simulation.heating_demand[t]) - float(self.energy_simulation.cooling_demand[t])) / self._dataset_step_hours()    # cooling removes heat (zero in Phase B datasets)
         dyn = self.dynamics
         T = step_temperature(dyn.temperature, float(w.outdoor_dry_bulb_temperature[t]), ghi, q_kw, dyn.area_eff,
                              dt_s=3600.0 * self._dataset_step_hours(), p=dyn.params)

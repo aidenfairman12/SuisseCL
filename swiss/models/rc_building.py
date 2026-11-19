@@ -65,3 +65,51 @@ def calibrate_area(annual_heat_kwh, t_amb, ghi, p=None, dt_s=3600.0):
     The temperature path does not depend on the area (every term scales with it), so heat is proportional to the area and one reference run suffices."""
     q1, _ = simulate_ideal(1.0, np.asarray(t_amb, float), np.asarray(ghi, float), p, dt_s)
     return annual_heat_kwh / float(q1.sum() * dt_s / 3600.0)
+
+
+# ----------------------------------------------------------------------------------------------------------------- Phase C: cooling (WP2)
+# Cooling mode of the same single-node model (M-006 = M-005 + cooling). Heat removed from the room node: step_temperature already accepts negative heat.
+# Assumptions (docs/phases/phase_c_drafts/wp2_registry_draft.md): reversible heat pump (cooling device = same rating and efficiency as the heating device, supply
+# temperature 8 C as in the schema), COP from CityLearn's Carnot-fraction form, cooling only when the outdoor temperature is at least COOLING_MIN_OUTDOOR_C
+# (the Carnot form gives COP 20 below the supply temperature, an artefact), cooling set point 26 C, cooling season June to September.
+COOL_SETPOINT_C = 26.0
+COOL_SUPPLY_C = 8.0
+COOLING_MIN_OUTDOOR_C = 15.0
+COOLING_MONTHS = (6, 7, 8, 9)            # local months in which the upper comfort limit is the cooling set point (26 C); otherwise 24 C
+UPPER_HEATING_SEASON_C = 24.0
+
+
+def cooling_cop(t_out, efficiency, t_supply=COOL_SUPPLY_C):
+    """Carnot-fraction cooling COP exactly as citylearn.energy_model.HeatPump.get_cop(heating=False): eta (Tc + 273.15) / (T_out - Tc), set to 20 if < 0 or > 20."""
+    t_out = np.asarray(t_out, dtype=float)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        c = efficiency * (t_supply + 273.15) / (t_out - t_supply)
+    c = np.where((c < 0) | (c > 20) | ~np.isfinite(c), 20.0, c)
+    return c
+
+
+def cooling_capacity_kwh(t_out, nominal_power_kw, efficiency, dt_h=1.0, t_supply=COOL_SUPPLY_C, min_outdoor_c=COOLING_MIN_OUTDOOR_C):
+    """Maximum heat removed per step (kWh thermal): nominal electric power x step x COP, zero when the outdoor temperature is below min_outdoor_c."""
+    t_out = np.asarray(t_out, dtype=float)
+    cap = nominal_power_kw * dt_h * cooling_cop(t_out, efficiency, t_supply)
+    return np.where(t_out >= min_outdoor_c, cap, 0.0)
+
+
+def simulate_thermostat(area_eff, t_amb, ghi, p=None, dt_s=3600.0, q_heat_max=None, q_cool_max=None, cool_setpoint=COOL_SETPOINT_C, t0=None):
+    """Thermostat baseline with cooling: heat to the setpoint (as simulate_ideal) and, if the free-running temperature would exceed cool_setpoint, cool to it
+    (limited by q_cool_max, kW thermal). q_cool_max None = no cooling device (identical to simulate_ideal). Returns (heat kW, cool kW, temperature) per step."""
+    p = {**PRIORS, **(p or {})}
+    T = p['setpoint_c'] if t0 is None else t0
+    n = len(t_amb)
+    q = np.zeros(n); qc = np.zeros(n); temp = np.zeros(n)
+    for k in range(n):
+        q[k] = max(heat_for_target(T, p['setpoint_c'], t_amb[k], ghi[k], area_eff, dt_s, p), 0.0)
+        if q_heat_max is not None:
+            q[k] = min(q[k], q_heat_max[k])
+        if q_cool_max is not None and q[k] <= 0.0:
+            t_free = step_temperature(T, t_amb[k], ghi[k], 0.0, area_eff, dt_s, p)
+            if t_free > cool_setpoint:
+                qc[k] = min(max(-heat_for_target(T, cool_setpoint, t_amb[k], ghi[k], area_eff, dt_s, p), 0.0), q_cool_max[k])
+        T = step_temperature(T, t_amb[k], ghi[k], q[k] - qc[k], area_eff, dt_s, p)
+        temp[k] = T
+    return q, qc, temp

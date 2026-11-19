@@ -26,13 +26,19 @@ RATIOS = (0.5, 1.0, 1.5)
 PLAUSIBLE_YIELD = (900.0, 1250.0)   # kWh/kWp/a, assumed plausibility range for Swiss Mittelland, tilt 30 south; not verified against a source
 
 
+def pv_ac_w_per_kwp(w):
+    """AC output per kWp in W/kW for a weather frame with the columns of weather_klo_2023_hourly.csv (timestamp_utc, temp_c, ghi_wm2, diffuse_wm2).
+    Phase C (WP1) calls this with scenario weather; the 2023 output is unchanged (regression test in swiss/tests/test_climate.py)."""
+    y = specific_yield_kwh_per_kwp(w.timestamp_utc, w.ghi_wm2, w.diffuse_wm2, w.temp_c)
+    return pd.DataFrame({'timestamp_utc': w.timestamp_utc, 'pv_ac_w_per_kwp': np.round(y * 1000.0, 4)}), y
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     w = pd.read_csv(os.path.join(CAN, 'weather_klo_2023_hourly.csv'), parse_dates=['timestamp_utc'])
-    y = specific_yield_kwh_per_kwp(w.timestamp_utc, w.ghi_wm2, w.diffuse_wm2, w.temp_c)
+    pv_df, y = pv_ac_w_per_kwp(w)
     annual = float(y.sum())
-    pd.DataFrame({'timestamp_utc': w.timestamp_utc, 'pv_ac_w_per_kwp': np.round(y * 1000.0, 4)}).to_csv(
-        os.path.join(OUT, 'pv_ac_w_per_kwp_2023_hourly.csv'), index=False)
+    pv_df.to_csv(os.path.join(OUT, 'pv_ac_w_per_kwp_2023_hourly.csv'), index=False)
     caps = {}
     for role in ROLES:
         d = pd.read_csv(os.path.join(CAN, 'thermal', f'{role}_2023_thermal_hourly.csv'))

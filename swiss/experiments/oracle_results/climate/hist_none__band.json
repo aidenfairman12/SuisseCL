@@ -1,0 +1,73 @@
+{
+ "metrics": {
+  "cell": "hist_none",
+  "steps": 8759,
+  "export_price_rp": 8.0,
+  "cooled_buildings": [],
+  "zero_bill_chf": 20892.601989770894,
+  "opt_bill_chf": 17557.65344657019,
+  "saving_chf": 3334.9485432007023,
+  "saving_pct": 15.96234181282689,
+  "import_kwh": {
+   "baseline": 170376.65964017052,
+   "optimum": 137041.11543076756,
+   "summer_baseline": 19697.822276554958,
+   "summer_optimum": 9423.976799063701
+  },
+  "export_kwh": {
+   "baseline": 81751.33266866855,
+   "optimum": 45085.2231618367,
+   "summer_baseline": 34414.99966603088,
+   "summer_optimum": 23612.8562833907
+  },
+  "peak_kw": {
+   "baseline": 80.12262095269841,
+   "optimum": 156.67635623182838,
+   "summer_baseline": 37.06834588224641,
+   "summer_optimum": 90.37263998038563
+  },
+  "pv_generation_kwh": 133348.77926765708,
+  "pv_self_consumption": {
+   "baseline": 0.38693602507918257,
+   "optimum": 0.6618999933149606
+  },
+  "heating_electricity_kwh": {
+   "baseline": 70388.26258873031,
+   "optimum": 70902.93846539006
+  },
+  "cooling_electricity_kwh": {
+   "baseline": 0.0,
+   "optimum": 0.0
+  },
+  "emissions_kg": {
+   "baseline": 11888.05542880455,
+   "optimum": 10808.024280813226
+  },
+  "emissions_index_optimum_vs_baseline": 0.9091498896131972,
+  "degree_hours_above_26": {
+   "baseline": 49464.32073234344,
+   "optimum": 49464.32073234345,
+   "by_building_optimum": {
+    "SFH-low": 8244.053455390576,
+    "SFH-mid": 8244.053455390576,
+    "SFH-high": 8244.053455390575,
+    "MFH-small": 8244.05345539057,
+    "MFH-medium": 8244.053455390576,
+    "MFH-large": 8244.053455390575
+   },
+   "by_building_baseline": {
+    "SFH-low": 8244.053455390576,
+    "SFH-mid": 8244.053455390575,
+    "SFH-high": 8244.05345539057,
+    "MFH-small": 8244.05345539057,
+    "MFH-medium": 8244.053455390575,
+    "MFH-large": 8244.053455390573
+   }
+  },
+  "mean_indoor_c": {
+   "baseline": 23.631600543910977,
+   "optimum": 23.8080000046026
+  }
+ },
+ "band": "band"
+}

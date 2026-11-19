@@ -1,0 +1,75 @@
+{
+ "metrics": {
+  "cell": "hist_high",
+  "steps": 8759,
+  "export_price_rp": 8.0,
+  "cooled_buildings": [
+   "MFH-large"
+  ],
+  "zero_bill_chf": 21042.24127776324,
+  "opt_bill_chf": 18032.76736211137,
+  "saving_chf": 3009.47391565187,
+  "saving_pct": 14.30205972798242,
+  "import_kwh": {
+   "baseline": 170537.25765350094,
+   "optimum": 139559.1980695725,
+   "summer_baseline": 19832.54321317957,
+   "summer_optimum": 9576.648497510738
+  },
+  "export_kwh": {
+   "baseline": 80225.44368873363,
+   "optimum": 46440.55799806503,
+   "summer_baseline": 33111.94832599778,
+   "summer_optimum": 22333.563833266086
+  },
+  "peak_kw": {
+   "baseline": 80.12262095269841,
+   "optimum": 133.97684678177114,
+   "summer_baseline": 37.06834588224641,
+   "summer_optimum": 77.59058571709708
+  },
+  "pv_generation_kwh": 133348.77926765708,
+  "pv_self_consumption": {
+   "baseline": 0.39837886683832724,
+   "optimum": 0.6517361594675738
+  },
+  "heating_electricity_kwh": {
+   "baseline": 70401.77312854705,
+   "optimum": 70202.86639915401
+  },
+  "cooling_electricity_kwh": {
+   "baseline": 1672.976453448584,
+   "optimum": 1672.976453448584
+  },
+  "emissions_kg": {
+   "baseline": 11893.185812580341,
+   "optimum": 10837.26054516308
+  },
+  "emissions_index_optimum_vs_baseline": 0.9112159446545999,
+  "degree_hours_above_26": {
+   "baseline": 41220.267276952865,
+   "optimum": 41220.267276952865,
+   "by_building_optimum": {
+    "SFH-low": 8244.053455390576,
+    "SFH-mid": 8244.053455390575,
+    "SFH-high": 8244.05345539057,
+    "MFH-small": 8244.05345539057,
+    "MFH-medium": 8244.053455390575,
+    "MFH-large": 0.0
+   },
+   "by_building_baseline": {
+    "SFH-low": 8244.053455390576,
+    "SFH-mid": 8244.053455390575,
+    "SFH-high": 8244.05345539057,
+    "MFH-small": 8244.05345539057,
+    "MFH-medium": 8244.053455390575,
+    "MFH-large": 0.0
+   }
+  },
+  "mean_indoor_c": {
+   "baseline": 23.437671992948623,
+   "optimum": 23.437671992948623
+  }
+ },
+ "band": "pinned"
+}
