@@ -228,8 +228,8 @@ export type ControllersData = {
     scenario: string; ceiling_pct: number;
     synthetic: { x: number; saving_pct: number; kind: string; label: string }[];
     history_only: { x: number; saving_pct: number; label: string };
-    weather_conditioned: { saving_pct: number; label: string; error_stored: boolean };
-    measured_error: Record<string, Record<string, number>>;
+    weather_conditioned: { x: number; saving_pct: number; label: string; error_stored: boolean; pv_error: number; demand_error: number };
+    measured_error: Record<string, unknown>;
   };
   peak_tradeoff: Record<string, { series: Record<string, PbTradeoffPoint[]>; zero_peak_kw: number; pv_rule: { saving_pct: number; peak_kw: number } }>;
   model_error_s3: { label: string; rc_perturb: number; rc_margin: number; rc_correct: boolean; peak_w: number; saving_pct: number; comfort_kh: number; peak_kw: number }[];

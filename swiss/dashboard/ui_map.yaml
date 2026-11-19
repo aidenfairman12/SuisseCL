@@ -183,8 +183,11 @@ _phase_b:
       result for these settings, not a proof that learning cannot work here.
     forecast_note: >
       Error is expressed as a multiple of the standard deviation of each series. The synthetic points add that much random error to
-      the true future. The history-only forecaster was measured against the real series; the error of the weather-conditioned
-      forecaster is not stored in a result file, so it appears as a level only.
+      the true future. The two real forecasters are placed by their measured error on the eight test weeks: the household load,
+      the forecast that limits everything, is off by {pb.forecast.history_load:.2f} for the history-only forecaster and
+      {pb.forecast.weather_load:.2f} for the weather-conditioned one; the solar forecast is off by {pb.forecast.history_pv:.2f}
+      and {pb.forecast.weather_pv:.2f}. The weather is taken as known in the weather-conditioned case, so its solar error is a
+      lower bound.
     tradeoff_note: >
       Each point is one peak weight in the planner. The weight is a tuning knob in the optimisation, not a tariff. The highest hour
       is the largest district grid draw in the eight test weeks.

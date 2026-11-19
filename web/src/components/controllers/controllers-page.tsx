@@ -74,9 +74,9 @@ function ForecastChart({ d }: { d: ControllersData }) {
         label: { show: true, fontSize: 10, position: "top", formatter: (q: { value?: unknown }) => fmt((q.value as number[])[1], 1) },
         markLine: { symbol: "none", lineStyle: { type: "dashed" }, data: [
           { yAxis: f.ceiling_pct, name: "Exact optimum", lineStyle: { color: PB_COLOURS.purple }, label: { formatter: "Exact optimum", fontSize: 10, position: "insideEndTop" } },
-          { yAxis: f.weather_conditioned.saving_pct, name: f.weather_conditioned.label, lineStyle: { color: PB_COLOURS.s3 }, label: { formatter: "Weather-conditioned forecast (its error is not stored)", fontSize: 10, position: "insideEndBottom" } },
         ] },
       },
+      { type: "scatter", name: "Weather-conditioned forecast (measured load error)", symbolSize: 12, itemStyle: { color: PB_COLOURS.s3 }, data: [{ value: [f.weather_conditioned.x, f.weather_conditioned.saving_pct], name: f.weather_conditioned.label }], label: { show: true, fontSize: 10, position: "right", formatter: (q: { value?: unknown }) => fmt((q.value as number[])[1], 1) } },
       { type: "scatter", name: "History-only forecast (measured error)", symbolSize: 12, itemStyle: { color: PB_COLOURS.red }, data: [{ value: [f.history_only.x, f.history_only.saving_pct], name: f.history_only.label }], label: { show: true, fontSize: 10, position: "right", formatter: (q: { value?: unknown }) => fmt((q.value as number[])[1], 1) } },
     ],
   };
@@ -169,7 +169,7 @@ export function ControllersPage() {
       </Section>
 
       <Section title="How good the forecast has to be" classes={["synthetic", "modeled"]}>
-        <p className="text-xs text-muted-foreground">S2: solar and battery. The sweep adds random error to the true future; the history-only forecast was measured against the real series.</p>
+        <p className="text-xs text-muted-foreground">S2: solar and battery. The sweep adds random error to the true future; the two real forecasters are placed by their measured load error on the eight test weeks.</p>
         <ForecastChart d={d} />
         <Note>{p.forecast_note as string}</Note>
       </Section>

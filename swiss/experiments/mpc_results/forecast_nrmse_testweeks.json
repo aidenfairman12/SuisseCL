@@ -1,0 +1,19 @@
+{
+ "unit": "RMSE divided by the standard deviation of the actual series (whole year), mean over six buildings, eight test weeks",
+ "weather_known": true,
+ "weather": {
+  "load": 0.6842428347441366,
+  "pv": 0.07048011354773615,
+  "dem": 0.7612405945581112
+ },
+ "weather_lag": {
+  "load": 0.6638851688933157,
+  "pv": 0.07048011354773615,
+  "dem": 0.7324332501629475
+ },
+ "history_only": {
+  "load": 0.8913255598542008,
+  "pv": 0.596698435100135,
+  "dem": 0.999397981219536
+ }
+}

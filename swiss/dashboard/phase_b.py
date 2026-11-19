@@ -145,6 +145,7 @@ def build(bb, ui, errors, nodes):
             d['_file'] = fn
             mp.setdefault(d['scenario'], []).append(d)
     ferr = rj(MPCR + 'forecast_error.json')
+    tw = rj(MPCR + 'forecast_nrmse_testweeks.json')                # forecaster errors measured on the eight test weeks (mpc_forecast_nrmse.py)
     out = {'scenarios': {}, 'rl_curves': [], 'sources': [RLR + 'phase_b_summary.json', MPCR]}
     comfort_rl = {}
     for s in SC:
@@ -224,9 +225,10 @@ def build(bb, ui, errors, nodes):
     hist = mpc('s2', 'naive', 48)
     weather = mpc('s2', 'weather', 48)
     out['forecast_quality'] = {'scenario': 's2', 'synthetic': pts,
-                               'history_only': {'x': ferr['load']['week1'], 'saving_pct': hist['saving_pct'], 'label': 'History-only forecast (same hour last week)'},
-                               'weather_conditioned': {'saving_pct': weather['saving_pct'], 'label': 'Weather-conditioned forecast', 'error_stored': False},
-                               'measured_error': ferr, 'ceiling_pct': ceil['s2']['week']}
+                               'history_only': {'x': tw['history_only']['load'], 'saving_pct': hist['saving_pct'], 'label': 'History-only forecast (same hour last week)'},
+                               'weather_conditioned': {'x': tw['weather']['load'], 'saving_pct': weather['saving_pct'], 'label': 'Weather-conditioned forecast', 'error_stored': True,
+                                                       'pv_error': tw['weather']['pv'], 'demand_error': tw['weather']['dem']},
+                               'measured_error': tw, 'ceiling_pct': ceil['s2']['week']}
     # peak trade-off
     to = {}
     for s in ('s2', 's3'):
@@ -270,7 +272,8 @@ def build(bb, ui, errors, nodes):
     pb['rl_n'] = sum(1 for _ in out['rl_curves'])
     full = [r for r in out['stochastic'] if r['err_scale'] == 1.0]          # errors at the measured size; scaled-down errors are a diagnostic
     pb['stoch'] = {'min': min(r['saving_pct'] for r in full), 'max': max(r['saving_pct'] for r in full), 'det': out['deterministic_reference']['saving_pct']}
-    pb['forecast'] = {'history_load': ferr['load']['week1'], 'history_pv': ferr['pv']['day1'], 'history_dem': ferr['dem']['week1']}
+    pb['forecast'] = {'history_load': tw['history_only']['load'], 'history_pv': tw['history_only']['pv'], 'history_dem': tw['history_only']['dem'],
+                      'weather_load': tw['weather']['load'], 'weather_pv': tw['weather']['pv'], 'weather_dem': tw['weather']['dem']}
     pb['share_of_ceiling_s2'] = 100 * pb['mpc']['s2']['weather'] / ceil['s2']['week']
     pb['share_of_ceiling_s3'] = 100 * pb['mpc']['s3']['weather'] / ceil['s3']['week']
 

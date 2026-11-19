@@ -218,3 +218,14 @@ Result: scenario-based stochastic MPC does not help on this problem; it loses 1.
 What was checked: the scenario errors are the right size (load error 0.72 of the standard deviation out of sample on the training weeks against 0.68 on the test weeks; PV 0.07 against 0.07) and nearly uncorrelated in time (lag-1 autocorrelation 0.12), so the scenarios are not mis-scaled. My first hypothesis, that hindsight recourse (each scenario knowing its own later noise) makes the plan overvalue flexibility, predicts that sharing more steps should help; it made things worse, so that explanation is not supported. **The cause is not identified.** One more candidate that I did not test: sampled errors on tank demand and the household load together push the shared net tank and battery actions towards zero (the storage cannot be used against the price signal when the noise is as large as the signal). An implementation error that grows with the noise cannot be excluded either; the only evidence against it is the small-noise limit above.
 
 Consequence: drop method 5 (stochastic or robust MPC) from the ranking for this data. The noise is close to white and as large as the signals, so the useful response to it is feedback (re-planning every hour with the observed load, which the deterministic MPC already does) and, possibly, a learned correction on top of it, not planning against scenarios. Remaining untested options for the gap between 62 % and 100 % of the ceiling: a learned residual policy on top of the MPC (needs training runs, a candidate for the cluster), a battery reserve rule, or measured instead of synthetic household loads.
+
+## 11. Forecast error of the forecasters, measured on the eight test weeks (added 2026-11-19; `swiss/experiments/mpc_forecast_nrmse.py`, `mpc_results/forecast_nrmse_testweeks.json`)
+nRMSE = RMSE over the standard deviation of the actual series, mean over six buildings, S2 inputs; weather taken as known for the weather-conditioned models (A-028).
+
+| Forecaster | Household load | PV | Tank demand |
+|---|---|---|---|
+| History-only (same hour last week; PV yesterday) | 0.89 | 0.60 | 1.00 |
+| Weather-conditioned (gradient boosting) | 0.68 | 0.07 | 0.76 |
+| Weather-conditioned plus load lags | 0.66 | 0.07 | 0.73 |
+
+They place the two real forecasters on the axis of the synthetic error sweep (14.6, 12.9, 9.7, 6.7 % at 0, 0.1, 0.3, 0.5): the weather-conditioned one (load error 0.68) saves 8.8 %, the history-only one (0.89) 3.7 %, close to the sweep's curve. The PV error of the weather-conditioned model is a lower bound because the weather is assumed known.
