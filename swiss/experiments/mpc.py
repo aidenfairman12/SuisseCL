@@ -37,8 +37,8 @@ OUT = os.path.join(ROOT, 'swiss', 'experiments', 'mpc_results')
 class Forecaster:
     """Returns, for building bi and global steps [g, g+h), the forecast of (net0 incl. PV, tank demand list)."""
 
-    def __init__(self, inp, mode, level=0.0, seed=0, perfect_parts=(), rc=False):
-        self.inp, self.mode, self.level = inp, mode, level
+    def __init__(self, inp, mode, level=0.0, seed=0, perfect_parts=(), rc=False, stoch=False, err_scale=1.0):
+        self.inp, self.mode, self.level, self.stoch, self.err_scale = inp, mode, level, stoch, err_scale
         self.tk = (lambda bi: [t for t in inp.tanks[bi] if t['kind'] == 'dhw']) if rc else (lambda bi: inp.tanks[bi])      # rc: space heat is a decision, only DHW demand is forecast
         self.pv = {bi: inp.kwp[1.0][bi] * inp.pv_per_kwp for bi in range(len(inp.net_s0))}
         self.load = {bi: inp.net_s0[bi] - (inp.derived_heat[bi] / inp.heat_tank[bi]['cop'] if rc else 0.0) for bi in range(len(inp.net_s0))}   # zero-action net WITHOUT PV (rc: and without space heat)
@@ -74,6 +74,43 @@ class Forecaster:
                     Xc = np.column_stack([X, l1, l2, (l1 + l2) / 2])
                 m = HistGradientBoostingRegressor(max_iter=200, learning_rate=0.08, max_leaf_nodes=15, random_state=0).fit(Xc[train], y[train])
                 out[bi].append(np.clip(m.predict(Xc), 0.0, None) if y.min() >= 0 else m.predict(Xc))
+        if self.stoch:                                                    # out-of-sample residuals of the training weeks (4 blocked folds by week): error samples for scenarios
+            wk = t // rl.WEEK
+            elig = np.unique(wk[train])
+            fold = {w: i % 4 for i, w in enumerate(elig)}
+            fid = np.array([fold.get(w, -1) for w in wk])
+            self.resid, self.valid = {}, train.copy()
+            for bi in range(len(self.inp.net_s0)):
+                comps = [self.load[bi]] + [t_['demand'] for t_ in self.tk(bi)] + [self.pv[bi]]
+                self.resid[bi] = []
+                for y in comps:
+                    r = np.full(n, np.nan)
+                    for f in range(4):
+                        tr = train & (fid != f)
+                        m = HistGradientBoostingRegressor(max_iter=200, learning_rate=0.08, max_leaf_nodes=15, random_state=0).fit(X[tr], y[tr])
+                        te = fid == f
+                        r[te] = y[te] - np.clip(m.predict(X[te]), 0.0, None)
+                    self.resid[bi].append(r)
+        return out
+
+    def sample_starts(self, g, h, K):
+        """K start steps of error blocks of length h from the training weeks, aligned on the hour of day of g (common to all buildings: errors are correlated across them)."""
+        n = self.inp.N
+        ok = np.isnan(self.resid[0][0]) == False  # noqa: E712
+        cs = np.concatenate([[0], np.cumsum(~ok)])
+        cand = np.array([s0 for s0 in range(g % 24, n - h, 24) if cs[s0 + h] - cs[s0] == 0])
+        rng = np.random.default_rng(g)
+        return rng.choice(cand, size=K, replace=len(cand) < K)
+
+    def scenarios(self, bi, g, h, starts):
+        """Forecast + sampled error blocks: list of (net0, demand list) for the given starts."""
+        p = self.pred[bi]
+        out = []
+        for s0 in starts:
+            load = p[0][g:g + h] + self.err_scale * self.resid[bi][0][s0:s0 + h]
+            pv = np.clip(p[-1][g:g + h] + self.err_scale * self.resid[bi][-1][s0:s0 + h], 0.0, None)
+            dem = [np.clip(p[1 + k][g:g + h] + self.err_scale * self.resid[bi][1 + k][s0:s0 + h], 0.0, None) for k in range(len(self.tk(bi)))]
+            out.append((load - pv, dem))
         return out
 
     def get(self, bi, g, h):
@@ -102,8 +139,9 @@ class Forecaster:
 
 
 class MPCAgent:
-    def __init__(self, env, s0, inp, fc, horizon=48, tv=1.0, peak_w=0.0):
-        self.env, self.s0, self.inp, self.fc, self.H, self.tv, self.peak_w = env, s0, inp, fc, horizon, tv, peak_w
+    def __init__(self, env, s0, inp, fc, horizon=48, tv=1.0, peak_w=0.0, K=1, share=1):
+        self.share = share
+        self.env, self.s0, self.inp, self.fc, self.H, self.tv, self.peak_w, self.K = env, s0, inp, fc, horizon, tv, peak_w, K
         self.p_low = float(inp.price.min())
         self.n_act = [list(b.active_actions) for b in env.buildings]
         self.solve_s = 0.0
@@ -121,12 +159,12 @@ class MPCAgent:
         out['bat'] = ((float(bat.soc[t - 1]) if t > 0 else float(bat.initial_soc)) * cap) if cap > 0 else None
         return out
 
-    def _lp(self, bi, b, t, g):
+    def _lp(self, bi, b, t, g, fcst=None):
         """Assemble the horizon LP of one building (forecasts in, CityLearn state in); the terminal credit is already in the cost vector."""
         inp = self.inp
         h = min(self.H, inp.N - g)
         st = self._state(b, t)
-        net0, dem = self.fc.get(bi, g, h)
+        net0, dem = fcst if fcst is not None else self.fc.get(bi, g, h)
         tanks = []
         for k, tk in enumerate(inp.tanks[bi]):
             tanks.append({**tk, 'cop': tk['cop'][g:g + h], 'maxout': tk['maxout'][g:g + h], 'demand': dem[k], 'e0': st[tk['kind']]})
@@ -156,6 +194,34 @@ class MPCAgent:
         r = linprog(lp['c'], A_ub=lp['A_ub'] if lp['A_ub'].shape[0] else None, b_ub=lp['b_ub'] if lp['b_ub'].shape[0] else None, A_eq=lp['A_eq'], b_eq=lp['b_eq'],
                     bounds=np.column_stack([lp['lo'], lp['hi']]), method='highs')
         return None if r.status != 0 else self._first_actions(b, r.x, lp, tanks, bat)
+
+    def plan_building_stochastic(self, bi, b, t, g, starts):
+        """Scenario LP: K error scenarios, expected bill (cost / K), NET first-step actions of every tank and the battery shared by all scenarios (non-anticipativity),
+        everything later per scenario (recourse). Same state, bounds and terminal credit as the deterministic LP."""
+        import scipy.sparse as sp
+        h = min(self.H, self.inp.N - g)
+        K = len(starts)
+        parts = [self._lp(bi, b, t, g, fcst=f) for f in self.fc.scenarios(bi, g, h, starts)]
+        nv = parts[0][0]['nv']
+        A_eq = sp.block_diag([p[0]['A_eq'] for p in parts], format='csr')
+        A_ub = sp.block_diag([p[0]['A_ub'] for p in parts], format='csr') if parts[0][0]['A_ub'].shape[0] else None
+        c = np.concatenate([p[0]['c'] / K for p in parts]); lo = np.concatenate([p[0]['lo'] for p in parts]); hi = np.concatenate([p[0]['hi'] for p in parts])
+        idx, tanks, bat = parts[0][0]['idx'], parts[0][1], parts[0][2]
+        pairs = [(f'a{k}', f'd{k}') for k in range(len(tanks))] + ([('c', 'u')] if bat is not None else [])
+        rows, cols, vals, r = [], [], [], 0
+        for k in range(1, K):
+            for step in range(min(self.share, h)):                        # the first `share` steps are decided before the noise is seen (shared); later steps adapt per scenario
+                for pos, neg in pairs:
+                    for kk, sgn in ((0, -1.0), (k, 1.0)):
+                        rows += [r, r]; cols += [kk * nv + idx[pos] + step, kk * nv + idx[neg] + step]; vals += [sgn, -sgn]
+                    r += 1
+        link = sp.csr_matrix((vals, (rows, cols)), shape=(r, K * nv))
+        A_eq = sp.vstack([A_eq, link], format='csr'); b_eq = np.concatenate([p[0]['b_eq'] for p in parts] + [np.zeros(r)])
+        res = linprog(c, A_ub=A_ub, b_ub=np.concatenate([p[0]['b_ub'] for p in parts]) if A_ub is not None else None, A_eq=A_eq, b_eq=b_eq,
+                      bounds=np.column_stack([lo, hi]), method='highs')
+        if res.status != 0:
+            return None
+        return self._first_actions(b, res.x[:nv], parts[0][0], tanks, bat)
 
     def plan_district(self, t, g):
         """One joint LP over all buildings with a district peak variable P >= sum_b (import_b - export_b) at every step of the horizon, cost peak_w CHF per kW of P.
@@ -192,7 +258,16 @@ class MPCAgent:
         acts = []
         plans = self.plan_district(t, g) if (self.peak_w > 0 and g < self.inp.N) else None
         for bi, b in enumerate(self.env.buildings):
-            plan = (plans[bi] if plans else None) if self.peak_w > 0 else (self.plan_building(bi, b, t, g) if g < self.inp.N else None)
+            if self.peak_w > 0:
+                plan = plans[bi] if plans else None
+            elif g >= self.inp.N:
+                plan = None
+            elif self.K > 1:
+                if bi == 0:
+                    starts = self.fc.sample_starts(g, min(self.H, self.inp.N - g), self.K)
+                plan = self.plan_building_stochastic(bi, b, t, g, starts)
+            else:
+                plan = self.plan_building(bi, b, t, g)
             for nm in self.n_act[bi]:
                 if plan is None:
                     acts.append(0.0)
@@ -335,11 +410,11 @@ class MPCAgentRC(MPCAgent):
         return out
 
 
-def play_mpc(win, inp, fc, horizon, tv, peak_w=0.0, warm=rl.WARM, perturb=1.0, margin=0.0, correct=False):
+def play_mpc(win, inp, fc, horizon, tv, peak_w=0.0, warm=rl.WARM, perturb=1.0, margin=0.0, correct=False, K=1, share=1):
     s, e = win
     s0 = max(0, s - warm)
     env = rl.make_env(True, 'bill', windows=(s0, min(e + 1, rl.LAST_STEP)))
-    ag = (MPCAgentRC(env, s0, inp, fc, horizon, tv, peak_w, perturb, margin, correct) if rl.SCENARIO == 's3' else MPCAgent(env, s0, inp, fc, horizon, tv, peak_w))
+    ag = (MPCAgentRC(env, s0, inp, fc, horizon, tv, peak_w, perturb, margin, correct) if rl.SCENARIO == 's3' else MPCAgent(env, s0, inp, fc, horizon, tv, peak_w, K, share))
     obs, _ = env.reset()
     rewards = []
     while not env.terminated:
@@ -361,6 +436,9 @@ def main(argv=None):
     ap.add_argument('--rc-perturb', type=float, default=1.0, help='s3: factor on H and C in the PLANNER model (plant unchanged); 1 = exact model')
     ap.add_argument('--rc-margin', type=float, default=0.0, help='s3: plan to 21 + margin C (scored against 21 C)')
     ap.add_argument('--rc-correct', action='store_true', help='s3: online correction of the room-model bias from the observed temperature')
+    ap.add_argument('--scenarios', type=int, default=1, help='stochastic MPC: K error scenarios (weather mode, s1/s2 only); 1 = deterministic')
+    ap.add_argument('--err-scale', type=float, default=1.0, help='stochastic MPC: factor on the sampled forecast errors (diagnostic; 1 = as measured)')
+    ap.add_argument('--share', type=int, default=1, help='stochastic MPC: number of leading steps whose storage actions are shared by all scenarios (1 = first action only)')
     ap.add_argument('--tv', type=float, default=1.0)
     ap.add_argument('--weeks', type=int, nargs='+', default=rl.TEST_WEEKS)
     ap.add_argument('--refs', action='store_true', help='also play the reference and the PV rule (r=0.1)')
@@ -369,13 +447,13 @@ def main(argv=None):
     rl.use_scenario(a.scenario)
     from swiss.experiments import oracle_rc as orc
     inp = orc.RCInputs() if a.scenario == 's3' else o.Inputs()
-    fc = Forecaster(inp, a.mode, a.level, perfect_parts=a.perfect_parts, rc=(a.scenario == 's3'))
+    fc = Forecaster(inp, a.mode, a.level, perfect_parts=a.perfect_parts, rc=(a.scenario == 's3'), stoch=a.scenarios > 1, err_scale=a.err_scale)
     wins = [rl.window(k) for k in a.weeks]
-    res = {'scenario': a.scenario, 'mode': a.mode, 'perfect_parts': a.perfect_parts, 'horizon': a.horizon, 'level': a.level, 'tv': a.tv, 'peak_w': a.peak_w, 'rc_perturb': a.rc_perturb, 'rc_margin': a.rc_margin, 'rc_correct': a.rc_correct, 'weeks': a.weeks, 'export_price_chf_kwh': EXPORT}
+    res = {'scenario': a.scenario, 'mode': a.mode, 'perfect_parts': a.perfect_parts, 'horizon': a.horizon, 'level': a.level, 'tv': a.tv, 'peak_w': a.peak_w, 'rc_perturb': a.rc_perturb, 'rc_margin': a.rc_margin, 'rc_correct': a.rc_correct, 'scenarios': a.scenarios, 'err_scale': a.err_scale, 'share': a.share, 'weeks': a.weeks, 'export_price_chf_kwh': EXPORT}
     t0 = time.time()
     rows = []
     for w in wins:
-        rows.append(play_mpc(w, inp, fc, a.horizon, a.tv, a.peak_w, perturb=a.rc_perturb, margin=a.rc_margin, correct=a.rc_correct))
+        rows.append(play_mpc(w, inp, fc, a.horizon, a.tv, a.peak_w, perturb=a.rc_perturb, margin=a.rc_margin, correct=a.rc_correct, K=a.scenarios, share=a.share))
         print(f'{a.scenario} {a.mode} H{a.horizon} L{a.level} week {w[0] // rl.WEEK}: cost {rows[-1]["cost_chf"]:.2f}  [{time.time() - t0:.0f}s]', flush=True)
     res['mpc'] = rl.aggregate(rows)
     res['mpc_windows'] = rows
@@ -383,7 +461,7 @@ def main(argv=None):
         res['reference'] = rl.aggregate([rl.play(rl.reference_agent, True, 'bill', w) for w in wins])
         res['pv_rule_r0.1'] = rl.aggregate([rl.play(lambda env: rl.PVRule(env, 0.1), True, 'bill', w) for w in wins])
     os.makedirs(a.out, exist_ok=True)
-    fn = f'mpc_{a.scenario}_{a.mode}{"_perfect-" + "-".join(a.perfect_parts) if a.perfect_parts else ""}_H{a.horizon}_L{a.level:g}_tv{a.tv:g}{"_peak" + format(a.peak_w, "g") if a.peak_w else ""}{"_rc" + format(a.rc_perturb, "g") if a.rc_perturb != 1.0 else ""}{"_m" + format(a.rc_margin, "g") if a.rc_margin else ""}{"_corr" if a.rc_correct else ""}.json'
+    fn = f'mpc_{a.scenario}_{a.mode}{"_perfect-" + "-".join(a.perfect_parts) if a.perfect_parts else ""}_H{a.horizon}_L{a.level:g}_tv{a.tv:g}{"_peak" + format(a.peak_w, "g") if a.peak_w else ""}{"_rc" + format(a.rc_perturb, "g") if a.rc_perturb != 1.0 else ""}{"_m" + format(a.rc_margin, "g") if a.rc_margin else ""}{"_corr" if a.rc_correct else ""}{"_K" + str(a.scenarios) if a.scenarios > 1 else ""}{"_es" + format(a.err_scale, "g") if a.err_scale != 1.0 else ""}{"_sh" + str(a.share) if a.share != 1 else ""}.json'
     json.dump(res, open(os.path.join(a.out, fn), 'w'), indent=1)
     print('written', fn, flush=True)
 
