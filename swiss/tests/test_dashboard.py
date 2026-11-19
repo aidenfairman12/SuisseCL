@@ -40,10 +40,10 @@ def meta():
 
 @pytest.mark.parametrize('path,id_col,n', [
     ('docs/data/transformation_log.md', 'ID', 20),
-    ('docs/decisions/issues_and_risks.md', 'ID', 91),      # 91 rows incl. update rows
-    ('docs/decisions/decision_log.md', 'ID', 61),
-    ('docs/decisions/assumptions_log.md', 'ID', 55),
-    ('docs/models/model_registry.md', 'ID', 6),
+    ('docs/decisions/issues_and_risks.md', 'ID', 95),      # 95 rows incl. update rows
+    ('docs/decisions/decision_log.md', 'ID', 63),
+    ('docs/decisions/assumptions_log.md', 'ID', 59),
+    ('docs/models/model_registry.md', 'ID', 7),
     ('docs/algorithms/algorithm_registry.md', 'ID', 13),
     ('docs/experiments/validation_reports/validation_phase_a.md', 'ID', 9),
 ])
@@ -66,8 +66,8 @@ def test_md_parser_pipe_in_code_span_and_short_row():
 
 @pytest.mark.parametrize('path,n', [
     ('docs/data/data_source_registry.csv', 39),
-    ('docs/models/parameter_registry.csv', 74),
-    ('docs/experiments/experiment_registry.csv', 24),
+    ('docs/models/parameter_registry.csv', 79),
+    ('docs/experiments/experiment_registry.csv', 26),
 ])
 def test_csv_row_counts_and_alignment(path, n):
     hdr, rows = parse_csv_registry(p(path), anchor_col='classification')
@@ -604,9 +604,8 @@ def test_phase_c_bundle_size_and_prose_filled(pcb):
 def test_phase_c_cooling_cells_equal_the_result_files(pcb):
     R = 'swiss/experiments/climate_results/'
     S = json.load(open(p(R + 'climate_summary.json')))
-    cells = {c['id']: c for c in pcb['cooling']['cells']}
+    cells = {c['id']: c for c in pcb['cooling']['cells'] if c['archetype'] == 'central'}
     assert set(cells) == set(S['cells']) and len(cells) == 26
-    assert all(c['archetype'] == 'central' for c in cells.values())
     for cid in ('hist_none', 'gwl3.0_hw99_high', 'gwl3.0_hw99_high_alt'):
         assert cells[cid]['ceiling_year_pct'] == pytest.approx(S['cells'][cid]['ceiling_year_pct'])
         assert cells[cid]['mass_value_pts'] == pytest.approx(S['cells'][cid]['pinned_year_pct'] and S['cells'][cid]['ceiling_year_pct'] - S['cells'][cid]['pinned_year_pct'])
@@ -626,7 +625,7 @@ def test_phase_c_cooling_cells_equal_the_result_files(pcb):
 
 def test_phase_c_robustness_rows_and_limitations(pcb):
     R = 'swiss/experiments/climate_results/'
-    cells = {c['id']: c for c in pcb['cooling']['cells']}
+    cells = {c['id']: c for c in pcb['cooling']['cells'] if c['archetype'] == 'central'}
     rows = {(r['cell'], r['case']): r for r in pcb['cooling']['robustness']}
     assert len(rows) == 33
     cid = 'gwl3.0_hw99_high'
@@ -635,17 +634,20 @@ def test_phase_c_robustness_rows_and_limitations(pcb):
     assert rows[(cid, 'T+2')]['saving_pct'] == pytest.approx(100 * (th - a['cost_chf']) / th)
     assert rows[(cid, 'T+2')]['comfort_cold_kh'] == pytest.approx(a['comfort_cold_kh']) and rows[(cid, 'T+2')]['synthetic'] is True
     assert rows[(cid, 'scenario')]['synthetic'] is False
-    assert [x['id'] for x in pcb['cooling']['limitations']] == ['ISS-032', 'ISS-034', 'ISS-040', 'A-028', 'A-029', 'A-030', 'A-031']
-    assert len(pcb['cooling']['pending_register']) >= 6
+    lim = [x['id'] for x in pcb['cooling']['limitations']]
+    assert lim[:10] == ['ISS-032', 'ISS-034', 'ISS-040', 'ISS-046', 'ISS-047', 'ISS-048', 'A-028', 'A-029', 'A-030', 'A-031']
+    assert set(lim[10:]) <= {'ISS-049', 'ISS-050', 'ISS-051', 'A-058', 'A-059', 'A-060', 'A-061'}       # archetype B rows, listed when the registers hold them
+    assert pcb['cooling']['pending_register'] == []                      # every drafted assumption is now in the registers, so the 'not yet registered' block is empty
 
 
 def test_phase_c_hourly_week_series(pcb):
     ex = pcb['explorer']
-    assert ex['week']['steps'] == [4872, 5039] and len(ex['hours_note_cells']) == 6
+    assert ex['week']['steps'] == [4872, 5039] and len(ex['hours_note_cells']) == 9
     for cid, h in ex['hourly'].items():
-        assert h['archetype'] == 'central'
+        assert h['archetype'] == ('room_units' if cid.startswith('room_units__') else 'central')
         assert {'thermostat', 'optimum'} <= set(h)
     for cid in ex['hours_note_cells']:
+        assert cid in ex['hourly']
         for ctrl in ('thermostat', 'pv_rule', 'mpc', 'mpc_peak0.1', 'optimum'):
             s = ex['hourly'][cid][ctrl]
             assert all(len(s[k]) == 168 for k in ('base', 'dhw', 'heat', 'cool', 'pv', 'batt', 'net'))
@@ -673,12 +675,76 @@ def test_phase_c_houses_difference_and_archetype_schema(pcb):
     hs = pcb['houses']
     assert hs['buildings'] == ['SFH-low', 'SFH-mid', 'SFH-high', 'MFH-small', 'MFH-medium', 'MFH-large']
     cell, none = hs['cells']['gwl3.0_hw99_high'], hs['cells']['gwl3.0_hw99_none']
+    assert cell['archetype'] == 'central'
     c = cell['thermostat']['buildings']['MFH-large']['annual']
     n = none['thermostat']['buildings']['MFH-large']['annual']
     assert n['cool'] == 0 and c['cool'] > 0
-    assert c['import'] - n['import'] == pytest.approx(pcb['cooling']['cells'][[x['id'] for x in pcb['cooling']['cells']].index('gwl3.0_hw99_high')]['difference_vs_none']['thermostat']['import_kwh'], rel=1e-3)
+    assert c['import'] - n['import'] == pytest.approx([x for x in pcb['cooling']['cells'] if x['archetype'] == 'central' and x['id'] == 'gwl3.0_hw99_high'][0]['difference_vs_none']['thermostat']['import_kwh'], rel=1e-3)
     for b in pcb.values():
-        assert [a['id'] for a in b['archetypes']] == ['central'] if 'archetypes' in b else True
+        assert [a['id'] for a in b['archetypes']] == ['central', 'room_units'] if 'archetypes' in b else True
+
+
+def test_phase_c_room_unit_cells_equal_the_result_files(pcb):
+    R = 'swiss/experiments/climate_results_ru/'
+    S = json.load(open(p(R + 'climate_summary_ru.json')))
+    ru = {c['id']: c for c in pcb['cooling']['cells'] if c['archetype'] == 'room_units'}
+    main = {k: v for k, v in S['cells'].items() if k.endswith('_ru')}
+    assert len(ru) == len(main) == 18 and all(abs(c['fraction'] - 0.4) < 1e-9 and not c['sensitivity'] for c in ru.values())
+    assert not any(c['sensitivity'] for c in pcb['cooling']['cells'] if c['archetype'] == 'central')
+    for cell, c in main.items():
+        cid = cell[:-3]
+        assert ru[cid]['ceiling_year_pct'] == pytest.approx(c['ceiling_year_pct']) and ru[cid]['cooling_kwh']['baseline'] == pytest.approx(c['cooling_kwh']['baseline'])
+        assert ru[cid]['cooled'] == c['cooled'] and ru[cid]['dh26_zones']['cooled_zone']['baseline'] == pytest.approx(c['degree_hours_above_26']['zones']['cooled_zone']['baseline'])
+    # controller rows recomputed from the per-cell week files: saving against the thermostat on the same weeks
+    for cell in ('gwl3.0_hw99_high_ru', 'hist_medium_ru'):
+        th = json.load(open(p(R + f'{cell}__weeks_thermostat.json')))['aggregate']['cost_chf']
+        for k, f in (('mpc', 'weeks_mpc'), ('pv_rule', 'weeks_pv_rule'), ('mpc_peak0.1', 'weeks_mpc_peak0.1')):
+            cost = json.load(open(p(R + f'{cell}__{f}.json')))['aggregate']['cost_chf']
+            assert ru[cell[:-3]]['controllers'][k]['saving_pct'] == pytest.approx(100 * (th - cost) / th)
+    # the cooled-fraction sensitivity: four shares, cooling electricity grows with the share, the 0.4 row is the default cell, the whole-building row is the central cell
+    fs = pcb['cooling']['fraction_sensitivity']
+    assert [round(r['fraction'], 1) for r in fs] == [0.2, 0.4, 0.6, 1.0]
+    cool = [r['cooling_kwh_thermostat'] for r in fs]
+    assert cool == sorted(cool) and fs[1]['cooling_kwh_thermostat'] == pytest.approx(ru['gwl3.0_hw99_high']['cooling_kwh']['baseline'])
+    central = {c['id']: c for c in pcb['cooling']['cells'] if c['archetype'] == 'central'}
+    assert fs[3]['cooling_kwh_thermostat'] == pytest.approx(central['gwl3.0_hw99_high']['cooling_kwh']['baseline'])
+    assert fs[0]['cooling_kwh_thermostat'] / fs[3]['cooling_kwh_thermostat'] == pytest.approx(0.2, abs=0.02)      # the share is the cooling-energy ratio in this model
+
+
+def test_phase_c_room_unit_houses_zones_and_shared_none(pcb):
+    hs = pcb['houses']['cells']
+    keys = [k for k in hs if k.startswith('room_units__')]
+    assert len(keys) == 18 and not any(k.endswith('_none') for k in keys)          # the no-cooling cells are shared with the central archetype
+    assert all(hs[k]['archetype'] == 'room_units' for k in keys)
+    for k in ('room_units__gwl3.0_hw99_high', 'room_units__hist_low'):
+        for ctrl in ('thermostat', 'optimum'):
+            bl = hs[k][ctrl]['buildings']
+            cooled = [b for b, v in bl.items() if 'dh26_zones' in v]
+            assert len(cooled) == 1                                                  # one cooled building per room-unit level
+            z = bl[cooled[0]]['dh26_zones']
+            assert 0.4 * z['cooled'] + 0.6 * z['uncooled'] == pytest.approx(bl[cooled[0]]['dh26']) and z['uncooled'] > z['cooled']      # whole building = area-weighted mean of the parts
+    # per-building cooling in the cooled building: about the cooled share of the central cell's cooling
+    a = hs['gwl3.0_hw99_high']['thermostat']['buildings']['MFH-large']['annual']['cool']
+    b = hs['room_units__gwl3.0_hw99_high']['thermostat']['buildings']['MFH-large']['annual']['cool']
+    assert b / a == pytest.approx(0.4, abs=0.02)
+
+
+def test_phase_c_room_unit_hourly_weeks_and_prose(pcb):
+    ex = pcb['explorer']['hourly']
+    for cid in ('hist_hw99', 'gwl2.0_hw99', 'gwl3.0_hw99'):
+        h = ex[f'room_units__{cid}_high']
+        assert h['archetype'] == 'room_units' and {'thermostat', 'optimum', 'pv_rule', 'mpc', 'mpc_peak0.1'} <= set(h)
+        for ctrl in ('thermostat', 'optimum', 'pv_rule', 'mpc', 'mpc_peak0.1'):
+            s = h[ctrl]
+            bal = np.array(s['base']) + np.array(s['dhw']) + np.array(s['heat']) + np.array(s['cool']) + np.array(s['batt']) - np.array(s['pv']) - np.array(s['net'])
+            assert len(s['net']) == 168 and np.abs(bal).max() < 0.05
+        assert sum(h['thermostat']['cool']) < sum(ex[f'{cid}_high']['thermostat']['cool'])          # room units cool less than central cooling
+    note = pcb['cooling']['prose']['archetype_compare_note']
+    cen = {c['id']: c for c in pcb['cooling']['cells'] if c['archetype'] == 'central'}
+    ru = {c['id']: c for c in pcb['cooling']['cells'] if c['archetype'] == 'room_units'}
+    ratio = [100 * ru[k]['cooling_kwh']['baseline'] / cen[k]['cooling_kwh']['baseline'] for k in ru]
+    assert f'{min(ratio):.1f} to {max(ratio):.1f} %' in note
+    assert all(t.strip() and '{' not in t for t in _flat_text(pcb['cooling']['prose']))
 
 
 def test_phase_c_pages_are_wired_into_the_site():

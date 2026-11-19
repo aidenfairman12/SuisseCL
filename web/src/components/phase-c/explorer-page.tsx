@@ -3,14 +3,12 @@ import { useState } from "react";
 import type { EChartsOption } from "echarts";
 import { Chart } from "@/components/charts/echarts";
 import { Lead, Loading, Note, PB_COLOURS, Section, Table, fmt, signed } from "@/components/phase-b/shared";
-import { ArchetypeSelector, Pills, cellId, useArchetype, weekDay } from "@/components/phase-c/shared";
+import { ArchetypeSelector, Pills, cellId, cellKey, useArchetype, weekDay } from "@/components/phase-c/shared";
 import { useBundleFile } from "@/lib/bundle";
 import type { CoolingCell, CoolingData, ExplorerData, HouseBlock, HoursSeries, HousesData } from "@/lib/types";
 
 const AX = { axisLabel: { fontSize: 11 }, nameTextStyle: { fontSize: 11 } };
 const LOAD_COL = { base: "#718096", dhw: "#4299e1", heat: "#dd6b20", cool: "#2b6cb0" };
-/** Data key of a cell: the central archetype uses the plain cell id, other archetypes are prefixed with their id. */
-export const dataKey = (arch: string, cell: string) => (arch === "central" ? cell : `${arch}__${cell}`);
 
 function AnnualChart({ blocks, buildings }: { blocks: Record<string, HouseBlock>; buildings: string[] }) {
   const g = (f: (b: HouseBlock) => number) => buildings.map((b) => Math.round((f(blocks[b]) / 1000) * 10) / 10);
@@ -63,12 +61,13 @@ export function ExplorerPage() {
   if (error) return <p className="text-sm text-destructive">Could not load the explorer bundle: {error}</p>;
   if (!d || !hs || !cd) return <Loading what="scenario explorer" />;
   const p = d.prose;
-  const adoptions = d.adoption.filter((a) => d.scenarios.some((s) => dataKey(arch.current, cellId(s, a)) in d.hourly));
-  const key = dataKey(arch.current, cellId(scen, adopt));
+  const adoptions = d.adoption.filter((a) => d.scenarios.some((s) => cellKey(arch.current, s, a) in d.hourly));
+  const key = cellKey(arch.current, scen, adopt);
   const hours = (d.hourly[key]?.[ctrl] as HoursSeries | undefined) ?? null;
   const annualCell = hs.cells[key] as ({ archetype: string } & Record<string, { buildings: Record<string, HouseBlock>; district: { annual: Record<string, number>; summer_peak_kw: number; peak_kw: number } }>) | undefined;
   const annual = annualCell && (ctrl === "thermostat" || ctrl === "optimum") ? annualCell[ctrl] : null;
-  const cell: CoolingCell | undefined = cd.cells.find((c) => c.archetype === arch.current && c.id === cellId(scen, adopt));
+  const cellArch = adopt === "none" ? "central" : arch.current;
+  const cell: CoolingCell | undefined = cd.cells.find((c) => !c.sensitivity && c.archetype === cellArch && c.id === cellId(scen, adopt));
   const ctrlRow = cell && ctrl !== "optimum" ? cell.controllers[ctrl] : null;
   return (
     <div className="space-y-10">

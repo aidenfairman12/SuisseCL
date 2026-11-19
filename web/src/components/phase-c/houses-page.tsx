@@ -1,8 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Lead, Loading, Note, Section, Table, fmt, signed } from "@/components/phase-b/shared";
-import { dataKey } from "@/components/phase-c/explorer-page";
-import { ArchetypeSelector, Pills, cellId, useArchetype } from "@/components/phase-c/shared";
+import { ArchetypeSelector, Pills, cellKey, useArchetype } from "@/components/phase-c/shared";
 import { useBundleFile } from "@/lib/bundle";
 import type { HouseBlock, HousesData } from "@/lib/types";
 
@@ -17,7 +16,8 @@ export function HousesPage() {
   if (error) return <p className="text-sm text-destructive">Could not load the houses bundle: {error}</p>;
   if (!d) return <Loading what="house-level results" />;
   const p = d.prose;
-  const get = (s: string, a: string) => d.cells[dataKey(arch.current, cellId(s, a))] as Cell | undefined;
+  const get = (s: string, a: string) => d.cells[cellKey(arch.current, s, a)] as Cell | undefined;
+  const zoned = arch.current === "room_units";
   const cell = get(scen, adopt), none = get(scen, "none"), histNone = get("hist", "none");
   const adoptions = d.adoption.filter((a) => a !== "none" && d.scenarios.some((s) => get(s, a)));
   const rows = cell && none && histNone ? d.buildings.map((b) => {
@@ -29,6 +29,7 @@ export function HousesPage() {
       cooled && c.annual.pv_share_of_cooling != null ? `${fmt(100 * c.annual.pv_share_of_cooling, 0)} %` : "–",
       cooled && c.pv_share_of_cooling_hp_first != null ? `${fmt(100 * c.pv_share_of_cooling_hp_first, 0)} %` : "–",
       signed(c.annual.import - n.annual.import, 0), signed(c.annual.export - n.annual.export, 0), signed(c.summer.import - n.summer.import, 0), fmt(c.dh26, 0),
+      ...(zoned ? [c.dh26_zones ? fmt(c.dh26_zones.cooled, 0) : "–", c.dh26_zones ? fmt(c.dh26_zones.uncooled, 0) : "–"] : []),
     ];
   }) : [];
   const dsp = cell && none ? cell[ctrl].district.summer_peak_kw - none[ctrl].district.summer_peak_kw : null;
@@ -45,14 +46,15 @@ export function HousesPage() {
 
       <Section title="Per building" classes={["modeled", "assumption"]}>
         <Table
-          head={["Building", "Cooling added (kWh per year)", "Heating saved by warming (kWh per year)", "Cooling covered by solar", "… with the heat pump first", "Grid import change (kWh)", "Export change (kWh)", "Summer import change (kWh)", "Degree-hours above the cooling setpoint"]}
+          head={["Building", "Cooling added (kWh per year)", "Heating saved by warming (kWh per year)", "Cooling covered by solar", "… with the heat pump first", "Grid import change (kWh)", "Export change (kWh)", "Summer import change (kWh)", "Degree-hours above the cooling setpoint", ...(zoned ? ["… in the cooled part", "… in the uncooled part"] : [])]}
           rows={rows}
-          minWidth={980}
+          minWidth={zoned ? 1180 : 980}
         />
         <p className="text-xs text-muted-foreground">
           Cell: {d.scenario_labels[scen]}; {d.adoption_labels[adopt]}. Import, export and summer import changes compare the cell with the heating-only cell of the same weather; heating saved by warming compares the heating-only cell of this weather with the heating-only cell of 2023 weather. A positive export change means more exported.
         </p>
         {dsp != null && dpk != null && <p className="text-sm">District: summer peak {signed(dsp, 1)} kW and highest hour of the year {signed(dpk, 1)} kW against the heating-only district of the same weather.</p>}
+        {zoned && <Note>{p.zone_note as string}</Note>}
         <Note>{p.rule_note as string}</Note>
       </Section>
       <Note>Sources: {d.sources.join(", ")}. Every number is read from committed result files at build time.</Note>

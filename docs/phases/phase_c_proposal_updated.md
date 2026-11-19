@@ -2,6 +2,8 @@
 
 Replaces the earlier version of this file, `phase_a_completion_report.md` section 11 and the Phase C wording of `master_plan.md` section 8. Authorisation: the owner told the agent in chat on 2026-11-19 to rewrite and execute Phase C. Decisions the owner confirmed in chat: climate source CH2025 (MeteoSwiss) for Kloten, download of the Kloten files (done, 27 MB), heat-wave extremes instead of a smooth warming only, MPC as the controller family, a scenario explorer in the dashboard. Decisions NOT explicitly confirmed and used as labelled defaults: adoption levels 10, 30, 50 % and their building assignment (section 4), the cooling set point and the overheating threshold (section 3). Commits: the owner approved local commits at milestones for Phase C (2026-11-19); pushes still need the owner's approval.
 
+Status (2026-11-19, end of execution): WP1 to WP6 implemented and committed locally; completion report drafted in `phase_c_completion_report.md`; owner review pending.
+
 ## 1. Questions
 1. **Ceiling (exact optimum, perfect foresight).** How do warming (+2 and +3 C global warming levels, CH2025) and cooling adoption (three levels) change the district's electricity demand, summer peaks, and the share of the bill that flexibility can save (storage, battery, PV, building mass), with and without a heat wave?
 2. **Does building mass become valuable once cooling exists?** Phase B found +1.6 points from mass under heating. In summer cooling coincides with PV, so pre-cooling may be worth far more. This is the headline hypothesis and is answered by the ceiling-first runs before any controller work.

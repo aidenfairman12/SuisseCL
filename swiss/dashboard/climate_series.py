@@ -8,7 +8,10 @@ Cells: hist_hw99, gwl2.0_hw99, gwl3.0_hw99 x adoption none and high (central arc
 Note on comparability: the optimum series continues the year-long replay (carried-in storage state), the controllers here start the week from empty tanks after a 96 step
 warm-up, so the first hours of the week can differ a little between the two groups.
 
-Run: cl/bin/python -I swiss/dashboard/climate_series.py [--workers 6]
+Archetype B (room units, WP5c): `--arch ru` rolls out the heat-wave week of the cells hist_hw99, gwl2.0_hw99 and gwl3.0_hw99 with adoption high at the default cooled fraction
+(cell names `<scenario>_high_ru`; the adoption `none` cells are shared with archetype A) and writes swiss/dashboard/data/climate_weeks_ru.json; archetype A's file is not touched.
+
+Run: cl/bin/python -I swiss/dashboard/climate_series.py [--workers 6] [--arch central|ru]
 """
 import os
 
@@ -27,7 +30,9 @@ import numpy as np  # noqa: E402
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.insert(0, ROOT)
 OUT = os.path.join(ROOT, 'swiss', 'dashboard', 'data', 'climate_weeks.json')
+OUT_RU = os.path.join(ROOT, 'swiss', 'dashboard', 'data', 'climate_weeks_ru.json')
 CELLS = [f'{s}_{a}' for s in ('hist_hw99', 'gwl2.0_hw99', 'gwl3.0_hw99') for a in ('none', 'high')]
+CELLS_RU = [f'{s}_high_ru' for s in ('hist_hw99', 'gwl2.0_hw99', 'gwl3.0_hw99')]
 CTRLS = ('pv_rule', 'mpc', 'mpc_peak0.1')
 WEEK = 29
 
@@ -75,26 +80,32 @@ def worker(cell):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--workers', type=int, default=6)
+    ap.add_argument('--arch', default='central', choices=['central', 'ru'])
     a = ap.parse_args()
     from swiss.pipeline import build_climate_datasets as bcd
-    for c in CELLS:
-        sc, ad = c.rsplit('_', 1)
-        d = bcd.cell_dir(sc, ad)
+    cells, out_path = (CELLS_RU, OUT_RU) if a.arch == 'ru' else (CELLS, OUT)
+    for c in cells:
+        if a.arch == 'ru':
+            sc, ad = c[:-len('_high_ru')], 'high'
+            d, fr = bcd.cell_dir(sc, ad, bcd.RU_FRACTION), bcd.RU_FRACTION
+        else:
+            sc, ad = c.rsplit('_', 1)
+            d, fr = bcd.cell_dir(sc, ad), None
         if not os.path.exists(os.path.join(d, 'schema.json')):
-            bcd.build_cell(sc, ad)
+            bcd.build_cell(sc, ad, fraction=fr)
     res = {}
     ctx = mp.get_context('spawn')
     t0 = time.time()
     with ctx.Pool(min(a.workers, 6), maxtasksperchild=1) as pool:
-        for cell, out in pool.imap_unordered(worker, CELLS):
+        for cell, out in pool.imap_unordered(worker, cells):
             res[cell] = out
             print(f'[{time.time() - t0:5.0f}s] {cell}', 'ERROR' if 'error' in out else 'ok', flush=True)
             if 'error' in out:
                 print(out['error'], flush=True)
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    json.dump({'week': WEEK, 'steps': [4872, 5039], 'unit': 'kWh per hour, district sum of six buildings', 'warm_steps': 96,
-               'controllers': list(CTRLS), 'cells': res}, open(OUT, 'w'), separators=(',', ':'))
-    print('written', OUT, f'{os.path.getsize(OUT) / 1e3:.0f} kB')
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    json.dump({'week': WEEK, 'steps': [4872, 5039], 'unit': 'kWh per hour, district sum of six buildings', 'warm_steps': 96, 'archetype': 'room_units' if a.arch == 'ru' else 'central',
+               'controllers': list(CTRLS), 'cells': res}, open(out_path, 'w'), separators=(',', ':'))
+    print('written', out_path, f'{os.path.getsize(out_path) / 1e3:.0f} kB')
 
 
 if __name__ == '__main__':

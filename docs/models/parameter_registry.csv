@@ -73,3 +73,8 @@ M-006,Cooling mode of the RC model,cooling_season_months,"6,7,8,9",month,agent c
 M-006,Cooling mode of the RC model,comfort_lower,21.0,C,D-018 heating set point,assumption
 M-006,Cooling mode of the RC model,cooling_device_nominal_power,= heating device (for example MFH-large 18.53),kW electric,A-040,assumption
 M-006,Cooling mode of the RC model,overheating_threshold,26.0,C,degree-hour metric (A-043),assumption
+M-007,Two-zone room-unit model,cooled_fraction,0.4 (0.2 and 0.6 sensitivities),share of floor area,A-058,assumption
+M-007,Two-zone room-unit model,cooling_capacity_factor,= cooled fraction (device nominal power times f),dimensionless,A-060,assumption
+M-007,Two-zone room-unit model,zone_heat_split,in proportion to zone area,dimensionless,A-059,assumption
+M-007,Two-zone room-unit model,cooled_zone_discomfort_penalty_mpc,2.0,CHF per K h,A-061,assumption
+M-007,Two-zone room-unit model,uncooled_zone_hot_penalty_mpc,0.05,CHF per K h,A-061,assumption

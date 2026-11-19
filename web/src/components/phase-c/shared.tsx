@@ -53,3 +53,7 @@ export const weekDay = (startStep: number, hour: number) => {
 
 /** Splits a "<scenario>_<adoption>" id as in the data. */
 export const cellId = (scenario: string, adoption: string) => `${scenario}_${adoption}`;
+
+/** Key of a cell in the hourly and house data: the archetype prefix for room units; the cells without cooling are the same district in every archetype and carry the plain key. */
+export const cellKey = (archetype: string, scenario: string, adoption: string) =>
+  archetype === "central" || adoption === "none" ? cellId(scenario, adoption) : `${archetype}__${cellId(scenario, adoption)}`;

@@ -57,7 +57,11 @@ export function CoolingPage() {
   if (error) return <p className="text-sm text-destructive">Could not load the cooling bundle: {error}</p>;
   if (!d) return <Loading what="cooling scenarios" />;
   const p = d.prose;
-  const cells = d.cells.filter((c) => c.archetype === arch.current);
+  const usable = d.cells.filter((c) => !c.sensitivity);
+  const cells = usable.filter((c) => c.archetype === arch.current || (arch.current !== "central" && c.archetype === "central" && c.adoption === "none"));
+  const central = usable.filter((c) => c.archetype === "central");
+  const roomUnits = usable.filter((c) => c.archetype === "room_units");
+  const hasRu = roomUnits.length > 0;
   const metric = METRICS.find((m) => m.id === metricId) ?? METRICS[0];
   const adoptionHere = d.adoption.filter((a) => cells.some((c) => c.adoption === a));
   const scCells = adoptionHere.map((a) => cells.find((c) => c.scenario === scen && c.adoption === a)).filter((c): c is CoolingCell => !!c);
@@ -68,6 +72,7 @@ export function CoolingPage() {
       <Lead>{p.intro as string}</Lead>
       <div className="space-y-1"><ArchetypeSelector list={d.archetypes} current={arch.current} onChange={arch.setSel} /><Note>{p.archetype_note as string}</Note></div>
       <Note>{p.model_note as string}</Note>
+      {arch.current === "room_units" && <Note>{p.ru_model_note as string}</Note>}
 
       <Section title="What the results say" classes={["modeled", "assumption"]}>
         <ul className="max-w-3xl list-disc space-y-2 pl-5 text-sm leading-relaxed">
@@ -97,6 +102,44 @@ export function CoolingPage() {
         <Note>{p.controllers_note as string} The highest hour is the largest district grid draw in the eight test weeks.</Note>
       </Section>
 
+      {hasRu && (
+        <Section title="Central cooling against room units" classes={["modeled", "assumption"]}>
+          <Lead>{p.archetype_compare_intro as string}</Lead>
+          <Pills value={metricId} onChange={setMetricId} label="Metric" options={METRICS.map((m) => ({ id: m.id, label: m.label }))} />
+          <p className="text-sm font-medium">{metric.label} <span className="text-xs font-normal text-muted-foreground">({metric.unit}); central / room units</span></p>
+          <div className="overflow-x-auto rounded-xl border">
+            <table className="w-full text-sm" style={{ minWidth: 560 }}>
+              <thead className="bg-muted/40 text-left text-xs"><tr><th className="p-2.5 font-medium">Weather scenario</th>{["low", "medium", "high"].map((a) => <th key={a} className="p-2.5 text-right font-medium" title={d.adoption_labels[a]}>{d.adoption_short[a]}</th>)}</tr></thead>
+              <tbody>
+                {d.scenarios.map((sc) => (
+                  <tr key={sc} className="border-t">
+                    <td className="p-2.5">{d.scenario_labels[sc]}</td>
+                    {["low", "medium", "high"].map((a) => {
+                      const ca = central.find((c) => c.scenario === sc && c.adoption === a), cb = roomUnits.find((c) => c.scenario === sc && c.adoption === a);
+                      const va = ca ? metric.get(ca) : null, vb = cb ? metric.get(cb) : null;
+                      return <td key={a} className="p-2.5 text-right tabular-nums">{va == null ? "–" : fmt(va, metric.digits)} / {vb == null ? "–" : fmt(vb, metric.digits)}</td>;
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Note>{p.archetype_compare_note as string}</Note>
+          <Note>{p.ru_overheat_note as string}</Note>
+          <p className="pt-2 text-sm font-medium">Share of the floor area that is cooled <span className="text-xs font-normal text-muted-foreground">(high warming level, heat wave, high cooling level)</span></p>
+          <Table
+            head={["Cooled share", "Cooling electricity, thermostat (kWh)", "Cooling electricity, exact optimum (kWh)", "Value of thermal mass (points)", "Planner share of the optimum (%)", "Solar share of cooling, thermostat (%)", "Summer peak, thermostat / optimum (kW)", "Degree-hours above the setpoint, uncooled part (thousand)"]}
+            rows={d.fraction_sensitivity.map((r) => [
+              r.fraction >= 1 ? "1.0 (whole building, central)" : fmt(r.fraction, 1), fmt(r.cooling_kwh_thermostat, 0), fmt(r.cooling_kwh_optimum, 0), fmt(r.mass_value_pts, 2), fmt(r.mpc_share_pct, 0),
+              r.pv_share_thermostat_pct == null ? "–" : fmt(r.pv_share_thermostat_pct, 0), `${fmt(r.summer_peak_thermostat_kw, 0)} / ${fmt(r.summer_peak_optimum_kw, 0)}`,
+              r.dh26_uncooled_zone == null ? "–" : fmt(r.dh26_uncooled_zone / 1000, 1),
+            ])}
+            minWidth={980}
+          />
+          <Note>{p.fraction_note as string}</Note>
+        </Section>
+      )}
+
       <Section title="Details" >
         <Fold title="Robustness of the planner on the heat-wave cells (high cooling)" classes={["synthetic", "modeled"]}>
           <Pills value={rcell} onChange={setRcell} label="Cell" options={[...new Set(d.robustness.map((r) => r.cell))].map((c) => ({ id: c, label: c }))} />
@@ -107,13 +150,13 @@ export function CoolingPage() {
           />
           <Note>{p.robustness_note as string}</Note>
         </Fold>
-        <Fold title="Phase C assumptions that are written in drafts and not yet in the registers" classes={["assumption"]}>
+        {d.pending_register.length > 0 && <Fold title="Phase C assumptions that are written in drafts and not yet in the registers" classes={["assumption"]}>
           <ul className="space-y-2">
             {d.pending_register.map((x) => (
               <li key={x.title} className="rounded-xl border bg-card p-3 text-sm"><div className="font-medium">{x.title}</div><p className="text-xs text-muted-foreground">{x.text}</p></li>
             ))}
           </ul>
-        </Fold>
+        </Fold>}
       </Section>
 
       <Section title={p.limitations_title as string}>

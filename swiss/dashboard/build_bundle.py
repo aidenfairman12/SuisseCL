@@ -338,6 +338,8 @@ def build_registry_nodes(g):
         elif src:
             last_source[c['model_id']] = src
         nid = f"PAR:{c['model_id']}:{slug(c['name'])}"
+        if nid in g.nodes:                                   # several rows of one model with the same name (the cooling parameters of M-006): disambiguate by the parameter column
+            nid = f"{nid}-{slug(c['parameter'])}"
         g.add(nid, 'parameter', c['name'], fields=c, source_ref=registry_ref(P['param_registry'], r),
               parse_warnings=r['_parse_warnings'], classification_raw=c.get('classification'),
               summary=f"{c['parameter']} = {c['value']} {c['unit'] if c['unit'] not in ('-', '') else ''}".strip()
