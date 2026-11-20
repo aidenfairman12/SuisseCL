@@ -1,4 +1,4 @@
-"""Build the audit-dashboard bundle (docs/dashboard/dashboard_implementation_plan.md).
+"""Build the audit-dashboard bundle.
 
 Reads the registries, QC reports, results and ui_map.yaml (all read-only) and writes web/public/bundle/*.json.
 The Next.js UI in web/ reads these files; lint.py and the tests read them with `bundle_io.read_bundle_file`.
@@ -496,7 +496,7 @@ def build_ui_nodes(g, ui, data, errors):
             g.edge(key, 'shows', x)
         if e.get('nodes_open_issues'):
             for x, nn in g.nodes.items():
-                if nn['kind'] == 'issue' and nn.get('open'):
+                if nn['kind'] == 'issue' and (nn.get('open') or re.match(r'\s*accepted limitation', nn.get('status') or '', re.I)):
                     g.edge(key, 'shows', x)
         for q in n['qc']:
             g.edge(key, 'qc', q)

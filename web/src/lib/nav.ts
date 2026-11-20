@@ -18,7 +18,7 @@ export const DEEP_DIVE: { group: string; items: NavItem[] }[] = [
     { href: "/inputs/", label: "Inputs", hint: "weather, price, carbon and demand" },
   ] },
   { group: "Audit", items: [
-    { href: "/audit/", label: "Audit", hint: "registry, validation and open issues" },
+    { href: "/audit/", label: "Audit", hint: "registry, validation and known limitations" },
     { href: "/glossary/", label: "Glossary", hint: "terms and definitions" },
   ] },
 ];

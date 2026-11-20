@@ -49,10 +49,10 @@ def defined_ids():
     for line in read(os.path.join(DOCS, 'algorithms', 'algorithm_registry.md')).splitlines():
         m = re.match(r'\|\s*(ALG-\d{3})\s*\|', line)
         if m: add('ALG', m.group(1))
-    for line in read(os.path.join(DOCS, 'execution_log.md')).splitlines():
-        m = re.match(r'###\s*(EL-\d{4})', line)
-        if m: add('EL', m.group(1))
-    add('R', 'R-001')  # reward documented in algorithms/reward_function_documentation.md
+    for line in read(os.path.join(DOCS, 'algorithms', 'reward_function_documentation.md')).splitlines():
+        m = re.match(r'#+\s*(R-\d{3})\b', line)
+        if m: add('R', m.group(1))
+    if 'R-001' not in d.get('R', set()): add('R', 'R-001')  # R-001 is described in the document's opening section
     return d, dup
 
 
@@ -75,11 +75,11 @@ def main():
     for row in csv.DictReader(open(os.path.join(DOCS, 'data', 'data_source_registry.csv'), encoding='utf-8')):
         if row['dataset_id'].startswith('DER'):
             first = re.split(r'\s*[;+]\s*', row['url'] if 'url' in row else '')[0]
-            hits = glob.glob(os.path.join(ROOT, first.split(' ')[0]))
+            hits = glob.glob(os.path.join(ROOT, re.sub(r'<[^>]+>', '*', first.split(' ')[0])))
             if not hits: fails.append(f"{row['dataset_id']}: path not found: {first}")
     # (3) experiment outputs
     for row in csv.DictReader(open(os.path.join(DOCS, 'experiments', 'experiment_registry.csv'), encoding='utf-8')):
-        out = row['output_location'].split(' ')[0]
+        out = re.split(r'[;\s]', row['output_location'])[0]
         if not os.path.exists(os.path.join(ROOT, out)): fails.append(f"{row['experiment_id']}: output missing {out}")
     # open issues listing
     issues = []

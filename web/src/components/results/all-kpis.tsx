@@ -14,7 +14,7 @@ export function AllKpis({ res, controller }: { res: ResultsFull; controller: str
   const group = (c: string) => (!c.startsWith("kpi_") ? "own" : r[c] == null ? "na" : "cl");
   const groups: [string, string, string][] = [
     ["own", "Our own computations", "Computed in run_baselines.py from the CityLearn building series and the R-001 reward."],
-    ["cl", "CityLearn KPIs, normalised to CityLearn's conventional counterfactual", "1.0 = the same buildings without storage control; lower is better (HANDOFF §4.1)."],
+    ["cl", "CityLearn KPIs, normalised to CityLearn's conventional counterfactual", "1.0 = the same buildings without storage control; lower is better."],
     ["na", "Not applicable", "The dataset has no thermal dynamics (constant indoor-temperature placeholder, D-018), so CityLearn's comfort and resilience KPIs are empty by design."],
   ];
   return (

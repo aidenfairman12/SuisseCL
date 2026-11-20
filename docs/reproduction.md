@@ -47,9 +47,10 @@ PYTHONPATH=. cl/bin/python swiss/experiments/oracle_ev_leg.py    # EV and LEG sc
 PYTHONPATH=. cl/bin/python swiss/experiments/phase_b_metrics.py  # district metrics (B9)
 PYTHONPATH=. cl/bin/python swiss/validation/compare_rc_phase_a.py
 PYTHONPATH=. cl/bin/python swiss/experiments/rl.py scales --scenario s1   # reward scales (also s2, s3); baselines: rl.py baselines --scenario s1 --reward bill
-bash swiss/hpc/deploy_phase_b.sh; (on UBELIX) bash swiss/hpc/submit_phase_b.sh      # RL grid, see docs/phases/phase_b_rl_deployment.md
+bash swiss/hpc/deploy_phase_b.sh; (on UBELIX) bash swiss/hpc/submit_phase_b.sh      # RL grid (27 jobs), see below
 PYTHONPATH=. cl/bin/python swiss/experiments/rl_report.py        # after rsync of the results
 ```
+RL on the UBELIX cluster: `swiss/hpc/deploy_phase_b.sh` (VPN on) copies the code, the scenario datasets and the reward scales to `~/SuisseCL_phaseB`; on the cluster, `cd ~/SuisseCL_phaseB && bash swiss/hpc/submit_phase_b.sh` submits SAC central (150,000 steps), SAC per building and MARLISA (100,000 steps) on S1 to S3 with seeds 0 to 2 (12 h limit, 11 h training cap; environment `~/venvs/cl` after `module load Python/3.11.3-GCCcore-12.3.0`). Collect with `rsync -av ubelix:SuisseCL_phaseB/swiss/experiments/rl_results/ swiss/experiments/rl_results/`.
 Test suite at the end of Phase B: 221 tests, about 16 minutes (several run real year-long rollouts, including two at 900 s).
 ### 4c. Phase C (climate, cooling, scenario matrix; needs `data/raw/ch2025_klo/`, see section 2)
 `bash swiss/run_pipeline.sh` builds the climate data and the cell datasets when `data/raw/ch2025_klo/` exists (TR-018 to TR-020, DER-023 to DER-027). The cell datasets (`swiss/datasets/climate/`, about 150 MB) are git-ignored like the 15-minute datasets. The matrix runs are NOT part of `run_pipeline.sh`; they take hours and one thread per worker is set inside the scripts:

@@ -34,18 +34,20 @@ function Validation() {
   );
 }
 
-function OpenIssues() {
+const isLimitation = (status: string | null | undefined) => /^\s*(open|accepted limitation)/i.test(status ?? "");
+
+function KnownLimitations() {
   const { nodes } = useBundle();
   const [q, setQ] = useState("");
   const all = Object.values(nodes).filter((n) => n.kind === "issue");
-  const open = all.filter((n) => n.open).sort(byId);
+  const open = all.filter((n) => n.open || isLimitation(n.status)).sort(byId);
   const rows = open.filter((n) => !q.trim() || `${n.id} ${n.summary} ${n.fields.Affects}`.toLowerCase().includes(q.trim().toLowerCase()));
-  const shownOn = (id: string) => (nodes[id].backlinks ?? []).filter((b) => nodes[b.from]?.ui && b.from !== "panel:open_issues");
+  const shownOn = (id: string) => (nodes[id].backlinks ?? []).filter((b) => nodes[b.from]?.ui && b.from !== "panel:known_limitations");
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-3">
-        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="filter open issues" className="h-8 w-64" />
-        <span className="text-xs text-muted-foreground">{open.length} open of {all.length}. Open = last non-empty Status is “Open…” and no later update row closes it (shown on each issue card).</span>
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="filter limitations" className="h-8 w-64" />
+        <span className="text-xs text-muted-foreground">{open.length} accepted limitations among {all.length} logged issues; the rest were resolved or superseded. Each card shows the full history.</span>
       </div>
       <Table>
         <TableHeader><TableRow><TableHead className="w-20">ID</TableHead><TableHead>Issue (first clause)</TableHead><TableHead className="w-32">Affects</TableHead><TableHead className="w-40">Status</TableHead><TableHead className="w-56">Shown on</TableHead></TableRow></TableHeader>
@@ -120,13 +122,13 @@ export function AuditPage() {
       <TabsList>
         <TabsTrigger value="registry">Registry</TabsTrigger>
         <TabsTrigger value="validation">Validation</TabsTrigger>
-        <TabsTrigger value="issues">Open issues</TabsTrigger>
+        <TabsTrigger value="issues">Known limitations</TabsTrigger>
         <TabsTrigger value="reports">Quality reports</TabsTrigger>
         <TabsTrigger value="snapshot">Snapshot</TabsTrigger>
       </TabsList>
       <TabsContent value="registry" className="pt-4"><RegistryBrowser /></TabsContent>
       <TabsContent value="validation" className="pt-4"><Validation /></TabsContent>
-      <TabsContent value="issues" className="pt-4"><OpenIssues /></TabsContent>
+      <TabsContent value="issues" className="pt-4"><KnownLimitations /></TabsContent>
       <TabsContent value="reports" className="pt-4"><Reports /></TabsContent>
       <TabsContent value="snapshot" className="pt-4"><Snapshot /></TabsContent>
     </Tabs>

@@ -10,7 +10,7 @@ Units here: power in kW, areas in m2, H in W/(K m2), C in J/(K m2), I in W/m2, t
 import numpy as np
 
 PRIORS = {
-    'H_w_per_k_m2': 1.03,        # median of the three houses' quasi-steady fits (EL-0064: 1.03, 2.09, 1.00); sweep 1.0 / 1.5 / 2.1
+    'H_w_per_k_m2': 1.03,        # median of the three houses' quasi-steady fits (1.03, 2.09, 1.00); sweep 1.0 / 1.5 / 2.1
     'g': 0.026,                  # median of fitted solar aperture / floor area (0.044, 0.026, 0.017); dimensionless, sweep 0.017 / 0.026 / 0.044
     'C_j_per_k_m2': 110e3,       # medium-weight class of the ISO 13790 simplified method (from memory, unverified); sweep 80e3 / 110e3 / 165e3
     'L_internal_w_m2': 2.0,      # occupants and appliances, judgement; constant
@@ -69,7 +69,7 @@ def calibrate_area(annual_heat_kwh, t_amb, ghi, p=None, dt_s=3600.0):
 
 # ----------------------------------------------------------------------------------------------------------------- Phase C: cooling (WP2)
 # Cooling mode of the same single-node model (M-006 = M-005 + cooling). Heat removed from the room node: step_temperature already accepts negative heat.
-# Assumptions (docs/phases/phase_c_drafts/wp2_registry_draft.md): reversible heat pump (cooling device = same rating and efficiency as the heating device, supply
+# Assumptions (A-040 and A-042 in docs/decisions/assumptions_log.md): reversible heat pump (cooling device = same rating and efficiency as the heating device, supply
 # temperature 8 C as in the schema), COP from CityLearn's Carnot-fraction form, cooling only when the outdoor temperature is at least COOLING_MIN_OUTDOOR_C
 # (the Carnot form gives COP 20 below the supply temperature, an artefact), cooling set point 26 C, cooling season June to September.
 COOL_SETPOINT_C = 26.0
@@ -116,7 +116,7 @@ def simulate_thermostat(area_eff, t_amb, ghi, p=None, dt_s=3600.0, q_heat_max=No
 
 
 # ----------------------------------------------------------------------------------------------------------------- Phase C: room-unit archetype (WP2b, M-007)
-# Archetype B ("room units", docs/phases/phase_c_proposal_updated.md section 10): a building with cooled fraction f is two INDEPENDENT RC nodes with the same per-m2
+# Archetype B ("room units", M-007): a building with cooled fraction f is two INDEPENDENT RC nodes with the same per-m2
 # parameters (assumption: no heat exchange between the zones): a cooled zone of area f A and an uncooled zone of area (1 - f) A. Heating is one action whose heat is split in
 # proportion to area (both zones get Q / A per m2); cooling (room units, capacity proportional to f) removes heat from the cooled zone only. Because the model is linear and the
 # parameters are per m2, the AREA-WEIGHTED MEAN temperature follows the single-node equation with net heat Q - Qc (exactly): the zones differ only through the cooling.

@@ -349,7 +349,7 @@ def train(kind, reward, seed, train_steps, explore_steps, eval_every, max_hours,
     json.dump(config, open(os.path.join(out_dir, 'config.json'), 'w'), indent=1)
     ref = baselines_zero(reward, tests)
     curve, evals, steps_done, t0, next_eval, stopped_by = [], [], 0, time.time(), eval_every, 'steps'
-    # MARLISA: mid-training evaluation mutates its internal buffers (HANDOFF section 5), so it is evaluated at the end only.
+    # MARLISA: mid-training evaluation mutates its internal buffers, so it is evaluated at the end only.
     mid_eval = kind != 'marlisa' and eval_every > 0
     ep_steps = episode_weeks * WEEK
     while steps_done < train_steps:

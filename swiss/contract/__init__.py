@@ -5,4 +5,4 @@ variables.py  data dictionary: unit, quantity, carrier, provenance and sources o
 export_v1.py  writes web/public/bundle/sim/ (manifest, buildings, components, conditions, runs/, comparisons)
 validate.py   minimal JSON-Schema validator for schema/*.schema.json (no extra dependency)
 """
-CONTRACT_VERSION = '1.0.0-draft'
+CONTRACT_VERSION = '1.0.0'

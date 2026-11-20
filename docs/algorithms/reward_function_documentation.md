@@ -10,7 +10,7 @@ reward_t = − Σ_k w_k · term_k(t) / scale_k, central agent, penalty-only.
 | ramp | \|district net(t) − district net(t−1)\| | kW | 1 | same |
 | carbon | Σ max(net,0) × carbon_intensity | gCO2eq-proportional | 0 (series not available yet) | same |
 
-Why no comfort term: the earlier US-cooling track found the comfort term mis-scaled (HANDOFF section 4.3); for Phase A it is removed because the dataset has no indoor-temperature dynamics (constant 21 °C placeholder) and heating/DHW demand is always served, so comfort cannot be measured. Cost and peak/ramp are relative to the uncontrolled reference, so a score of −(w sum) corresponds to the zero-action controller.
+Why no comfort term: the earlier US-cooling track found the comfort term mis-scaled; for Phase A it is removed because the dataset has no indoor-temperature dynamics (constant 21 °C placeholder) and heating/DHW demand is always served, so comfort cannot be measured. Cost and peak/ramp are relative to the uncontrolled reference, so a score of −(w sum) corresponds to the zero-action controller.
 Known weaknesses: equal weights are arbitrary; peak² surrogate emphasises winter evening peaks; without a comfort term, a learning agent could trade comfort silently if later given thermal dynamics (revisit in Phase B with an RC model).
 
 ## Presets used by the RL runs (`swiss/experiments/rl.py`, D-030)

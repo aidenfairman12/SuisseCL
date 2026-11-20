@@ -1,4 +1,4 @@
-"""Tests for the audit dashboard (docs/dashboard/dashboard_implementation_plan.md §8).
+"""Tests for the audit dashboard.
 
 Run: cl/bin/python -m pytest swiss/tests/test_dashboard.py
 """
@@ -40,7 +40,7 @@ def meta():
 
 @pytest.mark.parametrize('path,id_col,n', [
     ('docs/data/transformation_log.md', 'ID', 20),
-    ('docs/decisions/issues_and_risks.md', 'ID', 96),      # 96 rows incl. update rows
+    ('docs/decisions/issues_and_risks.md', 'ID', 127),     # 127 rows incl. update rows
     ('docs/decisions/decision_log.md', 'ID', 65),
     ('docs/decisions/assumptions_log.md', 'ID', 59),
     ('docs/models/model_registry.md', 'ID', 7),
@@ -125,7 +125,7 @@ def test_every_registry_row_is_a_node(prov):
 def test_issue_update_rows_are_merged(prov):
     assert len(prov['ISS-013']['history']) == 3
     assert prov['ISS-013']['open'] is False
-    assert prov['ISS-033']['open'] is True
+    assert prov['ISS-033']['open'] is False and prov['ISS-033']['status'].startswith('Accepted limitation')
 
 
 def test_lineage_reaches_source_or_decision(prov):
@@ -313,12 +313,11 @@ def test_results_bundle_equals_results_files():
 
 
 def test_system_map_boxes_have_cards(prov):
-    import re
-    tsx = open(p('web/src/components/overview/flow-diagram.tsx'), encoding='utf-8').read()
-    boxes = re.findall(r'\{ ui: "([^"]+)"', tsx)
-    assert len(boxes) >= 12
-    for b in boxes:
-        assert b in prov
+    sm = json.load(open(p('web/public/bundle/system_map.json'), encoding='utf-8'))
+    cards = {c['card'] for v in sm['views'].values() for c in v['components'] if c.get('card')}
+    assert len(cards) >= 12 and 'card:controllers' in cards
+    for c in cards:
+        assert c in prov and prov[c].get('ui')
     # walkthrough targets (plan §8.8): one click from the map opens these cards with the audit content on them
     carbon = prov['series:carbon_intensity']
     assert 'epfl_table' in carbon['figures'] and any(c['symbol'] == 'intensity' for c in carbon['code'])
@@ -349,11 +348,11 @@ def test_dirty_check_ignores_bundle_even_on_first_line():
 def test_web_sources_are_scanned_and_figures_resolve():
     import re
     srcs = dict(lint.web_sources())
-    assert any(k.endswith('flow-diagram.tsx') for k in srcs) and any(k.endswith('scene.tsx') for k in srcs)
+    assert any(k.endswith('system-flow-diagram.tsx') for k in srcs) and any(k.endswith('scene.tsx') for k in srcs)
     keys = set()
     for text in srcs.values():
         keys |= set(re.findall(r'["\']((?:series|card|kpi|panel):[a-z0-9_]+)["\']', text))
-    assert {'card:controllers', 'card:tanks', 'series:carbon_intensity'} <= keys
+    assert {'card:tanks', 'card:pv', 'card:cooling'} <= keys
     registry = open(lint.REGISTRY, encoding='utf-8').read()
     figs = set(re.findall(r'^  (\w+): \{ title:', registry, re.M))
     assert len(figs) >= 22 and 'cop_curves' in figs

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Submit the Phase B RL grid (D-041/D-044): scenarios s1 (+PV), s2 (+battery), s3 (+RC thermal model with comfort), reward "bill", held-out weeks protocol, 3 seeds.
-# Run from the deployed directory on UBELIX (~/SuisseCL_phaseB, see docs/phases/phase_b_rl_deployment.md). Prints "name jobid" per job.
+# Run from the deployed directory on UBELIX (~/SuisseCL_phaseB, see docs/reproduction.md). Prints "name jobid" per job.
 # The free QoS caps the sum of (CPUs x requested minutes) of running jobs (MaxCpuRunMinsPerUser): short requests let more jobs run at once. Measured speed: central SAC
 # about 25 steps/s (150,000 steps in under 2 h), per-building SAC and MARLISA about 5 times slower, hence the walltimes and training caps below (training stops at the cap and is then evaluated).
 set -euo pipefail

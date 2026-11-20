@@ -1,8 +1,7 @@
 <!--
 MASTER PLAN — version 1.0 (2026-11-16)
-This is the authoritative project plan. Do not edit silently: any change must be
-recorded in docs/execution_log.md (plan-change entry) and the version below bumped.
-Execution progress is tracked separately in docs/execution_log.md.
+The original project plan. Changes to it are recorded in docs/decisions/decision_log.md;
+what each phase delivered is in docs/phases/<phase>_completion_report.md.
 -->
 
 # Implementation Plan: Swiss Residential District Energy Simulation with CityLearn 3.3.0
@@ -669,7 +668,7 @@ The report must distinguish completed, partially completed, blocked, and deferre
 
 ## 7. Phase B implementation specification
 
-> **Superseded 2026-11-18 (D-031, D-032).** Phase A is approved and Phase B is authorised under `docs/phases/phase_b_plan.md`, which is the single source of truth for task order, decisions and scope. The text below is kept as history; the task definitions B1 to B9 and the acceptance criteria in 7.3 still apply, but where this section and `phase_b_plan.md` differ, `phase_b_plan.md` wins.
+> **Superseded 2026-11-18 (D-031, D-032).** Phase A is approved and Phase B was carried out under a revised Phase B plan (decisions D-031 to D-057; delivered scope in `docs/phases/phase_b_completion_report.md`). The text below is kept as history.
 
 ~~**Phase B is not authorized until Phase A has been reviewed and approved.**~~
 

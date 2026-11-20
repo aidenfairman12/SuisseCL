@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 
 type PhaseId = "A" | "B" | "C";
 type Carrier = "electricity" | "heat" | "cooling" | "signal" | "control";
-type MapComponent = { id: string; label: string; description: string; provenance: string | Record<string, string>; source_ids: string[]; present_in: string; tag: string | null };
+type MapComponent = { id: string; label: string; description: string; provenance: string | Record<string, string>; source_ids: string[]; present_in: string; tag: string | null; card: string | null };
 type MapFlow = { id: string; from: string; to: string; carrier: Carrier; description: string; both: boolean };
 type SystemMap = { phases: { id: PhaseId; label: string; title: string; summary: string }[]; views: Record<PhaseId, { components: MapComponent[]; flows: MapFlow[] }> };
 
@@ -277,7 +277,10 @@ export function SystemFlowDiagram() {
         <section className="rounded-xl border border-zinc-200 bg-white p-4" aria-live="polite">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="font-semibold">{active.label}{active.tag && <span className="ml-2 text-xs font-normal text-zinc-500">{active.tag}</span>}</h3>
-            <span className="rounded-full border border-zinc-200 px-2 py-0.5 text-[11px] capitalize text-zinc-600">{provText(active.provenance)}</span>
+            <span className="flex items-center gap-3">
+              {active.card && <NodeLink id={active.card} label="Open audit card →" className="font-sans text-xs" />}
+              <span className="rounded-full border border-zinc-200 px-2 py-0.5 text-[11px] capitalize text-zinc-600">{provText(active.provenance)}</span>
+            </span>
           </div>
           <p className="mt-2 max-w-4xl text-sm text-zinc-600">{active.description}</p>
           <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-500">

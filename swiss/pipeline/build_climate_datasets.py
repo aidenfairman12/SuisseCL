@@ -2,7 +2,7 @@
 git-ignored like the q15 datasets). Every cell is an S3 district: assumed PV (ratio 1.0), assumed battery (1 kWh/kWp), the RC building model, plus cooling in the cooled
 buildings. Scenario weather and PV files come from the WP1 pipeline (data/canonical/climate/); `hist` = the observed 2023 files; `*_hw99` = heat-wave week from the 99th-percentile spell (matrix), `*_hw` = 95th percentile (sensitivity).
 
-Adoption (shares of the 46 dwelling units, labelled defaults, docs/phases/phase_c_proposal_updated.md section 4):
+Adoption (shares of the 46 dwelling units, labelled defaults, A-044):
   none = no cooling (heating-only district)       low = MFH-small (5 units, 10.9 %)      medium = MFH-medium (14 units, 30.4 %)
   high = MFH-large (24 units, 52.2 %)             high_alt = MFH-medium + MFH-small + the three houses (22 units, 47.8 %), a sensitivity to the building identity
 Run: cl/bin/python -I swiss/pipeline/build_climate_datasets.py --scenario gwl3.0_hw99 --adoption high      or      --all  (matrix)  /  --all-extra

@@ -152,11 +152,22 @@ def _at(v, phase):
     return v
 
 
+# Audit card opened from each box (a dict where the card differs by phase).
+CARD = {
+    'weather': 'series:outdoor_temperature', 'tariff': 'series:price', 'carbon': 'series:carbon_intensity', 'controller': 'card:controllers',
+    'pv': 'card:pv', 'battery': 'card:battery', 'grid': 'kpi:district_import_kwh', 'meter': 'series:building_electricity', 'household': 'series:building_electricity',
+    'hp_sh': {'A': 'card:cop_model', 'B': 'card:cop_model', 'C': 'card:cooling'}, 'hp_hw': 'card:cop_model', 'tank_sh': 'card:tanks', 'tank_hw': 'card:tanks',
+    'demand_sh': {'A': 'card:cop_model', 'B': 'card:rc_building', 'C': 'card:rc_building'}, 'outcomes': 'panel:kpis',
+}
+
+
 def build():
     views = {}
     for p in PHASES:
         ph = p['id']
         comps = [{k: _at(v, ph) for k, v in c.items() if k != 'phases'} for c in COMPONENTS if ph in c['phases']]
+        for c in comps:
+            c['card'] = _at(CARD[c['id']], ph) if c['id'] in CARD else None
         ids = {c['id'] for c in comps}
         flows = [{k: _at(v, ph) for k, v in f.items() if k != 'phases'} for f in FLOWS if ph in f['phases']]
         missing = [f['id'] for f in flows if f['from'] not in ids or f['to'] not in ids]

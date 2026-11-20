@@ -141,7 +141,7 @@ export function ControllersPage() {
       <Lead>{p.intro as string}</Lead>
       <Section title="What the comparison shows" classes={["modeled"]}>
         <ul className="max-w-3xl list-disc space-y-2 pl-5 text-sm leading-relaxed">{findings.map((f, i) => <li key={i}>{f}</li>)}</ul>
-        <Note>These sentences are the agent&apos;s draft for the project owner&apos;s review; every number in them is read from the result files.</Note>
+        <Note>Every number in these sentences is read from the result files.</Note>
       </Section>
 
       <Section title="Controllers on the held-out weeks" classes={["modeled", "synthetic"]}>

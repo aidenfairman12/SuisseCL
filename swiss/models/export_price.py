@@ -1,8 +1,8 @@
 """B5: assumed export (feed-in) price for the PV scenarios (D-034).
 
 No source with a producer remuneration series was usable: the EKZ file has consumption prices only, the ElCom cubes hold consumer
-tariffs only (the field `aidfee` is the 2.3 Rp/kWh consumer surcharge, EL-0056), and the SFOE reference market price was not
-downloaded (licence and format unconfirmed, EL-0057; the owner chose an assumed sweep). The export price is therefore a labelled
+tariffs only (the field `aidfee` is the 2.3 Rp/kWh consumer surcharge), and the SFOE reference market price was not
+downloaded (licence and format unconfirmed; the owner chose an assumed sweep). The export price is therefore a labelled
 ASSUMPTION: a constant price in Rp/kWh excluding VAT, swept over EXPORT_SWEEP_RP, default DEFAULT_EXPORT_RP. The zero value is the
 what-if "exports earn nothing", which is also what CityLearn 3.3.0 does internally (cost = max(net, 0) * price).
 The reported range of recent SFOE quarterly reference prices (about 5.7 to 9.5 Rp/kWh for Q3 and Q4 2025, from a web search summary,

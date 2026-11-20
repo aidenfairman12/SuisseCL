@@ -1,7 +1,7 @@
 #!/bin/bash
 # Swiss RL job (adapted from my_data/hpc/train.sbatch). Run from the repository root on UBELIX (~/SuisseCL), after `git pull`.
 # Usage: sbatch --job-name=<name> swiss/hpc/train.sbatch <sac_central|sac_decentral|marlisa> [--reward r001|cost] [--seed N] [--train-steps N]
-# The partition, CPU, memory and the mandatory --nodes=1 follow docs/HANDOFF.md section 6. rl.py stops training at --max-hours (default 11)
+# The partition, CPU, memory and the mandatory --nodes=1 follow the UBELIX cluster rules. rl.py stops training at --max-hours (default 11)
 # so that evaluation and the result files are always written inside the 12-hour limit.
 #SBATCH --job-name=suissecl-rl
 #SBATCH --output=logs/%x-%j.out

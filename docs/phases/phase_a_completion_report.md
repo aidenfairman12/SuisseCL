@@ -1,6 +1,6 @@
 # Phase A completion report — Swiss heating baseline (for the phase approval gate)
 
-Date: 2026-11-17, refreshed 2026-11-18 · Plan: `master_plan.md` v1.0 · Log: `execution_log.md` (EL-0001…) · Status: **Phase A implemented and APPROVED by the owner on 2026-11-18 (D-031). Phase B authorised under `phase_b_plan.md`; Phase C not started.**
+Date: 2026-11-17, refreshed 2026-11-18 · Plan: `master_plan.md` v1.0 · Status: **Phase A implemented and APPROVED by the owner on 2026-11-18 (D-031). Phase B authorised under the Phase B plan; Phase C not started.**
 Code/data state: Phase A commits `615e8b4`…`2fe420b` plus the final documentation commit (see section 9), and later work on `main` through PR #8 (dashboard, data contract v1, mechanism check, decisions D-020…D-029).
 
 **Refresh 2026-11-18 (what changed since the first version):** (1) both pending items of 1.3 are closed: the EPFL check is done and the working defaults were accepted (D-026); (2) the issue register was brought up to date: 33 issues = 13 open limitations, 19 closed with evidence, 1 noted (section 7), and the decision statuses that later decisions settled were corrected (D-005, D-013a, D-014, D-014c, D-017); (3) reproduction was checked from a fresh clone of `main` (section 10); (4) the controller results gained an exact mechanism decomposition (section 6); (5) section 11c lists what changed for Phases B and C. The original assessments are unchanged unless a line says otherwise.
@@ -39,7 +39,7 @@ What remains is **your approval at the phase gate (plan 9.6)**, including your a
 | 7 | Baseline controllers run | **Met** (EXP-007…012) |
 | 8 | Data quality and validation reports | **Met**: `data_quality_reports/`, `validation_reports/`; validation is internal-consistency only |
 | 9 | Everything registered | **Met** by `registry_audit.md` (0 broken references); completeness of descriptions is my judgement |
-| 10 | Reproducible with documented instructions | **Verified for the derived layer, partly for the raw layer**: `reproduction.md` written; rebuild from raw reproduced all 31 manifested files byte-identically (EL-0043); a fresh clone of `main` without `data/raw/` passes the test suite except 2 tests that need the licensed raw files (section 10); the full raw-to-results rebuild was not re-run from a clean machine |
+| 10 | Reproducible with documented instructions | **Verified for the derived layer, partly for the raw layer**: `reproduction.md` written; rebuild from raw reproduced all 31 manifested files byte-identically; a fresh clone of `main` without `data/raw/` passes the test suite except 2 tests that need the licensed raw files (section 10); the full raw-to-results rebuild was not re-run from a clean machine |
 
 ## 3. Final building selection (D-006)
 | Role | Source/ID | Size | 2023 HP electricity (kWh, measured) | Notes |
@@ -87,7 +87,7 @@ D-007 time convention; D-009 MeteoSwiss end-of-interval convention (inferred, un
 ## 9. Repository changes
 Commits: `615e8b4` docs tree; `f325273` pipeline + tests; `b068bf9` derived data; `ba4adc3` log; `2ac0b40` thermal/CityLearn dataset; `8204282` docs; `d3de37c` A8; `2fe420b` A9/carbon; final documentation commit follows. New directories: `swiss/` (pipeline, models, citylearn_build, experiments, validation, tests, datasets), `data/` (raw ignored, interim, canonical), `docs/` (full tree). CityLearn and `my_data/` untouched (only `my_data/hpc/requirements-dev.txt` added).
 
-Since this report: PRs #1 and #2 (audit dashboard), #3 (data contract v1: `swiss/contract/`, the bundles `web/public/bundle/sim` and `sim_full`, the mechanism check, decisions D-020…D-028), #4 to #7 (district, Overview, Results and navigation of the dashboard), #8 (water-heater flag, plain event wording, Results explanation, D-029) and this refresh. New directories: `swiss/contract/`, `web/`. The Phase A simulation code, data and results are unchanged; the dataset `schema.json` files now use `root_directory: "."` and all five datasets were rebuilt with every other file byte-identical (EL-0045).
+Since this report: PRs #1 and #2 (audit dashboard), #3 (data contract v1: `swiss/contract/`, the bundles `web/public/bundle/sim` and `sim_full`, the mechanism check, decisions D-020…D-028), #4 to #7 (district, Overview, Results and navigation of the dashboard), #8 (water-heater flag, plain event wording, Results explanation, D-029) and this refresh. New directories: `swiss/contract/`, `web/`. The Phase A simulation code, data and results are unchanged; the dataset `schema.json` files now use `root_directory: "."` and all five datasets were rebuilt with every other file byte-identical.
 ## 10. Reproduction
 `docs/reproduction.md`; rebuild script `swiss/run_pipeline.sh`; tests `PYTHONPATH=. cl/bin/python -m pytest swiss/tests -q` (150 tests; all pass on the development machine. A fresh clone of `main` without `data/raw/` passed 146 and skipped 2 at `8863723`, checked 2026-11-17; the 2 skips need the licensed raw files, and the 2 tests added since pass on the development machine).
 ## 11. Proposed modifications to Phases B and C (for your approval; nothing implemented)

@@ -4,7 +4,7 @@ Input : data/raw/meteoswiss/ogd-smn_klo_h_historical_2020-2029.csv  (SRC-004)
 Output: data/canonical/weather_klo_2023_hourly.csv                   (DER-007)
         docs/data/data_quality_reports/qc_weather_klo_2023.json
 
-Timestamp convention (D-009, determined empirically, see EL-0018): MeteoSwiss hourly
+Timestamp convention (D-009, determined empirically): MeteoSwiss hourly
 `reference_timestamp` (UTC) labels the END of the averaging hour. The value for the
 hour that STARTS at UTC t is therefore the row labelled t+1h. Evidence: July mean global
 radiation peaks at label 12:00 UTC while local solar noon at Kloten is ~11:26 UTC

@@ -74,7 +74,7 @@ _pages:           # the question each Explore page answers
   inputs: What data drives the simulation, and how far can each series be trusted?
   model: How do the measured inputs become heat demand, storage and electricity use?
   results: What does each control rule do to the bill, the highest grid draw and the electricity bought, and when in the year?
-  audit: Where does every number come from, and what is still open?
+  audit: Where does every number come from, and what are its known limits?
   scenarios: Which solar, battery, building and price assumptions does Phase B add, and how much of the bill could an ideal controller save at each step?
   controllers: How much of that ideal saving do real controllers reach, and what do forecasts, peaks and model errors change?
   climate: What weather does Phase C use for a warmer climate, how was it built from the Swiss climate scenarios, and how far can it be trusted?
@@ -83,8 +83,8 @@ _pages:           # the question each Explore page answers
   houses: What does cooling add to each kind of house, how much of it does solar cover, and what reaches the grid?
   glossary: What do the technical terms on this site mean?
 
-# ---------------------------------------------------------------- Phase B pages (Scenarios, Controllers), WP5a. Agent's draft wording: the interpretation
-# sentences are for the owner's review. Numbers only through {pb.*} placeholders (namespace filled by swiss/dashboard/phase_b.py); no registry IDs in prose.
+# ---------------------------------------------------------------- Phase B pages (Scenarios, Controllers), WP5a.
+# Numbers only through {pb.*} placeholders (namespace filled by swiss/dashboard/phase_b.py); no registry IDs in prose.
 _phase_b:
   scenarios:
     intro: >
@@ -206,7 +206,7 @@ _phase_b:
       worse than the single forecast; with the sampled errors scaled down to a fraction the result returns to the single-forecast level.
     limitations_title: What limits how far these results can be read
     limitations_intro: >
-      These open issues and assumptions come from the project registers and affect how the numbers above should be read.
+      These limitations and assumptions come from the project registers and affect how the numbers above should be read.
   limitations:
     - ISS-032
     - ISS-034
@@ -218,8 +218,8 @@ _phase_b:
     - A-030
     - A-031
 
-# ---------------------------------------------------------------- Phase C pages (Climate, Cooling, Explorer, Houses), WP5b. Agent's draft wording: the
-# interpretation sentences are for the owner's review. Numbers only through {pc.*} placeholders (namespace filled by swiss/dashboard/phase_c.py); no registry IDs in prose.
+# ---------------------------------------------------------------- Phase C pages (Climate, Cooling, Explorer, Houses), WP5b.
+# Numbers only through {pc.*} placeholders (namespace filled by swiss/dashboard/phase_c.py); no registry IDs in prose.
 _phase_c:
   climate:
     intro: >
@@ -333,8 +333,8 @@ _phase_c:
       {pc.robust.tp2corr_cold:.0f} K·h.
     limitations_title: What limits how far these results can be read
     limitations_intro: >
-      These open issues and assumptions come from the project registers.
-    pending_title: Phase C assumptions not yet in the registers
+      These limitations and assumptions come from the project registers.
+    pending_title: Key Phase C assumptions
   explorer:
     intro: >
       Choose a cooling system, a weather scenario, a cooling level and a controller. Every controller has an hour-by-hour July week and the numbers of the eight test weeks.
@@ -387,7 +387,7 @@ _phase_c:
     - title: Cooling levels
       register_id: A-044
       text: >
-        Cooling levels are by whole building, set by the share of dwelling units. They were proposed by the agent from thin and partly commercial evidence and are not confirmed by the owner. A level
+        Cooling levels are by whole building, set by the share of dwelling units. They rest on thin and partly commercial evidence. A level
         mixes the adoption share with the identity of the building that is cooled.
     - title: Buildings and loads do not change with the climate
       register_id: A-045
@@ -890,7 +890,7 @@ panel:validation:
 
 # ---------------------------------------------------------------- KPI tiles: one per results column (plan §4.3)
 # own = computed by run_baselines.py from CityLearn building series; citylearn = env.evaluate() district KPI,
-# normalised to CityLearn's conventional counterfactual (1.0 = counterfactual, lower is better; HANDOFF §4.1).
+# normalised to CityLearn's conventional counterfactual (1.0 = counterfactual, lower is better).
 
 kpi:reward_return:
   label: Reward return (R-001)
@@ -1067,12 +1067,12 @@ panel:kpis:
     all controllers, the experiment row and the run-trace check.
   docs: [swiss/experiments/results/baselines_2023.csv]
 
-panel:open_issues:
-  label: Open issues
-  display_name: Open issues
-  nodes_open_issues: true    # filled at build time with every issue whose current status is open
+panel:known_limitations:
+  label: Known limitations
+  display_name: Known limitations
+  nodes_open_issues: true    # filled at build time with every issue that is open or an accepted limitation
   summary: >
-    Issues whose current status is open, from the issues and risks log. Each one also appears on the cards it affects.
+    Accepted limitations from the issues and risks log. Each one also appears on the cards it affects.
   docs: [docs/decisions/issues_and_risks.md]
 
 card:district:

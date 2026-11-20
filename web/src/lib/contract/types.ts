@@ -1,6 +1,6 @@
 // Contract v1 types. Mirrors swiss/contract/schema/*.schema.json (generated from swiss/contract/variables.py).
 // Owned by the simulation workstream: request changes instead of editing. test_contract.py fails if a variable is missing here.
-export const CONTRACT_VERSION = "1.0.0-draft";
+export const CONTRACT_VERSION = "1.0.0";
 
 /** Four data classes plus the assumed-parameter badge. Classified by HOW a value was obtained, not by what it represents. */
 export type Provenance = "measured" | "derived" | "modeled" | "synthetic" | "assumed_parameter";

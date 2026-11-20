@@ -78,7 +78,7 @@ export function CoolingPage() {
         <ul className="max-w-3xl list-disc space-y-2 pl-5 text-sm leading-relaxed">
           {findings.map((f, i) => <li key={i}>{f}</li>)}
         </ul>
-        <Note tone="warn">Agent&apos;s draft wording for the owner&apos;s review: the sentences above state what the numbers show; any reading beyond that is interpretation.</Note>
+        <Note>Every number above is read from the result files; the sentences state what the numbers show, not more.</Note>
       </Section>
 
       <Section title="Climate and cooling level" classes={["modeled", "assumption"]}>
@@ -150,7 +150,7 @@ export function CoolingPage() {
           />
           <Note>{p.robustness_note as string}</Note>
         </Fold>
-        {d.pending_register.length > 0 && <Fold title="Phase C assumptions that are written in drafts and not yet in the registers" classes={["assumption"]}>
+        {d.pending_register.length > 0 && <Fold title="Key Phase C assumptions" classes={["assumption"]}>
           <ul className="space-y-2">
             {d.pending_register.map((x) => (
               <li key={x.title} className="rounded-xl border bg-card p-3 text-sm"><div className="font-medium">{x.title}</div><p className="text-xs text-muted-foreground">{x.text}</p></li>

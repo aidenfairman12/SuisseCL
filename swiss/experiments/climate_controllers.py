@@ -9,7 +9,7 @@ Cells are S3 districts (PV, battery, RC building) with cooling in the cooled bui
                        26 C in the cooling season (soft, high penalty), uncooled buildings float.
 Forecasts (ClimateForecaster): 'perfect', or 'weather' = gradient boosting on calendar and weather features trained on the cell's own scenario (or another scenario for the
 robustness test) outside the test weeks +- 1 week; the weather itself is taken as KNOWN over the horizon (A-028) unless a forecast-weather override is given (synthetic error,
-labelled). Assumptions: docs/phases/phase_c_drafts/wp3_registry_draft.md.
+labelled). Assumptions: docs/decisions/assumptions_log.md.
 """
 import os
 import sys

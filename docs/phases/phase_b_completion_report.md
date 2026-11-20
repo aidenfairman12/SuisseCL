@@ -1,6 +1,6 @@
 # Phase B completion report — PV, battery, export, tariffs, thermal model, 15 minutes, EV and LEG (approved at the phase gate on 2026-11-20, D-057)
 
-Date: 2026-11-19 · Plan: `phase_b_plan.md` (D-031, D-032, D-037, D-041) · Log: `execution_log.md` (EL-0050 to EL-0074) · Status: **Phase B implemented and approved on 2026-11-20 (D-057). Phase C was implemented and approved afterwards (D-048, D-056).** The control study of section 8c and the final RL collection were added on 2026-11-19 before approval.
+Date: 2026-11-19 · Plan: the Phase B plan (D-031, D-032, D-037, D-041) · Status: **Phase B implemented and approved on 2026-11-20 (D-057). Phase C was implemented and approved afterwards (D-048, D-056).** The control study of section 8c and the final RL collection were added on 2026-11-19 before approval.
 Code state: commits from `b3af922` to the final Phase B commit on `main` (see section 12); nothing pushed (owner instruction D-041).
 
 ## 1. Summary
@@ -36,13 +36,13 @@ No quantity of the PV, battery, export, thermal, EV or LEG models is validated a
 ## 2. Task status
 | Task | Status | Notes |
 |---|---|---|
-| B1 review | Completed | ISS-019, ISS-021, ISS-024 re-checked, stay open (EL-0050) |
+| B1 review | Completed | ISS-019, ISS-021, ISS-024 re-checked, stay open |
 | B2 15-minute pipeline | Completed, with limits | exact aggregation to hourly, DST checked, environment at 900 s; weather is hourly information only (ISS-035) |
 | B3 PV | Completed, assumed | own first model replaced by pvlib at the owner's request (D-033); no measured PV |
 | B4 battery | Completed, assumed | constant round-trip efficiency, flat curves so the optimum stays linear |
 | B5 tariffs and export | Completed | ElCom has no export remuneration (verified by query); SFOE price not downloaded (licence); assumed sweep (D-034); scenario tariffs and day-ahead (D-040, D-042) |
 | B6 LEG | Completed as labelled scenario | facts from one utility document; statute not read (ISS-039) |
-| B7 thermal model | Completed, synthetic | routes (a) and (c) found nothing usable (EL-0062, EL-0063); owner supplied the Melillo equation; pooled priors (D-038) |
+| B7 thermal model | Completed, synthetic | routes (a) and (c) found nothing usable; owner supplied the Melillo equation; pooled priors (D-038) |
 | B8 EV | Completed as labelled scenario | aggregate station profile, assumed vehicles (ISS-038); no CityLearn replay |
 | B9 metrics | Completed | `metrics.py`, `district_metrics_phase_b.md` |
 | RL block | Code, local checks, jobs submitted; results in section 8 | D-044 |
@@ -92,7 +92,7 @@ Hourly stays the reference. At 15 minutes: HP, other load, derived heat and PV a
 - **RL results**: see section 8b (24 of 27 runs finished; none beat its reference) and section 8c (MPC reaches the exact optimum with perfect forecasts and 3.4 %, 8.8 %, 11.4 % on S1 to S3 with weather-conditioned forecasts).
 
 ### 8b. RL results
-Status (2026-11-19, final collection): 27 jobs were submitted to UBELIX (EL-0071, EL-0072). **Twenty-four runs finished and are reported below; three S2 MARLISA runs (jobs 22719857, 22719863, 22719869) ran out of memory after about 80 minutes and have no result (ISS-042), so the S2 MARLISA cell is empty.** Collection: `rsync -a ubelix:SuisseCL_phaseB/swiss/experiments/rl_results/ swiss/experiments/rl_results/`, then `swiss/experiments/rl_report.py`.
+Status (2026-11-19, final collection): 27 jobs were submitted to UBELIX. **Twenty-four runs finished and are reported below; three S2 MARLISA runs (jobs 22719857, 22719863, 22719869) ran out of memory after about 80 minutes and have no result (ISS-042), so the S2 MARLISA cell is empty.** Collection: `rsync -a ubelix:SuisseCL_phaseB/swiss/experiments/rl_results/ swiss/experiments/rl_results/`, then `swiss/experiments/rl_report.py`.
 
 Reading: **no learner beat its reference on the held-out weeks.** Central SAC (3 seeds): bill +1.1 % (S1), +3.0 % (S2), +59 % (S3, 782 K·h below 21 C). Per-building SAC (3 seeds): +1.2 % (S1), +6.3 % (S2), +83 % (S3, 591 K·h); MARLISA: +1.2 % (S1), +89 % (S3, 593 K·h). The hand-set PV rule saves about 5.5 % on S2 and S3 and the exact optimum saves 5.5 %, 14.6 % and 14.8 % on the same weeks. This repeats the Phase A pilot finding on rungs where the ceiling is larger. Possible reasons, not tested: 100,000 to 150,000 steps is small for a 12 to 24 dimensional action space with the comfort penalty; reward weights and scales were set by me without tuning; exploration on the heat pump action in S3 is costly. A larger budget, a warm start from the PV rule or a tuned reward are the obvious next experiments (not part of the Phase B grid). Section 8c shows that the headroom is reachable without learning (MPC), so the RL result is not for lack of headroom; the three seeds per cell are few, differences between learners are indicative.
 
@@ -169,7 +169,7 @@ What it shows: (1) the headroom is reachable: with perfect forecasts MPC equals 
 Decisions D-033 to D-047, assumptions A-011 to A-031, models M-003 to M-005, algorithms ALG-008 to ALG-011, experiments EXP-013 to EXP-020, issues ISS-035 to ISS-042; the audit bundle and registry tests cover all rows.
 
 ## 11. Updated Phase C proposal (for your approval; nothing implemented)
-See `phase_c_proposal_updated.md`.
+See `phase_c_completion_report.md`.
 
 ## 12. Repository changes and reproduction
 Commits since the Phase A approval: B1 and B9 `b3af922`, B3 `e40f28b`, B5 `772d4fe`, B4 `172a248`, step 6 `650f99b`, step 8 `48845dc` and `abebf68`, step 9 part 1 `09b61a2`, steps 9 part 2 and 10 with the RL code `c449541`, each followed by a bundle commit; final commits listed in the execution log. Reproduction: `docs/reproduction.md` section 4b. Tests: `PYTHONPATH=. cl/bin/python -m pytest swiss/tests -q` (see the execution log for the count of the final run).

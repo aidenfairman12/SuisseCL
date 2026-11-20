@@ -1,4 +1,4 @@
-"""Phase C, WP1: hourly climate scenarios for Zurich/Kloten from CH2025 daily data (docs/phases/phase_c_proposal_updated.md section 3).
+"""Phase C, WP1: hourly climate scenarios for Zurich/Kloten from CH2025 daily data (docs/phases/phase_c_completion_report.md).
 
 Inputs : data/raw/ch2025_klo/ogd-climate-scenarios-ch2025_klo_<var>_<level>.csv   (MeteoSwiss & ETH Zurich 2025, CC BY 4.0; daily, 365-day calendar,
          years 0001 to 0030 are anonymous model-years, several regional-climate-model chains per file, NA = missing; variables tas, tasmin, tasmax, rsds, hurs;
@@ -11,7 +11,7 @@ Outputs: data/canonical/climate/weather_klo_<scenario>_hourly.csv               
 Scenarios: `hist` is the 2023 file itself (not duplicated). gwl1.5, gwl2.0, gwl3.0 = typical warmed 2023 (delta change); hist_hw, gwl2.0_hw, gwl3.0_hw =
            the same with a hot spell from the CH2025 ensemble of that level replacing the 168 rows of the 2023 test week 29 (rows 4872 to 5039).
 
-Method (assumptions are labelled A-C1 to A-C8 in the report and in docs/phases/phase_c_drafts/wp1_registry_draft.md):
+Method (assumptions are labelled A-C1 to A-C8 in docs/experiments/validation_reports/climate_scenarios.md):
  1. Typical warmed year. Per month m (local calendar month of the row): delta of the ensemble median (over chains, model-years and days of the month) of the level
     minus the reference 1991-2020 for tas, tasmin, tasmax (additive) and rsds, hurs (ratio). Hourly temperature: T' = T + dtas_m + (dtmax_m - dtmin_m) (s_d(h) - sbar_m)
     where s_d(h) is the observed normalised diurnal position of the hour in its local day ((T - Tmin_d) / (Tmax_d - Tmin_d), 0.5 on days with a range below 1 K) and
