@@ -491,3 +491,6 @@ No account created, no API key used, nothing downloaded for this step.
 
 ### EL-0080 — 2026-11-20 — Phase C approved
 - Owner instruction "approve C" recorded as D-056. Status text in README, docs/project_overview.md and the completion report header updated. The Phase B gate still has no recorded decision (asked the owner). The audit bundle is rebuilt on the commit of this change.
+
+### EL-0081 — 2026-11-20 — Phase B approved
+- Owner instruction "accept phase b" recorded as D-057. README, docs/project_overview.md and the Phase B completion report header updated. The audit bundle is rebuilt on the commit of this change.

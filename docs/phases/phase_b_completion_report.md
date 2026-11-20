@@ -1,6 +1,6 @@
-# Phase B completion report — PV, battery, export, tariffs, thermal model, 15 minutes, EV and LEG (for the phase approval gate)
+# Phase B completion report — PV, battery, export, tariffs, thermal model, 15 minutes, EV and LEG (approved at the phase gate on 2026-11-20, D-057)
 
-Date: 2026-11-19 · Plan: `phase_b_plan.md` (D-031, D-032, D-037, D-041) · Log: `execution_log.md` (EL-0050 to EL-0074) · Status: **Phase B implemented; waiting for the owner's review. Phase C not started.**
+Date: 2026-11-19 · Plan: `phase_b_plan.md` (D-031, D-032, D-037, D-041) · Log: `execution_log.md` (EL-0050 to EL-0074) · Status: **Phase B implemented and approved on 2026-11-20 (D-057). Phase C was implemented and approved afterwards (D-048, D-056).** The control study of section 8c and the final RL collection were added on 2026-11-19 before approval.
 Code state: commits from `b3af922` to the final Phase B commit on `main` (see section 12); nothing pushed (owner instruction D-041).
 
 ## 1. Summary

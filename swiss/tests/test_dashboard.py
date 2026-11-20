@@ -41,7 +41,7 @@ def meta():
 @pytest.mark.parametrize('path,id_col,n', [
     ('docs/data/transformation_log.md', 'ID', 20),
     ('docs/decisions/issues_and_risks.md', 'ID', 95),      # 95 rows incl. update rows
-    ('docs/decisions/decision_log.md', 'ID', 64),
+    ('docs/decisions/decision_log.md', 'ID', 65),
     ('docs/decisions/assumptions_log.md', 'ID', 59),
     ('docs/models/model_registry.md', 'ID', 7),
     ('docs/algorithms/algorithm_registry.md', 'ID', 13),
