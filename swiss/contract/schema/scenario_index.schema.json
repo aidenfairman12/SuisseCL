@@ -1,0 +1,109 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "sim_scenarios/index.json",
+ "type": "object",
+ "properties": {
+  "contract_version": {
+   "const": "1.1.0"
+  },
+  "scenarios": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "phase": {
+      "enum": [
+       "B",
+       "C"
+      ]
+     },
+     "label": {
+      "type": "string"
+     },
+     "short_label": {
+      "type": "string"
+     },
+     "description": {
+      "type": "string"
+     },
+     "features": {
+      "type": "object",
+      "properties": {
+       "pv": {
+        "type": "boolean"
+       },
+       "battery": {
+        "type": "boolean"
+       },
+       "export": {
+        "type": "boolean"
+       },
+       "cooling": {
+        "type": "boolean"
+       },
+       "room_temperature": {
+        "type": "boolean"
+       }
+      },
+      "required": [
+       "pv",
+       "battery",
+       "export",
+       "cooling",
+       "room_temperature"
+      ],
+      "additionalProperties": false
+     },
+     "controllers": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "default_controller": {
+      "type": "string"
+     },
+     "jump_targets": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "id": {
+         "type": "string"
+        },
+        "label": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "id",
+        "label"
+       ],
+       "additionalProperties": false
+      }
+     }
+    },
+    "required": [
+     "id",
+     "phase",
+     "label",
+     "short_label",
+     "description",
+     "features",
+     "controllers",
+     "default_controller",
+     "jump_targets"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "contract_version",
+  "scenarios"
+ ],
+ "additionalProperties": false
+}

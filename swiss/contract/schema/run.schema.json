@@ -4,7 +4,7 @@
  "type": "object",
  "properties": {
   "contract_version": {
-   "const": "1.0.0"
+   "const": "1.1.0"
   },
   "scenario": {
    "type": "string"

@@ -1,0 +1,591 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "sim_scenarios/<scenario>/manifest.json",
+ "type": "object",
+ "properties": {
+  "contract_version": {
+   "const": "1.1.0"
+  },
+  "phase": {
+   "enum": [
+    "B",
+    "C"
+   ]
+  },
+  "kind": {
+   "const": "scenario_year"
+  },
+  "scenario": {
+   "type": "object",
+   "properties": {
+    "id": {
+     "type": "string"
+    },
+    "label": {
+     "type": "string"
+    },
+    "short_label": {
+     "type": "string"
+    },
+    "description": {
+     "type": "string"
+    },
+    "dataset": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "id",
+    "label",
+    "short_label",
+    "description",
+    "dataset"
+   ],
+   "additionalProperties": false
+  },
+  "description": {
+   "type": "string"
+  },
+  "district_note": {
+   "type": "string"
+  },
+  "year": {
+   "type": "integer"
+  },
+  "timezone": {
+   "type": "string"
+  },
+  "index_convention": {
+   "type": "string"
+  },
+  "time_axis": {
+   "type": "object",
+   "properties": {
+    "start_utc": {
+     "type": "string"
+    },
+    "step_seconds": {
+     "type": "integer",
+     "minimum": 1
+    },
+    "n_steps_inputs": {
+     "type": "integer"
+    },
+    "n_steps_simulated": {
+     "type": "integer"
+    },
+    "scope": {
+     "$ref": "common.schema.json#/$defs/scope"
+    }
+   },
+   "required": [
+    "start_utc",
+    "step_seconds",
+    "n_steps_inputs",
+    "n_steps_simulated",
+    "scope"
+   ],
+   "additionalProperties": false
+  },
+  "buildings": {
+   "type": "array",
+   "items": {
+    "$ref": "common.schema.json#/$defs/buildingId"
+   },
+   "minItems": 1
+  },
+  "equipment": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "pv_kwp": {
+      "$ref": "common.schema.json#/$defs/attribute"
+     },
+     "battery_kwh": {
+      "$ref": "common.schema.json#/$defs/attribute"
+     },
+     "cooling": {
+      "$ref": "common.schema.json#/$defs/attribute"
+     }
+    },
+    "required": [
+     "pv_kwp",
+     "battery_kwh",
+     "cooling"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "features": {
+   "type": "object",
+   "properties": {
+    "pv": {
+     "type": "boolean"
+    },
+    "battery": {
+     "type": "boolean"
+    },
+    "export": {
+     "type": "boolean"
+    },
+    "cooling": {
+     "type": "boolean"
+    },
+    "room_temperature": {
+     "type": "boolean"
+    }
+   },
+   "required": [
+    "pv",
+    "battery",
+    "export",
+    "cooling",
+    "room_temperature"
+   ],
+   "additionalProperties": false
+  },
+  "export_price_chf_kwh": {
+   "$ref": "common.schema.json#/$defs/attribute"
+  },
+  "controllers": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "display_name": {
+      "type": "string"
+     },
+     "short_name": {
+      "type": "string"
+     },
+     "reference": {
+      "type": "boolean"
+     },
+     "note": {
+      "type": "string"
+     },
+     "algorithm_id": {
+      "type": "string"
+     },
+     "file": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "display_name",
+     "short_name",
+     "reference",
+     "note",
+     "algorithm_id",
+     "file"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "jump_targets": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "label": {
+      "type": "string"
+     },
+     "description": {
+      "type": "string"
+     },
+     "steps": {
+      "type": "array",
+      "items": {
+       "type": "integer"
+      }
+     },
+     "window": {
+      "type": "array",
+      "items": {
+       "type": "integer"
+      }
+     }
+    },
+    "required": [
+     "id",
+     "label",
+     "description",
+     "steps",
+     "window"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "variables": {
+   "type": "object",
+   "properties": {
+    "building": {
+     "type": "object",
+     "properties": {
+      "import_kwh_el": {
+       "$ref": "common.schema.json#/$defs/variable"
+      },
+      "export_kwh_el": {
+       "$ref": "common.schema.json#/$defs/variable"
+      },
+      "pv_kwh_el": {
+       "$ref": "common.schema.json#/$defs/variable"
+      },
+      "household_kwh_el": {
+       "$ref": "common.schema.json#/$defs/variable"
+      },
+      "hp_sh_kwh_el": {
+       "$ref": "common.schema.json#/$defs/variable"
+      },
+      "hp_hw_kwh_el": {
+       "$ref": "common.schema.json#/$defs/variable"
+      },
+      "hp_cool_kwh_el": {
+       "$ref": "common.schema.json#/$defs/variable"
+      },
+      "battery_charge_kwh_el": {
+       "$ref": "common.schema.json#/$defs/variable"
+      },
+      "battery_discharge_kwh_el": {
+       "$ref": "common.schema.json#/$defs/variable"
+      },
+      "battery_soc": {
+       "$ref": "common.schema.json#/$defs/variable"
+      },
+      "temp_in_c": {
+       "$ref": "common.schema.json#/$defs/variable"
+      }
+     },
+     "required": [
+      "import_kwh_el",
+      "export_kwh_el",
+      "pv_kwh_el",
+      "household_kwh_el",
+      "hp_sh_kwh_el",
+      "hp_hw_kwh_el",
+      "hp_cool_kwh_el",
+      "battery_charge_kwh_el",
+      "battery_discharge_kwh_el",
+      "battery_soc",
+      "temp_in_c"
+     ],
+     "additionalProperties": false
+    },
+    "district": {
+     "type": "object",
+     "properties": {
+      "import_kwh_el": {
+       "$ref": "common.schema.json#/$defs/variable"
+      },
+      "export_kwh_el": {
+       "$ref": "common.schema.json#/$defs/variable"
+      },
+      "pv_kwh_el": {
+       "$ref": "common.schema.json#/$defs/variable"
+      },
+      "battery_charge_kwh_el": {
+       "$ref": "common.schema.json#/$defs/variable"
+      },
+      "battery_discharge_kwh_el": {
+       "$ref": "common.schema.json#/$defs/variable"
+      },
+      "hp_cool_kwh_el": {
+       "$ref": "common.schema.json#/$defs/variable"
+      }
+     },
+     "required": [
+      "import_kwh_el",
+      "export_kwh_el",
+      "pv_kwh_el",
+      "battery_charge_kwh_el",
+      "battery_discharge_kwh_el",
+      "hp_cool_kwh_el"
+     ],
+     "additionalProperties": false
+    },
+    "conditions": {
+     "type": "object",
+     "properties": {
+      "temp_c": {
+       "type": "object",
+       "properties": {
+        "label": {
+         "type": "string"
+        },
+        "unit": {
+         "type": "string"
+        },
+        "provenance": {
+         "enum": [
+          "measured",
+          "derived",
+          "modeled",
+          "synthetic",
+          "assumed_parameter"
+         ]
+        },
+        "source_ids": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "pattern": "^[A-Za-z]+[-:][A-Za-z0-9._:\\-]+$"
+         }
+        },
+        "description": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "label",
+        "unit",
+        "provenance",
+        "source_ids",
+        "description"
+       ],
+       "additionalProperties": false
+      },
+      "ghi_wm2": {
+       "type": "object",
+       "properties": {
+        "label": {
+         "type": "string"
+        },
+        "unit": {
+         "type": "string"
+        },
+        "provenance": {
+         "enum": [
+          "measured",
+          "derived",
+          "modeled",
+          "synthetic",
+          "assumed_parameter"
+         ]
+        },
+        "source_ids": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "pattern": "^[A-Za-z]+[-:][A-Za-z0-9._:\\-]+$"
+         }
+        },
+        "description": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "label",
+        "unit",
+        "provenance",
+        "source_ids",
+        "description"
+       ],
+       "additionalProperties": false
+      },
+      "price_chf_kwh": {
+       "type": "object",
+       "properties": {
+        "label": {
+         "type": "string"
+        },
+        "unit": {
+         "type": "string"
+        },
+        "provenance": {
+         "enum": [
+          "measured",
+          "derived",
+          "modeled",
+          "synthetic",
+          "assumed_parameter"
+         ]
+        },
+        "source_ids": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "pattern": "^[A-Za-z]+[-:][A-Za-z0-9._:\\-]+$"
+         }
+        },
+        "description": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "label",
+        "unit",
+        "provenance",
+        "source_ids",
+        "description"
+       ],
+       "additionalProperties": false
+      },
+      "tariff_tier": {
+       "type": "object",
+       "properties": {
+        "label": {
+         "type": "string"
+        },
+        "unit": {
+         "type": "string"
+        },
+        "provenance": {
+         "enum": [
+          "measured",
+          "derived",
+          "modeled",
+          "synthetic",
+          "assumed_parameter"
+         ]
+        },
+        "source_ids": {
+         "type": "array",
+         "items": {
+          "type": "string",
+          "pattern": "^[A-Za-z]+[-:][A-Za-z0-9._:\\-]+$"
+         }
+        },
+        "description": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "label",
+        "unit",
+        "provenance",
+        "source_ids",
+        "description"
+       ],
+       "additionalProperties": false
+      }
+     },
+     "required": [
+      "temp_c",
+      "ghi_wm2",
+      "price_chf_kwh",
+      "tariff_tier"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "building",
+    "district",
+    "conditions"
+   ],
+   "additionalProperties": false
+  },
+  "situation_tags": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "string"
+   }
+  },
+  "situation_thresholds": {
+   "type": "object",
+   "properties": {
+    "cold_temp_c": {
+     "type": "number"
+    },
+    "export_hour_kwh": {
+     "type": "number"
+    },
+    "temp_limit_c": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "cold_temp_c",
+    "export_hour_kwh",
+    "temp_limit_c"
+   ],
+   "additionalProperties": false
+  },
+  "units": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "string"
+   }
+  },
+  "checks": {
+   "type": "object"
+  },
+  "compute": {
+   "type": "object"
+  },
+  "generated": {
+   "type": "object",
+   "properties": {
+    "git_commit": {
+     "type": "string"
+    },
+    "git_dirty": {
+     "type": "boolean"
+    },
+    "python": {
+     "type": "string"
+    },
+    "citylearn": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "git_commit",
+    "git_dirty",
+    "python",
+    "citylearn"
+   ],
+   "additionalProperties": false
+  },
+  "files": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "string",
+    "pattern": "^[0-9a-f]{64}$"
+   }
+  },
+  "inputs": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "string",
+    "pattern": "^[0-9a-f]{64}$"
+   }
+  }
+ },
+ "required": [
+  "contract_version",
+  "phase",
+  "kind",
+  "scenario",
+  "description",
+  "district_note",
+  "year",
+  "timezone",
+  "index_convention",
+  "time_axis",
+  "buildings",
+  "equipment",
+  "features",
+  "export_price_chf_kwh",
+  "controllers",
+  "jump_targets",
+  "variables",
+  "situation_tags",
+  "situation_thresholds",
+  "units",
+  "checks",
+  "compute",
+  "generated",
+  "files",
+  "inputs"
+ ],
+ "additionalProperties": false
+}

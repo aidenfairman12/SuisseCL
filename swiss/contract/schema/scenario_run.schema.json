@@ -1,0 +1,239 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "sim_scenarios/<scenario>/runs/<controller>.json",
+ "type": "object",
+ "properties": {
+  "contract_version": {
+   "const": "1.1.0"
+  },
+  "scenario": {
+   "type": "string"
+  },
+  "controller": {
+   "type": "string"
+  },
+  "algorithm_id": {
+   "type": "string"
+  },
+  "scope": {
+   "$ref": "common.schema.json#/$defs/scope"
+  },
+  "buildings": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "import_kwh_el": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "export_kwh_el": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "pv_kwh_el": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "household_kwh_el": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "hp_sh_kwh_el": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "hp_hw_kwh_el": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "hp_cool_kwh_el": {
+      "type": [
+       "array",
+       "null"
+      ],
+      "items": {
+       "type": "number"
+      }
+     },
+     "battery_charge_kwh_el": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "battery_discharge_kwh_el": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "battery_soc": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "temp_in_c": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     }
+    },
+    "required": [
+     "import_kwh_el",
+     "export_kwh_el",
+     "pv_kwh_el",
+     "household_kwh_el",
+     "hp_sh_kwh_el",
+     "hp_hw_kwh_el",
+     "hp_cool_kwh_el",
+     "battery_charge_kwh_el",
+     "battery_discharge_kwh_el",
+     "battery_soc",
+     "temp_in_c"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "district": {
+   "type": "object",
+   "properties": {
+    "import_kwh_el": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "export_kwh_el": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "pv_kwh_el": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "battery_charge_kwh_el": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "battery_discharge_kwh_el": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "hp_cool_kwh_el": {
+     "type": [
+      "array",
+      "null"
+     ],
+     "items": {
+      "type": "number"
+     }
+    }
+   },
+   "required": [
+    "import_kwh_el",
+    "export_kwh_el",
+    "pv_kwh_el",
+    "battery_charge_kwh_el",
+    "battery_discharge_kwh_el",
+    "hp_cool_kwh_el"
+   ],
+   "additionalProperties": false
+  },
+  "situations": {
+   "type": "object",
+   "properties": {
+    "district": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "array",
+      "items": {
+       "type": "integer"
+      }
+     }
+    }
+   },
+   "required": [
+    "district"
+   ],
+   "additionalProperties": false
+  },
+  "summary": {
+   "type": "object",
+   "properties": {
+    "import_kwh_el": {
+     "type": "number"
+    },
+    "export_kwh_el": {
+     "type": "number"
+    },
+    "pv_kwh_el": {
+     "type": "number"
+    },
+    "hp_cool_kwh_el": {
+     "type": [
+      "number",
+      "null"
+     ]
+    },
+    "bill_chf": {
+     "type": "number"
+    },
+    "peak_kw_el": {
+     "type": "number"
+    },
+    "peak_step": {
+     "type": "integer"
+    },
+    "degree_hours_above_26_c": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "import_kwh_el",
+    "export_kwh_el",
+    "pv_kwh_el",
+    "hp_cool_kwh_el",
+    "bill_chf",
+    "peak_kw_el",
+    "peak_step",
+    "degree_hours_above_26_c"
+   ],
+   "additionalProperties": false
+  }
+ },
+ "required": [
+  "contract_version",
+  "scenario",
+  "controller",
+  "algorithm_id",
+  "scope",
+  "buildings",
+  "district",
+  "situations",
+  "summary"
+ ],
+ "additionalProperties": false
+}

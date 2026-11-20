@@ -1,6 +1,6 @@
 // Contract v1 types. Mirrors swiss/contract/schema/*.schema.json (generated from swiss/contract/variables.py).
 // Owned by the simulation workstream: request changes instead of editing. test_contract.py fails if a variable is missing here.
-export const CONTRACT_VERSION = "1.0.0";
+export const CONTRACT_VERSION = "1.1.0";
 
 /** Four data classes plus the assumed-parameter badge. Classified by HOW a value was obtained, not by what it represents. */
 export type Provenance = "measured" | "derived" | "modeled" | "synthetic" | "assumed_parameter";
@@ -140,3 +140,40 @@ export type Comparison = {
   relative_only: string[];
 };
 export type ComparisonsFile = { contract_version: string; scenario: string; reference_controller: string; scope: Scope; comparisons: Record<string, Comparison> };
+
+// ---- v1.1 scenario files (/bundle/sim_scenarios/<scenario>/): Phase B and Phase C full-year scenarios, same six buildings, two controllers each.
+// Mirrors swiss/contract/schema/scenario_*.schema.json (generated from swiss/contract/variables_scenario.py). Energies are per STEP (see units.ts).
+export type ScenarioFeatures = { pv: boolean; battery: boolean; export: boolean; cooling: boolean; room_temperature: boolean };
+export type ScenarioIndexEntry = {
+  id: string; phase: "B" | "C"; label: string; short_label: string; description: string; features: ScenarioFeatures;
+  controllers: string[]; default_controller: string; jump_targets: { id: string; label: string }[];
+};
+export type ScenarioIndex = { contract_version: string; scenarios: ScenarioIndexEntry[] };
+export type ScenarioManifest = {
+  contract_version: string; phase: "B" | "C"; kind: "scenario_year";
+  scenario: { id: string; label: string; short_label: string; description: string; dataset: string };
+  description: string; district_note: string; year: number; timezone: string; index_convention: string;
+  time_axis: { start_utc: string; step_seconds: number; n_steps_inputs: number; n_steps_simulated: number; scope: Scope };
+  buildings: BuildingId[];
+  equipment: Record<BuildingId, { pv_kwp: Attribute; battery_kwh: Attribute; cooling: Attribute }>;
+  features: ScenarioFeatures; export_price_chf_kwh: Attribute;
+  controllers: { id: string; display_name: string; short_name: string; reference: boolean; note: string; algorithm_id: string; file: string }[];
+  jump_targets: { id: string; label: string; description: string; steps: number[]; window: number[] }[];
+  variables: { building: Record<keyof ScenarioBuildingSeries, Variable>; district: Record<keyof ScenarioDistrictSeries, Variable>; conditions: Record<keyof ScenarioConditionSeries, ConditionVariable> };
+  situation_tags: Record<string, string>; situation_thresholds: Record<string, number>; units: Record<string, string>;
+  checks: Record<string, unknown>; compute: Record<string, unknown>;
+  generated: { git_commit: string; git_dirty: boolean; python: string; citylearn: string }; files: Record<string, string>; inputs: Record<string, string>;
+};
+export type ScenarioConditionSeries = { temp_c: (number | null)[]; ghi_wm2: (number | null)[]; price_chf_kwh: number[]; tariff_tier: ("low" | "high")[] };
+export type ScenarioConditionsFile = { contract_version: string; scenario: string; scope: Scope; local_time: string[]; series: ScenarioConditionSeries };
+/** Balance of every step: import - export + pv = household + hp_sh + hp_hw + hp_cool + battery_charge - battery_discharge. `hp_cool_kwh_el` is null (not zero) without a cooling device. */
+export type ScenarioBuildingSeries = {
+  import_kwh_el: S; export_kwh_el: S; pv_kwh_el: S; household_kwh_el: S; hp_sh_kwh_el: S; hp_hw_kwh_el: S; hp_cool_kwh_el: SA;
+  battery_charge_kwh_el: S; battery_discharge_kwh_el: S; battery_soc: S; temp_in_c: S;
+};
+export type ScenarioDistrictSeries = { import_kwh_el: S; export_kwh_el: S; pv_kwh_el: S; battery_charge_kwh_el: S; battery_discharge_kwh_el: S; hp_cool_kwh_el: SA };
+export type ScenarioRunFile = {
+  contract_version: string; scenario: string; controller: string; algorithm_id: string; scope: Scope;
+  buildings: Record<BuildingId, ScenarioBuildingSeries>; district: ScenarioDistrictSeries; situations: { district: Tags };
+  summary: { import_kwh_el: number; export_kwh_el: number; pv_kwh_el: number; hp_cool_kwh_el: number | null; bill_chf: number; peak_kw_el: number; peak_step: number; degree_hours_above_26_c: number };
+};

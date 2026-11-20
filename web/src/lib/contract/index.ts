@@ -2,7 +2,7 @@
 // Typed access to the contract files in /bundle/sim/. Owned by the simulation workstream.
 // loadBundleFile and useBundleFile (lib/bundle.tsx) are reused; their names may contain a folder ("sim/manifest").
 import { useBundleFile } from "@/lib/bundle";
-import type { BuildingsFile, ComparisonsFile, ComponentsFile, ConditionsFile, Manifest, RunFile } from "./types";
+import type { BuildingsFile, ComparisonsFile, ComponentsFile, ConditionsFile, Manifest, RunFile, ScenarioConditionsFile, ScenarioIndex, ScenarioManifest, ScenarioRunFile } from "./types";
 
 export * from "./types";
 export * from "./units";
@@ -22,3 +22,10 @@ export const useComparisonsYear = (variant: SimVariant = "sample") => useSim<Com
 /** One run = one controller in one scenario (ids from manifest.controllers / manifest.scenarios). Pass null until chosen. */
 export const useRun = (scenario: string | null, controller: string | null, variant: SimVariant = "sample") =>
   useSim<RunFile>(scenario && controller ? `runs/${scenario}/${controller}` : null, variant);
+
+// Scenario files (contract v1.1): the list of scenarios is tiny; the data of a scenario is fetched only when its id is passed (null = not selected, nothing is loaded).
+export const useScenarioIndex = () => useBundleFile<ScenarioIndex>("sim_scenarios/index");
+export const useScenarioManifest = (scenario: string | null) => useBundleFile<ScenarioManifest>(scenario ? `sim_scenarios/${scenario}/manifest` : null);
+export const useScenarioConditions = (scenario: string | null) => useBundleFile<ScenarioConditionsFile>(scenario ? `sim_scenarios/${scenario}/conditions` : null);
+export const useScenarioRun = (scenario: string | null, controller: string | null) =>
+  useBundleFile<ScenarioRunFile>(scenario && controller ? `sim_scenarios/${scenario}/runs/${controller}` : null);

@@ -1,0 +1,75 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "sim_scenarios/<scenario>/conditions.json",
+ "type": "object",
+ "properties": {
+  "contract_version": {
+   "const": "1.1.0"
+  },
+  "scenario": {
+   "type": "string"
+  },
+  "scope": {
+   "$ref": "common.schema.json#/$defs/scope"
+  },
+  "local_time": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "series": {
+   "type": "object",
+   "properties": {
+    "temp_c": {
+     "type": "array",
+     "items": {
+      "type": [
+       "number",
+       "null"
+      ]
+     }
+    },
+    "ghi_wm2": {
+     "type": "array",
+     "items": {
+      "type": [
+       "number",
+       "null"
+      ]
+     }
+    },
+    "price_chf_kwh": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "tariff_tier": {
+     "type": "array",
+     "items": {
+      "enum": [
+       "low",
+       "high"
+      ]
+     }
+    }
+   },
+   "required": [
+    "temp_c",
+    "ghi_wm2",
+    "price_chf_kwh",
+    "tariff_tier"
+   ],
+   "additionalProperties": false
+  }
+ },
+ "required": [
+  "contract_version",
+  "scenario",
+  "scope",
+  "local_time",
+  "series"
+ ],
+ "additionalProperties": false
+}

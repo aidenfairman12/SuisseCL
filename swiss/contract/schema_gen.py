@@ -10,6 +10,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from swiss.contract import CONTRACT_VERSION  # noqa: E402
+from swiss.contract import variables_scenario as vs  # noqa: E402
 from swiss.contract.variables import BUILDING_VARIABLES, CONDITION_VARIABLES, DISTRICT_VARIABLES  # noqa: E402
 
 DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'schema')
@@ -124,6 +125,43 @@ def schemas():
                                       'carbon_from_extra_electricity_pct': {'type': ['number', 'null']},
                                       'relative_carbon_change_pct': {'type': ['number', 'null']}, 'peak_step_reference': INT, 'peak_step': INT}),
                    'relative_only': {'type': 'array', 'items': S}})}})}
+    # ---- v1.1 scenario files (Phase B and Phase C full-year scenarios); additive: the Phase A schemas above are unchanged except for the version constant
+    sb, sd, sc = vs.building_variables(True), vs.district_variables(True), vs.condition_variables(True)
+    sprops = {k: (SERIES_ABSENT if var['absent_when'] else SERIES) for k, var in sb.items()}
+    sdprops = {k: (SERIES_ABSENT if var['absent_when'] else SERIES) for k, var in sd.items()}
+    out['scenario_conditions'] = {'$schema': 'https://json-schema.org/draft/2020-12/schema', 'title': 'sim_scenarios/<scenario>/conditions.json',
+        **obj({'contract_version': VERSION, 'scenario': S, 'scope': ref('scope'), 'local_time': {'type': 'array', 'items': S},
+               'series': obj({'temp_c': SERIES_GAPS, 'ghi_wm2': SERIES_GAPS, 'price_chf_kwh': SERIES, 'tariff_tier': {'type': 'array', 'items': {'enum': ['low', 'high']}}})})}
+    out['scenario_run'] = {'$schema': 'https://json-schema.org/draft/2020-12/schema', 'title': 'sim_scenarios/<scenario>/runs/<controller>.json',
+        **obj({'contract_version': VERSION, 'scenario': S, 'controller': S, 'algorithm_id': S, 'scope': ref('scope'),
+               'buildings': {'type': 'object', 'additionalProperties': obj(sprops)}, 'district': obj(sdprops),
+               'situations': obj({'district': tags}),
+               'summary': obj({'import_kwh_el': metric, 'export_kwh_el': metric, 'pv_kwh_el': metric, 'hp_cool_kwh_el': {'type': ['number', 'null']}, 'bill_chf': metric,
+                               'peak_kw_el': metric, 'peak_step': INT, 'degree_hours_above_26_c': metric})})}
+    scond = {k: obj({'label': S, 'unit': S, 'provenance': {'enum': PROV}, 'source_ids': IDS, 'description': S}) for k in sc}
+    out['scenario_manifest'] = {'$schema': 'https://json-schema.org/draft/2020-12/schema', 'title': 'sim_scenarios/<scenario>/manifest.json',
+        **obj({'contract_version': VERSION, 'phase': {'enum': ['B', 'C']}, 'kind': {'const': 'scenario_year'},
+               'scenario': obj({'id': S, 'label': S, 'short_label': S, 'description': S, 'dataset': S}),
+               'description': S, 'district_note': S, 'year': INT, 'timezone': S, 'index_convention': S,
+               'time_axis': obj({'start_utc': S, 'step_seconds': {'type': 'integer', 'minimum': 1}, 'n_steps_inputs': INT, 'n_steps_simulated': INT, 'scope': ref('scope')}),
+               'buildings': {'type': 'array', 'items': ref('buildingId'), 'minItems': 1},
+               'equipment': {'type': 'object', 'additionalProperties': obj({'pv_kwp': ref('attribute'), 'battery_kwh': ref('attribute'), 'cooling': ref('attribute')})},
+               'features': obj({'pv': BOOL, 'battery': BOOL, 'export': BOOL, 'cooling': BOOL, 'room_temperature': BOOL}),
+               'export_price_chf_kwh': ref('attribute'),
+               'controllers': {'type': 'array', 'items': obj({'id': S, 'display_name': S, 'short_name': S, 'reference': BOOL, 'note': S, 'algorithm_id': S, 'file': S})},
+               'jump_targets': {'type': 'array', 'items': obj({'id': S, 'label': S, 'description': S, 'steps': {'type': 'array', 'items': INT}, 'window': {'type': 'array', 'items': INT}})},
+               'variables': obj({'building': obj({k: ref('variable') for k in sb}, list(sb)), 'district': obj({k: ref('variable') for k in sd}, list(sd)), 'conditions': obj(scond, list(scond))}),
+               'situation_tags': {'type': 'object', 'additionalProperties': S},
+               'situation_thresholds': obj({'cold_temp_c': NUM, 'export_hour_kwh': NUM, 'temp_limit_c': NUM}),
+               'units': {'type': 'object', 'additionalProperties': S}, 'checks': {'type': 'object'}, 'compute': {'type': 'object'},
+               'generated': obj({'git_commit': S, 'git_dirty': BOOL, 'python': S, 'citylearn': S}),
+               'files': {'type': 'object', 'additionalProperties': {'type': 'string', 'pattern': r'^[0-9a-f]{64}$'}},
+               'inputs': {'type': 'object', 'additionalProperties': {'type': 'string', 'pattern': r'^[0-9a-f]{64}$'}}})}
+    out['scenario_index'] = {'$schema': 'https://json-schema.org/draft/2020-12/schema', 'title': 'sim_scenarios/index.json',
+        **obj({'contract_version': VERSION, 'scenarios': {'type': 'array', 'items': obj({
+            'id': S, 'phase': {'enum': ['B', 'C']}, 'label': S, 'short_label': S, 'description': S,
+            'features': obj({'pv': BOOL, 'battery': BOOL, 'export': BOOL, 'cooling': BOOL, 'room_temperature': BOOL}),
+            'controllers': {'type': 'array', 'items': S}, 'default_controller': S, 'jump_targets': {'type': 'array', 'items': obj({'id': S, 'label': S})}})}})}
     return out
 
 
