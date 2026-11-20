@@ -1,15 +1,36 @@
 # SuisseCL
 
-A Swiss residential district energy simulation built on [CityLearn](https://github.com/citylearn-project/CityLearn) 3.3.0, with a public dashboard
-(https://suisse-cl.vercel.app/). The aim is a research-quality, auditable simulation of a Swiss district (heat pumps, thermal storage, Swiss tariff and weather)
-and an environment for evaluating and training district energy controllers.
+A Swiss residential district energy simulation built on CityLearn 3.3.0, with a public dashboard. It asks what a heat-pump district needs from the grid today and in a warmer climate,
+and how much smart operation can save, and it documents where every number comes from.
 
+**Live:** https://suisse-cl.vercel.app/
+
+![The SuisseCL landing page](docs/img/landing.jpg)
+
+## Main findings
+- **Warming cuts heating much more than it adds cooling.** At +3 °C the district's heating electricity falls 25.8 % (70,388 to 52,258 kWh a year), while cooling adds 1,072 to 4,535 kWh a year across the low, medium and high adoption levels; solar directly covers 73 to 92 % of it. The yearly heat peak falls less than the yearly heat (10.1 % against 25.8 %).
+- **Flexibility is worth little today and about 16 % of the bill with solar, a battery and building mass.** The exact optimum saves 0.84 % with today's setup and 6.03 / 15.60 / 15.96 % in the three richer scenarios.
+- **A planner reaches about three quarters of that.** Model predictive control gets 75 to 78 % of the optimum and a simple solar rule 37 to 45 %; without a peak term the planner raises the district peak to about 155 kW against 58 to 63 kW for the thermostat, and a small peak weight brings it back to 63 to 70 kW. Learning controllers did not beat their reference.
+
+Numbers come from `docs/phases/phase_b_completion_report.md`, `docs/phases/phase_c_completion_report.md` and `docs/experiments/validation_reports/heat_peaks.md`. The buildings are a constructed composite, storage is synthetic and cooling is modeled; see the limits on the site.
+
+**Limitation.** The model's heat pumps can deliver about 1.5 times the rated heat of the one installed unit that could be checked against a HEAPO site visit (SFH-low, 1.53 at A2/W35), so savings may be somewhat optimistic; see `docs/experiments/validation_reports/hp_sizing_ratio.md`.
+
+## Quick start
+```bash
+python3.11 -m venv cl && source cl/bin/activate
+pip install -r swiss/requirements-lock.txt      # CityLearn 3.3.0, torch 2.2.2, numpy 1.26.4, pandas 2.3.3, ...
+cd web && npm ci && npm run dev                 # dashboard on http://localhost:3000
+```
+Raw data are not in git; sources, licences and download steps are in `docs/reproduction.md` and `docs/data/data_source_registry.csv`.
+
+## Details
 **Status.** Phase A (hourly heating baseline, six representative buildings, four stock controllers, validation) is implemented and approved (2026-11-18, D-031). Phase B (assumed PV, battery, export price, RC thermal model, scenario tariffs incl. day-ahead, 15-minute environment, LEG and EV scenarios, exact ceilings, RL on the cluster, receding-horizon MPC) is implemented and was approved at the phase gate on 2026-11-20 (D-057): `docs/phases/phase_b_completion_report.md`. Phase C (CH2025 climate scenarios for Kloten with heat-wave weeks, cooling in two system archetypes, three adoption levels, scenario matrix against the exact optimum, PV rule and MPC, climate impact analysis, dashboard pages) was authorised on 2026-11-19 (D-048) and is implemented and its completion report is drafted (`docs/phases/phase_c_completion_report.md`; proposal `docs/phases/phase_c_proposal_updated.md`); it was approved at the phase gate on 2026-11-20 (D-056; labelled assumptions and agent-drafted wording stay as stated in the report).
 Everything is documented for audit: sources and licences, transformations, assumptions, decisions, open issues and validation limits (`docs/`).
 The six buildings are a **constructed composite** of representative models from two datasets (three HEAPO houses, three ETH/EKZ apartment-building heat-pump
 meters); they are not neighbours. Thermal storage is synthetic and heat timing is unvalidated.
 
-## Layout
+### Layout
 | Path | What |
 |---|---|
 | `swiss/` | Swiss simulation: `pipeline/` (raw data to canonical datasets), `models/` (heat pump), `citylearn_build/` (CityLearn dataset), `experiments/` (controllers, reward, results), `validation/`, `contract/` (data contract v1), `dashboard/` (audit-bundle builder), `tests/` |
@@ -19,14 +40,14 @@ meters); they are not neighbours. Thermal storage is synthetic and heat timing i
 | `my_data/` | Earlier US cooling-control experiments on CityLearn challenge datasets (legacy; see the end of this file) |
 | `CityLearn/`, `cl/` | Local CityLearn clone and virtualenv (both gitignored) |
 
-## Setup
+### Setup
 ```bash
 python3.11 -m venv cl && source cl/bin/activate
 pip install -r swiss/requirements-lock.txt      # CityLearn 3.3.0, torch 2.2.2, numpy 1.26.4, pandas 2.3.3, ...
 ```
 Raw data are not in git; sources, licences and download steps are in `docs/reproduction.md` and `docs/data/data_source_registry.csv`.
 
-## Common commands (from the repository root)
+### Common commands (from the repository root)
 ```bash
 PYTHONPATH=. cl/bin/python -m pytest swiss/tests -q                      # full test suite (about 3 minutes, includes real rollouts)
 PYTHONPATH=. cl/bin/python -I swiss/experiments/run_baselines.py        # baseline controllers, full year
@@ -38,7 +59,7 @@ PYTHONPATH=. cl/bin/python -I swiss/dashboard/lint.py --check-fresh     # dashbo
 cd web && npm ci && npm run dev                                         # dashboard on http://localhost:3000
 ```
 
-## Where to read first
+### Where to read first
 - `docs/phases/phase_b_plan.md`: Phase B specification (implemented); `docs/phases/phase_b_completion_report.md`: what was built and found.
 - `docs/phases/phase_a_completion_report.md`: what was built, acceptance criteria, limitations.
 - `docs/experiments/validation_reports/mechanism_check_phase_a.md`: what the controller results do and do not show.
@@ -48,10 +69,10 @@ cd web && npm ci && npm run dev                                         # dashbo
 
 ---
 
-# Legacy: US cooling experiments (`my_data/`)
+## Legacy: US cooling experiments (`my_data/`)
 Reinforcement-learning experiments for district cooling control on CityLearn challenge datasets; kept for reference. The Swiss work above does not depend on it.
 
-## Layout
+### Layout
 - `my_data/run.py` – baseline controllers (do nothing, hour rule, RBCs) on full CityLearn datasets
 - `my_data/rl.py` – train SAC / MARLISA on the first part of a dataset, score on held-out later weeks
 - `my_data/rewards.py` – composite reward (comfort, cost, carbon, peak, ramping; normalised, weights swappable)

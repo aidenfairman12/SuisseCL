@@ -11,11 +11,11 @@ const f = (v: number | null | undefined, d = 1) => v == null || !Number.isFinite
 const maxOf = (a: number[]) => a.reduce((m, v) => Math.max(m, v), 0);
 export const DEFAULT_CONTROLLER = "ALG-003_basic_rbc";
 
-export function DistrictView({ controller: controllerProp, onController }: { controller: string; onController: (c: string) => void }) {
-  const manifestFile = useManifest("full");
-  const buildingsFile = useBuildings("full");
-  const conditionsFile = useConditions("full");
-  const runFile = useRun("base", controllerProp || DEFAULT_CONTROLLER, "full");
+export function DistrictView({ controller: controllerProp, onController, variant = "full" }: { controller: string; onController: (c: string) => void; variant?: "sample" | "full" }) {
+  const manifestFile = useManifest(variant);
+  const buildingsFile = useBuildings(variant);
+  const conditionsFile = useConditions(variant);
+  const runFile = useRun("base", controllerProp || DEFAULT_CONTROLLER, variant);
   const manifest = manifestFile.data;
   const buildings = buildingsFile.data?.buildings;
   const conditions = conditionsFile.data;

@@ -67,7 +67,7 @@ QC_REPORTS = {  # placeholder namespace -> (json file, markdown twin or None, ti
 # Builder code is an input too: a changed builder means a stale bundle.
 BUILDER_FILES = ['swiss/dashboard/build_bundle.py', 'swiss/dashboard/parse_registries.py', 'swiss/dashboard/bundle_io.py',
                  'swiss/dashboard/figures.py', 'swiss/dashboard/story.py', 'swiss/pipeline/select_buildings.py', 'swiss/experiments/run_baselines.py',
-                 'swiss/experiments/run_sensitivity.py', 'swiss/datasets/swiss_district_2023/pricing.csv', 'swiss/dashboard/phase_b.py', 'swiss/dashboard/phase_c.py', 'swiss/dashboard/climate_series.py']
+                 'swiss/experiments/run_sensitivity.py', 'swiss/datasets/swiss_district_2023/pricing.csv', 'swiss/dashboard/phase_b.py', 'swiss/dashboard/phase_c.py', 'swiss/dashboard/climate_series.py', 'swiss/dashboard/insights.py']
 
 _read_files = set()
 
@@ -625,6 +625,8 @@ def main():
     scenarios_obj, controllers_obj, data['pb'] = phase_b.build(sys.modules[__name__], ui, errors, g.nodes)
     from swiss.dashboard import phase_c
     climate_obj, cooling_obj, explorer_obj, houses_obj, data['pc'] = phase_c.build(sys.modules[__name__], ui, errors, g.nodes, data['pb'])
+    from swiss.dashboard import insights
+    heat_peaks_obj, pipeline_obj = insights.build_heat_peaks(sys.modules[__name__]), insights.build_pipeline(sys.modules[__name__])
     for f in BUILDER_FILES:
         _read_files.add(f)
     counts = {}
@@ -657,6 +659,8 @@ def main():
     emit('cooling', clean(cooling_obj))
     emit('explorer', clean(explorer_obj))
     emit('houses', clean(houses_obj))
+    emit('heat_peaks', clean(heat_peaks_obj))
+    emit('pipeline', clean(pipeline_obj))
     for f in os.listdir(BUNDLE):
         if f.startswith('trace_'):
             os.remove(os.path.join(BUNDLE, f))

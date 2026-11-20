@@ -40,7 +40,7 @@ def meta():
 
 @pytest.mark.parametrize('path,id_col,n', [
     ('docs/data/transformation_log.md', 'ID', 20),
-    ('docs/decisions/issues_and_risks.md', 'ID', 95),      # 95 rows incl. update rows
+    ('docs/decisions/issues_and_risks.md', 'ID', 96),      # 96 rows incl. update rows
     ('docs/decisions/decision_log.md', 'ID', 65),
     ('docs/decisions/assumptions_log.md', 'ID', 59),
     ('docs/models/model_registry.md', 'ID', 7),
@@ -353,7 +353,7 @@ def test_web_sources_are_scanned_and_figures_resolve():
     keys = set()
     for text in srcs.values():
         keys |= set(re.findall(r'["\']((?:series|card|kpi|panel):[a-z0-9_]+)["\']', text))
-    assert {'card:district', 'card:tanks', 'series:carbon_intensity'} <= keys
+    assert {'card:controllers', 'card:tanks', 'series:carbon_intensity'} <= keys
     registry = open(lint.REGISTRY, encoding='utf-8').read()
     figs = set(re.findall(r'^  (\w+): \{ title:', registry, re.M))
     assert len(figs) >= 22 and 'cop_curves' in figs
@@ -562,7 +562,7 @@ def test_phase_b_rl_rows_and_limitations(ctrl):
 
 
 def test_phase_b_pages_are_wired_into_the_site():
-    header = open(os.path.join(ROOT, 'web', 'src', 'components', 'site-header.tsx'), encoding='utf-8').read()
+    header = open(os.path.join(ROOT, 'web', 'src', 'lib', 'nav.ts'), encoding='utf-8').read()  # the Deep dive menu and the story page share this list
     assert '/scenarios/' in header and '/controllers/' in header
     for route in ('scenarios', 'controllers'):
         assert os.path.exists(os.path.join(ROOT, 'web', 'src', 'app', route, 'page.tsx'))
@@ -748,7 +748,7 @@ def test_phase_c_room_unit_hourly_weeks_and_prose(pcb):
 
 
 def test_phase_c_pages_are_wired_into_the_site():
-    header = open(os.path.join(ROOT, 'web', 'src', 'components', 'site-header.tsx'), encoding='utf-8').read()
+    header = open(os.path.join(ROOT, 'web', 'src', 'lib', 'nav.ts'), encoding='utf-8').read()  # the Deep dive menu and the story page share this list
     story = read_bundle_file(os.path.join(BUNDLE, 'story.json'))
     for route in ('climate', 'cooling', 'explorer', 'houses'):
         assert f'/{route}/' in header

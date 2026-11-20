@@ -4,6 +4,7 @@ import { Lead, Loading, Note, Section, Table, fmt, signed } from "@/components/p
 import { ArchetypeSelector, Pills, cellKey, useArchetype } from "@/components/phase-c/shared";
 import { useBundleFile } from "@/lib/bundle";
 import type { HouseBlock, HousesData } from "@/lib/types";
+import { HeatPeakSummary, HeatPeakTable, useHeatPeaks } from "@/components/story/heat-peaks";
 
 type Cell = { archetype: string } & Record<string, { buildings: Record<string, HouseBlock>; district: { summer_peak_kw: number; peak_kw: number } }>;
 
@@ -13,6 +14,7 @@ export function HousesPage() {
   const [adopt, setAdopt] = useState("high");
   const [ctrl, setCtrl] = useState<"thermostat" | "optimum">("thermostat");
   const arch = useArchetype(d?.archetypes ?? []);
+  const hp = useHeatPeaks();
   if (error) return <p className="text-sm text-destructive">Could not load the houses bundle: {error}</p>;
   if (!d) return <Loading what="house-level results" />;
   const p = d.prose;
@@ -57,6 +59,13 @@ export function HousesPage() {
         {zoned && <Note>{p.zone_note as string}</Note>}
         <Note>{p.rule_note as string}</Note>
       </Section>
+      {hp && (
+        <Section title="Peak heat demand per building" classes={["modeled", "synthetic"]}>
+          <p className="max-w-3xl text-sm"><HeatPeakSummary d={hp} /></p>
+          <HeatPeakTable d={hp} />
+          <Note>Thermostat reference, heating-only district; observed 2023 weather against the +3.0 °C typical year. Highest hour in kW of heat-pump electricity; full-load hours are the yearly energy divided by the highest hour.</Note>
+        </Section>
+      )}
       <Note>Sources: {d.sources.join(", ")}. Every number is read from committed result files at build time.</Note>
     </div>
   );
