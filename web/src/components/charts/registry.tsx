@@ -10,7 +10,7 @@ type Fig = { title: string; source: string; Component: ComponentType };
 
 export const FIGURES: Record<string, Fig> = {
   ts_temp: { title: "Hourly outdoor temperature 2023", source: "data/canonical/weather_klo_2023_hourly.csv: temp_c", Component: () => <LineTime keys={["temp_c"]} unit="°C" /> },
-  ts_irradiance: { title: "Hourly irradiance 2023 (beam = global − diffuse)", source: "data/canonical/weather_klo_2023_hourly.csv: ghi_wm2, diffuse_wm2, beam_horizontal_wm2", Component: () => <LineTime keys={["ghi", "diffuse", "beam"]} unit="W/m²" colours={["#2b6cb0", "#90cdf4", "#2f855a"]} /> },
+  ts_irradiance: { title: "Hourly irradiance 2023 (beam = global − diffuse)", source: "data/canonical/weather_klo_2023_hourly.csv: ghi_wm2, diffuse_wm2, beam_horizontal_wm2", Component: () => <LineTime keys={["ghi", "diffuse", "beam"]} unit="W/m²" colours={["#2563eb", "#93c5fd", "#0d9488"]} /> },
   ghi_vs_diffuse: { title: "Diffuse vs global irradiance (each point = one hour)", source: "data/canonical/weather_klo_2023_hourly.csv", Component: GhiVsDiffuse },
   klo_vs_heapo: { title: "KLO temperature vs HEAPO station 8jB (timestamp check, D-009)", source: "data/canonical/weather_klo_2023_hourly.csv, weather_heapo_2023_hourly.csv", Component: KloVsHeapo },
   price_heatmap: { title: "Mean price by local hour and weekday (two tiers)", source: "data/canonical/tariff_ekz_standard_2023_hourly.csv: total_rp_kwh; local time Europe/Zurich", Component: PriceHeatmap },

@@ -5,9 +5,10 @@ import { Chart } from "@/components/charts/echarts";
 import { Fold, Lead, Loading, Note, PB_COLOURS, Section, Table, fmt } from "@/components/phase-b/shared";
 import { useBundleFile } from "@/lib/bundle";
 import type { ScenariosData } from "@/lib/types";
+import { PALETTE } from "@/lib/palette";
 
 const AX = { axisLabel: { fontSize: 11 }, nameTextStyle: { fontSize: 11 } };
-const COLS = [PB_COLOURS.grey, PB_COLOURS.s1, PB_COLOURS.s2, PB_COLOURS.s3];
+const COLS = [PALETTE.soft, PALETTE.gridSoft, PALETTE.gridMid, PALETTE.grid];
 
 function CeilingChart({ d }: { d: ScenariosData }) {
   const ids = ["s0", "s1", "s2", "s3"], names = ["S0", "S1", "S2", "S3"];

@@ -18,7 +18,7 @@ export function HeatPeakSection() {
           <HeatPeakTable d={d} />
           <p className="max-w-3xl text-sm text-muted-foreground">
             Modeled values for the thermostat reference: a composite district, an RC building model and synthetic heat timing. The district peak is the highest hour of all six buildings together, not the sum of their own peaks.
-            Per-building curves are on the <Link href="/houses/" className="text-sky-700 hover:underline">Houses</Link> page.
+            Per-building curves are on the <Link href="/houses/" className="text-blue-700 hover:underline">Houses</Link> page.
           </p>
         </>
       )}

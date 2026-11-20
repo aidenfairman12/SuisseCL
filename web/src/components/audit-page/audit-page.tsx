@@ -75,7 +75,7 @@ function Reports() {
         {qcs.map((n) => (
           <li key={n.id}>
             <NodeLink id={n.id} title />
-            <span className="ml-2 text-xs">{n.docs.map((d) => meta?.repo_url ? <a key={d} className="mr-2 font-mono text-sky-700 hover:underline" href={`${meta.repo_url}/blob/${meta.git.commit_full}/${d}`} target="_blank" rel="noreferrer">{d.split("/").pop()}</a> : <code key={d} className="mr-2">{d}</code>)}</span>
+            <span className="ml-2 text-xs">{n.docs.map((d) => meta?.repo_url ? <a key={d} className="mr-2 font-mono text-blue-700 hover:underline" href={`${meta.repo_url}/blob/${meta.git.commit_full}/${d}`} target="_blank" rel="noreferrer">{d.split("/").pop()}</a> : <code key={d} className="mr-2">{d}</code>)}</span>
           </li>
         ))}
       </ul>
@@ -96,7 +96,7 @@ function Snapshot() {
       <p className="max-w-3xl text-sm text-muted-foreground">Which version of the repository this page was built from, and whether the inputs have changed since. The same checks run as <code>lint.py --check-fresh</code> in the Python test suite.</p>
       <table className="w-full max-w-4xl text-sm">
         <tbody>
-          {row("Built from commit", <><code>{g.commit_full}</code>{meta.repo_url && <> · <a className="text-sky-700 hover:underline" href={`${meta.repo_url}/commit/${g.commit_full}`} target="_blank" rel="noreferrer">view</a></>}</>)}
+          {row("Built from commit", <><code>{g.commit_full}</code>{meta.repo_url && <> · <a className="text-blue-700 hover:underline" href={`${meta.repo_url}/commit/${g.commit_full}`} target="_blank" rel="noreferrer">view</a></>}</>)}
           {row("Built (UTC)", meta.built_utc)}
           {row("Git working tree", g.dirty ? <div>{bad(`built from uncommitted changes (${g.dirty_paths.length} paths)`)}<ul className="ml-6 list-disc text-xs">{g.dirty_paths.map((p) => <li key={p}><code>{p}</code></li>)}</ul></div> : ok("clean when built"))}
           {row("Canonical data MANIFEST", m.verified ? ok(`all ${m.files_listed} files in data/canonical/MANIFEST.sha256 match`) : <div>{bad("does not verify")}<ul className="text-xs">{m.failures.map((f) => <li key={f.file}><code>{f.file}</code>: {f.problem}</li>)}</ul></div>)}

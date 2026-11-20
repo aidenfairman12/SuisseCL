@@ -24,9 +24,9 @@ export function HourlyView({ res, controller }: { res: ResultsFull; controller: 
     for (const t of ((nodes["R-001"]?.fields.terms as unknown as Record<string, string>[]) ?? [])) w[t.Term] = parseFloat(t["Default weight"]);
     const term = (k: string) => T[`term_${k}`].map((v) => (v == null ? null : (-w[k] * v) / res.reward_scales[k]));
     return [
-      { title: `Grid draw of all buildings — ${names.ctrl(controller)}${controller === REF ? "" : ` vs ${names.ctrl(REF)}`}`, unit: "kWh per hour", series: [...(controller === REF ? [] : [{ name: names.ctrl(REF), values: T0.district_net_kwh, cls: "", color: "#a0aec0" }]), { name: names.ctrl(controller), values: T.district_net_kwh, cls: "", color: "#2b6cb0" }] },
+      { title: `Grid draw of all buildings — ${names.ctrl(controller)}${controller === REF ? "" : ` vs ${names.ctrl(REF)}`}`, unit: "kWh per hour", series: [...(controller === REF ? [] : [{ name: names.ctrl(REF), values: T0.district_net_kwh, cls: "", color: "#a1a1aa" }]), { name: names.ctrl(controller), values: T.district_net_kwh, cls: "", color: "#2563eb" }] },
       { title: `Tank fill level — ${names.building(ROLES[building - 1])}, ${names.ctrl(controller)} (assumed tanks)`, unit: "0–1", series: [{ name: "heating tank", values: T[`b${building}_heating_storage_soc`], cls: "", color: "#e8590c" }, { name: "hot-water tank", values: T[`b${building}_dhw_storage_soc`], cls: "", color: "#1098ad" }] },
-      { title: `How each step is scored — ${names.ctrl(controller)} (cost, peak, swings; lower is better)`, unit: "reward", series: ["cost", "peak", "ramp", "carbon"].filter((k) => w[k]).map((k) => ({ name: `${k} (weight ${w[k]})`, values: term(k), cls: "", color: ({ cost: "#2b6cb0", peak: "#c53030", ramp: "#dd6b20", carbon: "#b7791f" } as Record<string, string>)[k] })) },
+      { title: `How each step is scored — ${names.ctrl(controller)} (cost, peak, swings; lower is better)`, unit: "reward", series: ["cost", "peak", "ramp", "carbon"].filter((k) => w[k]).map((k) => ({ name: `${k} (weight ${w[k]})`, values: term(k), cls: "", color: ({ cost: "#2563eb", peak: "#dc2626", ramp: "#ea580c", carbon: "#ca8a04" } as Record<string, string>)[k] })) },
     ];
   }, [T, T0, controller, building, res.reward_scales, nodes, names, ROLES]);
   if (!si) return null;

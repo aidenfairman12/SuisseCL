@@ -7,6 +7,7 @@ import { useBuildingLabel } from "@/components/charts/util";
 import { Table } from "@/components/phase-b/shared";
 import { useBundleFile } from "@/lib/bundle";
 import { fmt, rng } from "./landing-data";
+import { PALETTE } from "@/lib/palette";
 
 type Stat = { annual_kwh: number; peak_kw: number; full_load_hours: number; ldc: { rank_hour: number[]; kw: number[] } };
 type Row = Record<"heat_el" | "heat_th", Stat>;
@@ -19,7 +20,7 @@ export type HeatPeaksData = {
 };
 const WARM = "gwl3.0_none", NOW = "hist_none";
 const pct = (v: number, d = 1) => (Math.abs(v) < 0.5 * 10 ** -d ? `${fmt(0, d)} %` : `${v > 0 ? "+" : "−"}${fmt(Math.abs(v), d)} %`);
-const COLOURS: Record<string, string> = { hist_none: "#a0aec0", "gwl2.0_none": "#ed8936", "gwl3.0_none": "#c05621" };
+const COLOURS: Record<string, string> = { hist_none: PALETTE.soft, "gwl2.0_none": PALETTE.water, "gwl3.0_none": PALETTE.heatDeep };
 
 export function useHeatPeaks() {
   return useBundleFile<HeatPeaksData>("heat_peaks").data;

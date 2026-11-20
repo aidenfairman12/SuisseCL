@@ -38,7 +38,7 @@ function Head({ n }: { n: NodeT }) {
       </div>
       {n.summary && <p className="text-[15px] leading-relaxed"><Linkified text={n.summary} /></p>}
       {(n.caveats ?? []).map((c, i) => (
-        <div key={i} className="flex gap-2 rounded-md border-l-4 border-amber-500 bg-amber-50 p-2 text-sm text-amber-950">
+        <div key={i} className="flex gap-2 rounded-r-lg border-l-2 border-zinc-400 bg-zinc-50 px-3 py-2 text-sm text-zinc-700">
           <AlertTriangle className="mt-0.5 size-4 shrink-0" />
           <span><Linkified text={c} /></span>
         </div>
@@ -264,7 +264,7 @@ function Registry({ n }: { n: NodeT }) {
       {n.source_ref && <p className="text-xs">Registry row: <code>{n.source_ref.file}</code> line {n.source_ref.line}</p>}
       {n.parse_warnings.length > 0 && (
         <>
-          <div className="rounded-md border-l-4 border-amber-500 bg-amber-50 p-2 text-xs">This registry row did not parse cleanly: {n.parse_warnings.join("; ")}. Raw line:</div>
+          <div className="rounded-r-lg border-l-2 border-zinc-400 bg-zinc-50 px-3 py-2 text-xs text-zinc-700">This registry row did not parse cleanly: {n.parse_warnings.join("; ")}. Raw line:</div>
           <pre className="max-h-24 overflow-auto rounded bg-muted p-1.5 text-[11px] whitespace-pre-wrap">{n.source_ref?.raw}</pre>
         </>
       )}
@@ -279,7 +279,7 @@ function Files({ n }: { n: NodeT }) {
     <ul className="space-y-1 text-sm">
       {docs.map((d) => (
         <li key={d}>
-          {meta?.repo_url ? <a className="font-mono text-xs text-sky-700 hover:underline" href={`${meta.repo_url}/blob/${meta.git.commit_full}/${d}`} target="_blank" rel="noreferrer">{d}</a> : <code className="text-xs">{d}</code>}
+          {meta?.repo_url ? <a className="font-mono text-xs text-blue-700 hover:underline" href={`${meta.repo_url}/blob/${meta.git.commit_full}/${d}`} target="_blank" rel="noreferrer">{d}</a> : <code className="text-xs">{d}</code>}
         </li>
       ))}
     </ul>

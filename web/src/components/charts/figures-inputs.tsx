@@ -43,8 +43,8 @@ export function GhiVsDiffuse() {
     grid: { left: 52, right: 14, top: 20, bottom: 56 }, tooltip: { trigger: "item" }, legend: LEG,
     xAxis: { type: "value", name: "global W/m²", ...AX }, yAxis: { type: "value", name: "diffuse W/m²", ...AX },
     series: [
-      { type: "scatter", name: "hours", symbolSize: 3, large: true, itemStyle: { color: "#2b6cb0", opacity: 0.35 }, data: g.map((x, i) => [x, d[i]]) },
-      { type: "line", name: "diffuse = global", showSymbol: false, lineStyle: { type: "dashed", color: "#a0aec0" }, data: [[0, 0], [1150, 1150]] },
+      { type: "scatter", name: "hours", symbolSize: 3, large: true, itemStyle: { color: "#2563eb", opacity: 0.35 }, data: g.map((x, i) => [x, d[i]]) },
+      { type: "line", name: "diffuse = global", showSymbol: false, lineStyle: { type: "dashed", color: "#a1a1aa" }, data: [[0, 0], [1150, 1150]] },
       { type: "scatter", name: `beam < 0 (${neg.length} h)`, symbol: "diamond", symbolSize: 11, itemStyle: { color: FLAG_COLOURS.beam_negative }, data: neg.map((i) => [g[i], d[i]]) },
     ],
   };
@@ -80,7 +80,7 @@ export function PriceHeatmap() {
   const option: EChartsOption = {
     grid: { left: 50, right: 70, top: 14, bottom: 30 }, tooltip: { formatter: (p: unknown) => { const v = (p as { value: number[] }).value; return `${WD[v[0]]} ${v[1]}:00 local: ${v[2]} Rp/kWh`; } },
     xAxis: { type: "category", data: WD, ...AX }, yAxis: { type: "category", data: Array.from({ length: 24 }, (_, h) => String(h)), inverse: true, name: "local hour", ...AX },
-    visualMap: { min: 15, max: 19.5, calculable: false, right: 0, top: "middle", inRange: { color: ["#ebf8ff", "#2b6cb0"] }, text: ["Rp/kWh", ""], textStyle: { fontSize: 10 } },
+    visualMap: { min: 15, max: 19.5, calculable: false, right: 0, top: "middle", inRange: { color: ["#ebf8ff", "#2563eb"] }, text: ["Rp/kWh", ""], textStyle: { fontSize: 10 } },
     series: [{ type: "heatmap", data: z, label: { show: true, fontSize: 9 } }],
   };
   return <Chart option={option} height={420} />;
@@ -97,7 +97,7 @@ export function CarbonConsDom() {
     xAxis: { type: "time", ...AX }, yAxis: { type: "value", name: "gCO2eq/kWh", ...AX },
     series: [
       { type: "line", name: S.carbon.label, showSymbol: false, sampling: "lttb", lineStyle: { width: 1 }, itemStyle: { color: colours.modeled }, data: pairs(ts, S.carbon.values) },
-      { type: "line", name: S.carbon_domestic.label, showSymbol: false, sampling: "lttb", lineStyle: { width: 1, type: "dotted" }, itemStyle: { color: "#4a5568" }, data: pairs(ts, S.carbon_domestic.values) },
+      { type: "line", name: S.carbon_domestic.label, showSymbol: false, sampling: "lttb", lineStyle: { width: 1, type: "dotted" }, itemStyle: { color: "#52525b" }, data: pairs(ts, S.carbon_domestic.values) },
       { type: "scatter", name: `neighbour fallback (${fb.length} h)`, symbol: "diamond", symbolSize: 6, itemStyle: { color: FLAG_COLOURS.neighbour_intensity_fallback_flag }, data: fb.map((i) => [ts[i], S.carbon.values[i]]) },
       { type: "scatter", name: `missing / interpolated (${ip.length} h, drawn on domestic line)`, symbol: "diamond", symbolSize: 9, itemStyle: { color: FLAG_COLOURS.gap_interpolated_flag }, data: ip.map((i) => [ts[i], S.carbon_domestic.values[i]]) },
     ],
@@ -109,14 +109,14 @@ type CarbonDaily = { days: string[]; mwh: Record<string, (number | null)[]>; mea
 export function CarbonImportStack() {
   const d = useBundleFile<{ carbon_daily: CarbonDaily }>("figures").data?.carbon_daily;
   if (!d) return <Loading />;
-  const cols: [string, string, string][] = [["domestic_generation_excl_pumped_mwh", "domestic generation (excl. pumped storage)", "#718096"], ["import_france_mwh", "import France", "#2b6cb0"], ["import_germany_mwh", "import Germany", "#c53030"], ["import_austria_mwh", "import Austria", "#dd6b20"], ["import_italy_mwh", "import Italy", "#2f855a"]];
+  const cols: [string, string, string][] = [["domestic_generation_excl_pumped_mwh", "domestic generation (excl. pumped storage)", "#71717a"], ["import_france_mwh", "import France", "#2563eb"], ["import_germany_mwh", "import Germany", "#dc2626"], ["import_austria_mwh", "import Austria", "#ea580c"], ["import_italy_mwh", "import Italy", "#0d9488"]];
   const option: EChartsOption = {
     grid: { left: 56, right: 48, top: 26, bottom: 62 }, tooltip: { trigger: "axis" }, legend: LEG, dataZoom: ZOOM,
     xAxis: { type: "category", data: d.days, ...AX, boundaryGap: false },
     yAxis: [{ type: "value", name: "MWh/day", ...AX }, { type: "value", name: "g/kWh", ...AX, splitLine: { show: false } }],
     series: [
       ...cols.map(([k, n, c]) => ({ type: "line" as const, name: n, stack: "s", areaStyle: { opacity: 0.8 }, showSymbol: false, lineStyle: { width: 0.5, color: c }, itemStyle: { color: c }, data: d.mwh[k] })),
-      { type: "line" as const, name: "daily mean carbon intensity (g/kWh, right axis)", yAxisIndex: 1, showSymbol: false, lineStyle: { width: 1.5, color: "#b7791f" }, itemStyle: { color: "#b7791f" }, data: d.mean_ci_consumption },
+      { type: "line" as const, name: "daily mean carbon intensity (g/kWh, right axis)", yAxisIndex: 1, showSymbol: false, lineStyle: { width: 1.5, color: "#ca8a04" }, itemStyle: { color: "#ca8a04" }, data: d.mean_ci_consumption },
     ],
   };
   return <Chart option={option} height={360} />;
@@ -132,7 +132,7 @@ export function EpflMonthly() {
   for (const [y, type] of [["2016", "solid"], ["2017", "dotted"]] as const) {
     const m = obj(obj(R[y]).monthly_means);
     series.push({ type: "line", name: `this model ${y}`, lineStyle: { type }, itemStyle: { color: colours.modeled }, data: arrn(m.mine).map((v, i) => [lab(+y)[i], v]) });
-    series.push({ type: "line", name: `EPFL ${y}`, lineStyle: { type }, itemStyle: { color: "#2d3748" }, data: arrn(m.epfl).map((v, i) => [lab(+y)[i], v]) });
+    series.push({ type: "line", name: `EPFL ${y}`, lineStyle: { type }, itemStyle: { color: "#27272a" }, data: arrn(m.epfl).map((v, i) => [lab(+y)[i], v]) });
   }
   const option: EChartsOption = { grid: { left: 50, right: 14, top: 20, bottom: 90 }, tooltip: { trigger: "axis" }, legend: LEG, xAxis: { type: "category", axisLabel: { fontSize: 8, rotate: 45 } }, yAxis: { type: "value", name: "gCO2eq/kWh", ...AX }, series };
   return (
@@ -151,7 +151,7 @@ export function EpflDiurnal() {
   for (const [y, type] of [["2016", "solid"], ["2017", "dotted"]] as const) {
     const m = obj(obj(R[y]).diurnal_means);
     series.push({ type: "line", name: `this model ${y}`, lineStyle: { type }, showSymbol: false, itemStyle: { color: colours.modeled }, data: arrn(m.mine) });
-    series.push({ type: "line", name: `EPFL ${y}`, lineStyle: { type }, showSymbol: false, itemStyle: { color: "#2d3748" }, data: arrn(m.epfl) });
+    series.push({ type: "line", name: `EPFL ${y}`, lineStyle: { type }, showSymbol: false, itemStyle: { color: "#27272a" }, data: arrn(m.epfl) });
   }
   const option: EChartsOption = { grid: { left: 50, right: 14, top: 20, bottom: 56 }, tooltip: { trigger: "axis" }, legend: LEG, xAxis: { type: "category", data: Array.from({ length: 24 }, (_, h) => String(h)), name: "hour of day (Europe/Zurich local)", nameLocation: "middle", nameGap: 24, ...AX }, yAxis: { type: "value", name: "gCO2eq/kWh", ...AX }, series };
   return <Chart option={option} height={290} />;
@@ -195,8 +195,8 @@ export function BuildingDaily() {
     const gap = new Set(idxWhere(b.gap_filled_flag).map((i) => dayLab[Math.floor(i / 24)]));
     b.components.forEach((c, k) => {
       const y = Array.from({ length: days }, (_, d) => { let s = 0; for (let h = 0; h < 24; h++) { const v = c.values[d * 24 + h]; if (v == null) return null; s += v; } return +s.toFixed(2); });
-      series.push({ type: "bar", name: c.label, stack: role, xAxisIndex: r, yAxisIndex: r, itemStyle: { color: c.classification === "synthetic" ? "#e03131" : k === 0 ? "#2b6cb0" : "#90cdf4" }, data: y,
-        ...(k === 0 && gap.size ? { markLine: { silent: true, symbol: "none", label: { formatter: "gap-filled day (synthetic)", fontSize: 9, color: "#c53030" }, lineStyle: { color: "#c53030", type: "dashed" }, data: [...gap].map((g) => ({ xAxis: g })) } } : {}) });
+      series.push({ type: "bar", name: c.label, stack: role, xAxisIndex: r, yAxisIndex: r, itemStyle: { color: c.classification === "synthetic" ? "#e03131" : k === 0 ? "#2563eb" : "#93c5fd" }, data: y,
+        ...(k === 0 && gap.size ? { markLine: { silent: true, symbol: "none", label: { formatter: "gap-filled day (synthetic)", fontSize: 9, color: "#dc2626" }, lineStyle: { color: "#dc2626", type: "dashed" }, data: [...gap].map((g) => ({ xAxis: g })) } } : {}) });
     });
   });
   const option: EChartsOption = { title: titles, grid: grids, xAxis: xs, yAxis: ys, series, tooltip: { trigger: "axis" }, dataZoom: [{ type: "inside", xAxisIndex: roles.map((_, i) => i) }] };
@@ -218,10 +218,10 @@ export function SelectionPools() {
     xAxis: [{ type: "value", gridIndex: 0, name: "HP electricity 2023 (kWh)", nameLocation: "middle", nameGap: 24, ...AX }, { type: "value", gridIndex: 1, name: "HP electricity 2023 per housing unit (kWh)", nameLocation: "middle", nameGap: 24, ...AX }],
     yAxis: [{ type: "category", gridIndex: 0, data: [`${sfhG} (pool)`], ...AX }, { type: "category", gridIndex: 1, data: ["4–6 units", "7–14 units", "15–23 (no stratum)", "≥24 units"], ...AX }],
     series: [
-      { type: "scatter", name: `HEAPO pool of ${sfhG.toLowerCase()} (${s.pool_sizes.sfh})`, xAxisIndex: 0, yAxisIndex: 0, symbolSize: 8, itemStyle: { color: "#a0aec0" }, data: s.sfh.kwh_hp_2023.map((v) => [v, `${sfhG} (pool)`]) },
-      { type: "scatter", name: `Selected ${sfhG.toLowerCase()}`, xAxisIndex: 0, yAxisIndex: 0, symbol: "diamond", symbolSize: 14, itemStyle: { color: "#2b6cb0" }, label: { show: true, formatter: (p: unknown) => label((p as { value: [number, string, string] }).value[2]), fontSize: 10 }, data: sp.map((q, k) => ({ value: [q.v, `${sfhG} (pool)`, q.p.role], label: { position: k % 2 ? "bottom" : "top" } })) },
-      { type: "scatter", name: `EKZ pool of ${mfhG.toLowerCase()} (${s.pool_sizes.mfh})`, xAxisIndex: 1, yAxisIndex: 1, symbolSize: 8, itemStyle: { color: "#a0aec0" }, data: s.mfh.kwh_per_unit_2023.map((v, i) => [v, band(s.mfh.units[i])]) },
-      { type: "scatter", name: `Selected ${mfhG.toLowerCase()}`, xAxisIndex: 1, yAxisIndex: 1, symbol: "diamond", symbolSize: 14, itemStyle: { color: "#2f855a" }, label: { show: true, formatter: (p: unknown) => label((p as { value: [number, string, string] }).value[2]), fontSize: 10 }, data: mp.map((q, k) => ({ value: [q.v, band(q.p.units), q.p.role], label: { position: k % 2 ? "bottom" : "top" } })) },
+      { type: "scatter", name: `HEAPO pool of ${sfhG.toLowerCase()} (${s.pool_sizes.sfh})`, xAxisIndex: 0, yAxisIndex: 0, symbolSize: 8, itemStyle: { color: "#a1a1aa" }, data: s.sfh.kwh_hp_2023.map((v) => [v, `${sfhG} (pool)`]) },
+      { type: "scatter", name: `Selected ${sfhG.toLowerCase()}`, xAxisIndex: 0, yAxisIndex: 0, symbol: "diamond", symbolSize: 14, itemStyle: { color: "#2563eb" }, label: { show: true, formatter: (p: unknown) => label((p as { value: [number, string, string] }).value[2]), fontSize: 10 }, data: sp.map((q, k) => ({ value: [q.v, `${sfhG} (pool)`, q.p.role], label: { position: k % 2 ? "bottom" : "top" } })) },
+      { type: "scatter", name: `EKZ pool of ${mfhG.toLowerCase()} (${s.pool_sizes.mfh})`, xAxisIndex: 1, yAxisIndex: 1, symbolSize: 8, itemStyle: { color: "#a1a1aa" }, data: s.mfh.kwh_per_unit_2023.map((v, i) => [v, band(s.mfh.units[i])]) },
+      { type: "scatter", name: `Selected ${mfhG.toLowerCase()}`, xAxisIndex: 1, yAxisIndex: 1, symbol: "diamond", symbolSize: 14, itemStyle: { color: "#0d9488" }, label: { show: true, formatter: (p: unknown) => label((p as { value: [number, string, string] }).value[2]), fontSize: 10 }, data: mp.map((q, k) => ({ value: [q.v, band(q.p.units), q.p.role], label: { position: k % 2 ? "bottom" : "top" } })) },
     ],
   };
   return <Chart option={option} height={340} />;
@@ -237,9 +237,9 @@ export function Backtest() {
     xAxis: [{ type: "category", gridIndex: 0, data: lab, axisLabel: { show: false } }, { type: "category", gridIndex: 1, data: lab, axisLabel: { fontSize: 9, rotate: 40 } }],
     yAxis: [{ type: "value", gridIndex: 0, name: "hourly MAE (kWh)", ...AX }, { type: "value", gridIndex: 1, name: "daily MAPE (fraction)", ...AX }],
     series: [
-      { type: "bar", name: "A: neighbouring days (used, D-011)", xAxisIndex: 0, yAxisIndex: 0, itemStyle: { color: "#2b6cb0" }, data: keys.map((k) => v(k, "hourly_MAE_kWh_A_neighbour_days")) },
-      { type: "bar", name: "B: same weekday ±7 d", xAxisIndex: 0, yAxisIndex: 0, itemStyle: { color: "#a0aec0" }, data: keys.map((k) => v(k, "hourly_MAE_kWh_B_same_weekday")) },
-      { type: "bar", name: "daily MAPE A", xAxisIndex: 1, yAxisIndex: 1, itemStyle: { color: "#2f855a" }, data: keys.map((k) => v(k, "daily_MAPE_A")) },
+      { type: "bar", name: "A: neighbouring days (used, D-011)", xAxisIndex: 0, yAxisIndex: 0, itemStyle: { color: "#2563eb" }, data: keys.map((k) => v(k, "hourly_MAE_kWh_A_neighbour_days")) },
+      { type: "bar", name: "B: same weekday ±7 d", xAxisIndex: 0, yAxisIndex: 0, itemStyle: { color: "#a1a1aa" }, data: keys.map((k) => v(k, "hourly_MAE_kWh_B_same_weekday")) },
+      { type: "bar", name: "daily MAPE A", xAxisIndex: 1, yAxisIndex: 1, itemStyle: { color: "#0d9488" }, data: keys.map((k) => v(k, "daily_MAPE_A")) },
       { type: "bar", name: "daily MAPE B", xAxisIndex: 1, yAxisIndex: 1, itemStyle: { color: "#c6f6d5" }, data: keys.map((k) => v(k, "daily_MAPE_B")) },
     ],
   };

@@ -18,13 +18,13 @@ export function How() {
       <ol className="grid gap-3 md:grid-cols-4">
         {STEPS.map((s, i) => (
           <li key={s.title} className="rounded-xl border bg-card p-4 shadow-sm">
-            <div className="mb-2 flex size-7 items-center justify-center rounded-full bg-sky-100 text-sm font-semibold text-sky-800">{i + 1}</div>
+            <div className="mb-2 flex size-7 items-center justify-center rounded-full bg-zinc-900 text-sm font-semibold text-white">{i + 1}</div>
             <div className="font-medium">{s.title}</div>
             <p className="mt-1 text-sm text-muted-foreground">{s.text}</p>
           </li>
         ))}
       </ol>
-      <p className="max-w-3xl text-sm text-muted-foreground">Built with Claude Code agents under a documented decision log, with assumption and issue registers, replay-exact validation, dashboard lint guards and owner-approved phase gates and commits. More on <Link href="/methods/" className="text-sky-700 hover:underline">Data &amp; methods</Link>.</p>
+      <p className="max-w-3xl text-sm text-muted-foreground">Built with Claude Code agents under a documented decision log, with assumption and issue registers, replay-exact validation, dashboard lint guards and owner-approved phase gates and commits. More on <Link href="/methods/" className="text-blue-700 hover:underline">Data &amp; methods</Link>.</p>
     </section>
   );
 }
@@ -45,13 +45,13 @@ export function Trust() {
       <p className="max-w-3xl text-base text-muted-foreground">Read the results as a controlled experiment on a realistic district, not as a forecast for a real one. These limits matter most.</p>
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {limits.map((l) => (
-          <div key={l.title} className="rounded-xl border border-amber-300 bg-amber-50/60 p-4">
-            <div className="font-medium text-amber-950">{l.title}</div>
-            <p className="mt-1 text-sm text-amber-950/80">{l.text}</p>
+          <div key={l.title} className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <div className="font-medium text-zinc-900">{l.title}</div>
+            <p className="mt-1 text-sm text-zinc-600">{l.text}</p>
           </div>
         ))}
       </div>
-      <p className="text-sm">Sources, assumptions and validation: <Link href="/methods/" className="text-sky-700 hover:underline">Data &amp; methods</Link> · <Link href="/audit/" className="text-sky-700 hover:underline">Audit</Link></p>
+      <p className="text-sm">Sources, assumptions and validation: <Link href="/methods/" className="text-blue-700 hover:underline">Data &amp; methods</Link> · <Link href="/audit/" className="text-blue-700 hover:underline">Audit</Link></p>
     </section>
   );
 }
@@ -70,7 +70,7 @@ export function DeepDive() {
             <div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{g.group}</div>
             <ul className="space-y-2">
               {g.items.map((p) => (
-                <li key={p.href}><Link href={p.href} className="font-medium text-sky-700 hover:underline">{p.label}</Link><div className="text-sm text-muted-foreground">{p.hint}</div></li>
+                <li key={p.href}><Link href={p.href} className="font-medium text-blue-700 hover:underline">{p.label}</Link><div className="text-sm text-muted-foreground">{p.hint}</div></li>
               ))}
             </ul>
           </div>

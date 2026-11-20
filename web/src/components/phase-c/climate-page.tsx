@@ -1,14 +1,15 @@
 "use client";
 import type { EChartsOption } from "echarts";
 import { Chart } from "@/components/charts/echarts";
-import { Fold, Lead, Loading, Note, PB_COLOURS, Section, Table, fmt } from "@/components/phase-b/shared";
+import { Fold, Lead, Loading, Note, Section, Table, fmt } from "@/components/phase-b/shared";
 import { weekDay } from "@/components/phase-c/shared";
 import { useBundleFile } from "@/lib/bundle";
 import type { ClimateData } from "@/lib/types";
+import { PALETTE } from "@/lib/palette";
 
 const AX = { axisLabel: { fontSize: 11 }, nameTextStyle: { fontSize: 11 } };
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const COL: Record<string, string> = { hist: PB_COLOURS.grey, "gwl2.0": PB_COLOURS.s3, "gwl3.0": PB_COLOURS.red, hist_hw99: PB_COLOURS.s1, "gwl2.0_hw99": PB_COLOURS.s3, "gwl3.0_hw99": PB_COLOURS.red };
+const COL: Record<string, string> = { hist: PALETTE.soft, "gwl2.0": PALETTE.water, "gwl3.0": PALETTE.heatDeep, hist_hw99: PALETTE.muted, "gwl2.0_hw99": PALETTE.heat, "gwl3.0_hw99": PALETTE.alert };
 
 function MonthlyChart({ d }: { d: ClimateData }) {
   const ids = ["hist", "gwl2.0", "gwl3.0"];

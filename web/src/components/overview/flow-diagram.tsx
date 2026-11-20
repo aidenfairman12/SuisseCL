@@ -35,16 +35,16 @@ export function FlowDiagram() {
   const { open } = useNodeParam();
   return (
     <svg viewBox="0 0 1080 330" className="h-auto w-full max-w-[1180px]" role="img" aria-label="How the simulation fits together">
-      <defs><marker id="farr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#718096" /></marker></defs>
-      <g stroke="#a0aec0" strokeWidth="1.5" fill="none" markerEnd="url(#farr)">{LINKS.map((d) => <path key={d} d={d} />)}</g>
-      <g fontSize="10" fill="#718096">{LABELS.map(([x, y, t]) => <text key={t} x={x} y={y}>{t}</text>)}</g>
+      <defs><marker id="farr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#71717a" /></marker></defs>
+      <g stroke="#a1a1aa" strokeWidth="1.5" fill="none" markerEnd="url(#farr)">{LINKS.map((d) => <path key={d} d={d} />)}</g>
+      <g fontSize="10" fill="#71717a">{LABELS.map(([x, y, t]) => <text key={t} x={x} y={y}>{t}</text>)}</g>
       {BOXES.map((b) => {
         const n = nodes[b.ui], c = n?.classification ? colours[n.classification] : null, w = b.w ?? 150, h = b.h ?? 50;
         return (
           <g key={b.ui} transform={`translate(${b.x},${b.y})`} className="cursor-pointer" onClick={() => open(b.ui)}>
-            <rect width={w} height={h} rx="7" fill={c ? `${c}22` : "#f7fafc"} stroke={c ?? "#718096"} strokeWidth="1.5" />
+            <rect width={w} height={h} rx="7" fill={c ? `${c}22` : "#fafafa"} stroke={c ?? "#71717a"} strokeWidth="1.5" />
             <text x={w / 2} y={b.sub ? (h < 45 ? 18 : 22) : 20} textAnchor="middle" fontSize="13" fontWeight="600" fill="#1a202c">{b.title}</text>
-            {b.sub && <text x={w / 2} y={h < 45 ? 32 : 38} textAnchor="middle" fontSize="10.5" fill="#4a5568">{b.sub}</text>}
+            {b.sub && <text x={w / 2} y={h < 45 ? 32 : 38} textAnchor="middle" fontSize="10.5" fill="#52525b">{b.sub}</text>}
             <title>{n ? `${n.title}${n.classification ? ` — ${n.classification}` : ""}${n.summary ? `: ${n.summary}` : ""}` : b.ui}</title>
           </g>
         );

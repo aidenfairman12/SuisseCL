@@ -3,11 +3,13 @@
 import type { ReactNode } from "react";
 import { ClassBadge } from "@/components/audit/bits";
 import { cn } from "@/lib/utils";
+import { PALETTE } from "@/lib/palette";
 
 export const fmt = (v: number | null | undefined, d = 1) => (v == null || !Number.isFinite(v) ? "–" : v.toLocaleString("en-CH", { minimumFractionDigits: d, maximumFractionDigits: d }));
 export const signed = (v: number | null | undefined, d = 1) => (v == null || !Number.isFinite(v) ? "–" : `${v > 0 ? "+" : ""}${fmt(v, d)}`);
 
-export const PB_COLOURS = { s1: "#2b6cb0", s2: "#2f855a", s3: "#b7791f", grey: "#718096", red: "#c53030", purple: "#6b46c1", light: "#a0aec0" };
+/** Generic categorical colours for the Phase B/C charts, drawn from the site palette. */
+export const PB_COLOURS = { s1: PALETTE.grid, s2: PALETTE.battery, s3: PALETTE.solar, grey: PALETTE.muted, red: PALETTE.alert, purple: PALETTE.export, light: PALETTE.soft };
 
 /** A titled block with the classification of what it shows (measured / derived / modeled / synthetic / assumption). */
 export function Section({ title, classes, children, id }: { title: string; classes?: string[]; children: ReactNode; id?: string }) {
@@ -27,7 +29,7 @@ export function Lead({ children }: { children: ReactNode }) {
 }
 
 export function Note({ children, tone = "muted" }: { children: ReactNode; tone?: "muted" | "warn" }) {
-  return <p className={cn("max-w-3xl text-xs leading-relaxed", tone === "warn" ? "rounded-lg border border-amber-200 bg-amber-50/60 p-3 text-amber-950" : "text-muted-foreground")}>{children}</p>;
+  return <p className={cn("max-w-3xl text-xs leading-relaxed", tone === "warn" ? "rounded-r-lg border-l-2 border-zinc-400 bg-zinc-50 px-3 py-2.5 text-zinc-700" : "text-muted-foreground")}>{children}</p>;
 }
 
 export function Table({ head, rows, className, minWidth = 640 }: { head: ReactNode[]; rows: ReactNode[][]; className?: string; minWidth?: number }) {

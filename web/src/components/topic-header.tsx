@@ -19,7 +19,7 @@ export function TopicHeader({ nodeId, maxNumbers = 4 }: { nodeId: string; maxNum
         <Button size="sm" variant="outline" className="ml-auto gap-1.5" onClick={() => open(nodeId)}>Audit card <ExternalLink className="size-3.5" /></Button>
       </div>
       {n.summary && <p className="max-w-4xl text-[15px] leading-relaxed"><Linkified text={n.summary} /></p>}
-      {(n.caveats ?? []).map((c, i) => <p key={i} className="max-w-4xl rounded-md border-l-4 border-amber-500 bg-amber-50 p-2 text-sm text-amber-950"><Linkified text={c} /></p>)}
+      {(n.caveats ?? []).map((c, i) => <p key={i} className="max-w-4xl rounded-r-lg border-l-2 border-zinc-400 bg-zinc-50 px-3 py-2 text-sm text-zinc-700"><Linkified text={c} /></p>)}
       {n.numbers && n.numbers.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {n.numbers.slice(0, maxNumbers).map((x, i) => (

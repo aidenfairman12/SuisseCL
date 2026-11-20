@@ -9,12 +9,10 @@ import { cn } from "@/lib/utils";
 export function ClassBadge({ cls, className }: { cls: string | null | undefined; className?: string }) {
   const { colours } = useBundle();
   if (!cls) return null;
-  const c = colours[cls] ?? "#4a5568";
+  const c = colours[cls] ?? "#52525b";
   return (
-    <span
-      className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white", className)}
-      style={{ background: c }}
-    >
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-2 py-0.5 text-[11px] font-medium capitalize text-zinc-600", className)}>
+      <span aria-hidden className="size-1.5 rounded-full" style={{ background: c }} />
       {cls}
     </span>
   );
@@ -32,7 +30,7 @@ export function NodeLink({ id, label, title, className }: { id: string; label?: 
       href={nodeHref(pathname, id)}
       scroll={false}
       title={n.title}
-      className={cn("font-mono text-[12.5px] text-sky-700 hover:underline", open && "font-bold text-red-600", className)}
+      className={cn("font-mono text-[12.5px] text-blue-700 hover:underline", open && "font-bold text-red-600", className)}
     >
       {label ?? (n.ui ? n.display_name || n.title : id)}
       {title && <span className="ml-1 font-sans text-xs font-normal text-foreground/80">{short(n.title, 90)}</span>}

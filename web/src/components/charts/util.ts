@@ -1,11 +1,11 @@
 import { useNames } from "@/lib/names";
 import type { SeriesInputs, StoryData } from "@/lib/types";
 
-export const NEUTRAL = ["#2d3748", "#718096", "#a0aec0", "#4a5568"];
+export const NEUTRAL = ["#27272a", "#71717a", "#a1a1aa", "#52525b"];
 export const FLAG_COLOURS: Record<string, string> = {
-  neighbour_intensity_fallback_flag: "#dd6b20", gap_interpolated_flag: "#d53f8c", weather_missing: "#805ad5", beam_negative: "#e53e3e", gap_filled_flag: "#c53030",
+  neighbour_intensity_fallback_flag: "#ea580c", gap_interpolated_flag: "#db2777", weather_missing: "#7c3aed", beam_negative: "#ef4444", gap_filled_flag: "#dc2626",
 };
-export const ROLE_COL: Record<string, string> = { "SFH-low": "#2b6cb0", "SFH-mid": "#3182ce", "SFH-high": "#90cdf4", "MFH-small": "#2f855a", "MFH-medium": "#48bb78", "MFH-large": "#9ae6b4" };
+export const ROLE_COL: Record<string, string> = { "SFH-low": "#1d4ed8", "SFH-mid": "#3b82f6", "SFH-high": "#93c5fd", "MFH-small": "#0f766e", "MFH-medium": "#14b8a6", "MFH-large": "#99f6e4" };
 /** Plain display name of a building role ("Single-family house (low use)"): the `_buildings` names of ui_map.yaml, via story.json. */
 export function useBuildingLabel(): (role: string) => string {
   return useNames().building;

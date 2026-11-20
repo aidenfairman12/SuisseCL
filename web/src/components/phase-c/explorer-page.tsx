@@ -2,13 +2,14 @@
 import { useState } from "react";
 import type { EChartsOption } from "echarts";
 import { Chart } from "@/components/charts/echarts";
-import { Lead, Loading, Note, PB_COLOURS, Section, Table, fmt, signed } from "@/components/phase-b/shared";
+import { Lead, Loading, Note, Section, Table, fmt, signed } from "@/components/phase-b/shared";
 import { ArchetypeSelector, Pills, cellId, cellKey, useArchetype, weekDay } from "@/components/phase-c/shared";
 import { useBundleFile } from "@/lib/bundle";
 import type { CoolingCell, CoolingData, ExplorerData, HouseBlock, HoursSeries, HousesData } from "@/lib/types";
+import { PALETTE } from "@/lib/palette";
 
 const AX = { axisLabel: { fontSize: 11 }, nameTextStyle: { fontSize: 11 } };
-const LOAD_COL = { base: "#718096", dhw: "#4299e1", heat: "#dd6b20", cool: "#2b6cb0" };
+const LOAD_COL = { base: PALETTE.household, dhw: PALETTE.water, heat: PALETTE.heat, cool: PALETTE.cool };
 
 function AnnualChart({ blocks, buildings }: { blocks: Record<string, HouseBlock>; buildings: string[] }) {
   const g = (f: (b: HouseBlock) => number) => buildings.map((b) => Math.round((f(blocks[b]) / 1000) * 10) / 10);
@@ -22,8 +23,8 @@ function AnnualChart({ blocks, buildings }: { blocks: Record<string, HouseBlock>
     series: [
       bar("Household load", "use", LOAD_COL.base, g((b) => b.annual.base)), bar("Hot water", "use", LOAD_COL.dhw, g((b) => b.annual.dhw)),
       bar("Heating", "use", LOAD_COL.heat, g((b) => b.annual.heat)), bar("Cooling", "use", LOAD_COL.cool, g((b) => b.annual.cool)),
-      bar("Solar used on site", "source", PB_COLOURS.s2, g((b) => b.annual.pv_used_onsite)), bar("Bought from the grid", "source", PB_COLOURS.red, g((b) => b.annual.import)),
-      bar("Exported", "export", PB_COLOURS.purple, g((b) => b.annual.export)),
+      bar("Solar used on site", "source", PALETTE.solar, g((b) => b.annual.pv_used_onsite)), bar("Bought from the grid", "source", PALETTE.grid, g((b) => b.annual.import)),
+      bar("Exported", "export", PALETTE.export, g((b) => b.annual.export)),
     ],
   };
   return <Chart option={option} height={340} />;
@@ -41,9 +42,9 @@ function WeekChart({ h, start }: { h: HoursSeries; start: number }) {
     yAxis: { type: "value", name: "district energy per hour (kWh)", ...AX },
     series: [
       area("Household load", "base", h.base), area("Hot water", "dhw", h.dhw), area("Heating", "heat", h.heat), area("Cooling", "cool", h.cool),
-      { type: "line", name: "Solar generation", showSymbol: false, lineStyle: { width: 1.6, color: PB_COLOURS.s3 }, itemStyle: { color: PB_COLOURS.s3 }, data: h.pv },
-      { type: "line", name: "Battery (charging positive)", showSymbol: false, lineStyle: { width: 1.2, color: PB_COLOURS.s1, type: "dashed" }, itemStyle: { color: PB_COLOURS.s1 }, data: h.batt },
-      { type: "line", name: "Grid (import positive)", showSymbol: false, lineStyle: { width: 2.2, color: PB_COLOURS.red }, itemStyle: { color: PB_COLOURS.red }, data: h.net,
+      { type: "line", name: "Solar generation", showSymbol: false, lineStyle: { width: 1.6, color: PALETTE.solar }, itemStyle: { color: PALETTE.solar }, data: h.pv },
+      { type: "line", name: "Battery (charging positive)", showSymbol: false, lineStyle: { width: 1.2, color: PALETTE.battery, type: "dashed" }, itemStyle: { color: PALETTE.battery }, data: h.batt },
+      { type: "line", name: "Grid (import positive)", showSymbol: false, lineStyle: { width: 2.2, color: PALETTE.grid }, itemStyle: { color: PALETTE.grid }, data: h.net,
         markPoint: { symbolSize: 46, label: { fontSize: 10, formatter: () => `highest ${fmt(peak, 1)}` }, data: [{ coord: [at, peak] }] } },
     ] as EChartsOption["series"],
   };

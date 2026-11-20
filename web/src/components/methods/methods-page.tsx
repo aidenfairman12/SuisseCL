@@ -13,8 +13,9 @@ export function MethodsPage() {
   return (
     <div className="space-y-12">
       <header className="max-w-3xl space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Data &amp; methods</h1>
-        <p className="text-muted-foreground">Where the numbers come from, how they are turned into a simulation, and how the project was built.</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">How it was built</p>
+        <h1 className="text-3xl font-semibold tracking-tight">Data &amp; methods</h1>
+        <p className="text-base leading-relaxed text-zinc-600">Where the numbers come from, how they are turned into a simulation, and how the project was built.</p>
       </header>
 
       <section className="space-y-4">
@@ -25,7 +26,7 @@ export function MethodsPage() {
               {p.stages.map((s, i) => (
                 <li key={s.id} className="flex flex-col items-stretch gap-2 md:flex-row md:items-center">
                   <div className="flex-1 rounded-xl border bg-card p-3 shadow-sm">
-                    <div className="text-xs font-medium text-sky-700">Step {i + 1}</div>
+                    <div className="text-xs font-medium text-zinc-500">Step {i + 1}</div>
                     <div className="font-medium leading-snug">{s.title}</div>
                     <p className="mt-1 text-xs text-muted-foreground">{s.text}</p>
                   </div>
@@ -48,7 +49,7 @@ export function MethodsPage() {
                 </tbody>
               </table>
             </div>
-            <p className="max-w-3xl text-sm text-muted-foreground">Names and licences are copied from the project&apos;s source registry. The full list, with versions, checksums and access dates, is on the <Link href="/audit/" className="text-sky-700 hover:underline">Audit</Link> page.</p>
+            <p className="max-w-3xl text-sm text-muted-foreground">Names and licences are copied from the project&apos;s source registry. The full list, with versions, checksums and access dates, is on the <Link href="/audit/" className="text-blue-700 hover:underline">Audit</Link> page.</p>
           </>
         )}
       </section>
@@ -65,7 +66,7 @@ export function MethodsPage() {
         <h2 className="text-xl font-semibold tracking-tight">Go deeper</h2>
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[["/model/", "Model", "devices, assumptions and control"], ["/inputs/", "Inputs", "weather, price, carbon and demand"], ["/scenarios/", "Scenarios", "solar, battery, building and price assumptions"], ["/audit/", "Audit", "registry, validation and open issues"]].map(([h, l, t]) => (
-            <li key={h}><Link href={h} className="block rounded-xl border p-4 hover:border-sky-300"><div className="font-medium text-sky-700">{l}</div><div className="text-sm text-muted-foreground">{t}</div></Link></li>
+            <li key={h}><Link href={h} className="block rounded-xl border p-4 hover:border-blue-300"><div className="font-medium text-blue-700">{l}</div><div className="text-sm text-muted-foreground">{t}</div></Link></li>
           ))}
         </ul>
       </section>

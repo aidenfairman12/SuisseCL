@@ -5,14 +5,15 @@ import type { EChartsOption } from "echarts";
 import { ArrowRight } from "lucide-react";
 import { Chart } from "@/components/charts/echarts";
 import { fmt, rng, type Landing, type Range } from "./landing-data";
+import { PALETTE } from "@/lib/palette";
 
-const BLUE = "#2b6cb0", GREY = "#a0aec0", AMBER = "#dd6b20", GREEN = "#2f855a";
+const BLUE = PALETTE.grid, GREY = PALETTE.soft, AMBER = PALETTE.heat, GREEN = PALETTE.battery;
 
 function Section({ n, title, lead, children }: { n: number; title: string; lead: string; children: React.ReactNode }) {
   return (
     <section className="space-y-5">
       <div className="space-y-2">
-        <div className="text-xs font-medium uppercase tracking-wide text-sky-700">Finding {n}</div>
+        <div className="text-xs font-medium uppercase tracking-wide text-zinc-500">Finding {n}</div>
         <h2 className="max-w-4xl text-2xl font-semibold leading-snug tracking-tight">{title}</h2>
         <p className="max-w-3xl text-base leading-relaxed text-muted-foreground">{lead}</p>
       </div>
@@ -70,8 +71,8 @@ export function ClimateFinding({ d }: { d: Landing | null }) {
             <Chart option={option} height={320} />
             <Caption>Weather is observed 2023 for today and a Swiss climate-scenario version of it for the warmer years. The thermostat is the reference control.</Caption>
           </div>
-          <Link href="/houses/" className="inline-flex items-center gap-1.5 rounded-lg border bg-card px-4 py-2 text-sm font-medium shadow-sm hover:border-sky-300">
-            See it building by building: heat, cooling and grid per house <ArrowRight className="size-4 text-sky-700" />
+          <Link href="/houses/" className="inline-flex items-center gap-1.5 rounded-lg border bg-card px-4 py-2 text-sm font-medium shadow-sm hover:border-blue-300">
+            See it building by building: heat, cooling and grid per house <ArrowRight className="size-4 text-blue-700" />
           </Link>
         </>
       )}
@@ -96,7 +97,7 @@ export function FlexibilityFinding({ d }: { d: Landing | null }) {
           <Chart option={option} height={260} />
           <Caption>
             Saving against doing nothing, over the simulated year: {s0} % with today&apos;s setup (S0), then {s1} / {s2} / {s3} % in S1 / S2 / S3. Each rung adds flexible equipment:
-            S1 solar panels, S2 a battery, S3 the building&apos;s own thermal mass as heat storage. Details on the <Link href="/scenarios/" className="text-sky-700 hover:underline">Scenarios</Link> page.
+            S1 solar panels, S2 a battery, S3 the building&apos;s own thermal mass as heat storage. Details on the <Link href="/scenarios/" className="text-blue-700 hover:underline">Scenarios</Link> page.
           </Caption>
         </>
       )}
@@ -119,7 +120,7 @@ export function ControlFinding({ d }: { d: Landing | null }) {
           <Caption>
             An MPC that only minimises the bill pushes the district peak to about {fmt(d.peakMpc[0], 0)} kW, against {rng(d.peakThermostat)} kW for the thermostat. A small peak weight (0.1) brings it back to {rng(d.peakMpcWeighted)} kW
             at the same or a slightly higher saving ({rng(d.savingMpcWeighted, 1)} % against {rng(d.savingMpc, 1)} %). Ranges span the warming levels and cooling adoption levels. Learning controllers (reinforcement learning) did not beat their reference.
-            More on the <Link href="/controllers/" className="text-sky-700 hover:underline">Controllers</Link> page.
+            More on the <Link href="/controllers/" className="text-blue-700 hover:underline">Controllers</Link> page.
           </Caption>
         </>
       )}

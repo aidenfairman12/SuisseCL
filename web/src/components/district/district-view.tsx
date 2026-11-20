@@ -202,13 +202,15 @@ export function DistrictView({ controller: controllerProp, onController, variant
               <Level label="Heating tank" soc={selectedStep.shSoc} colour="bg-orange-600" />
               <Level label="Hot-water tank" soc={hasHwTank ? selectedStep.hwSoc : null} colour="bg-orange-400" />
             </div>
-            <details className="group mt-auto md:col-span-2 text-xs text-zinc-600">
-              <summary className="cursor-pointer select-none font-medium text-zinc-700 hover:text-zinc-900">How heat moves in this building</summary>
-              <div className="mt-3"><BuildingCutaway building={selectedInfo} state={selectedStep} stepSeconds={stepSeconds} /></div>
-            </details>
           </section>
         )}
       </div>
+      {selectedInfo && selectedStep && (
+        <details className="group border-b border-zinc-100 px-4 py-3 text-xs text-zinc-600 sm:px-6">
+          <summary className="cursor-pointer select-none font-medium text-zinc-700 hover:text-zinc-900">How heat moves inside {selectedInfo.display_name.toLowerCase()}</summary>
+          <div className="mt-3"><BuildingCutaway building={selectedInfo} state={selectedStep} stepSeconds={stepSeconds} /></div>
+        </details>
+      )}
 
       <div className="flex gap-3 px-4 pt-4 sm:gap-4 sm:px-6">
         <Button size="icon" variant="outline" className="mt-2 size-11 shrink-0 rounded-full" onClick={() => setPlaying((p) => !p)} aria-label={playing ? "Pause" : "Play"}>

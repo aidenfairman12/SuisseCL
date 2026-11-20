@@ -8,7 +8,7 @@ const pos: Record<string,{x:number;y:number}> = {
  demand_sh:{x:1010,y:88},demand_hw:{x:1010,y:218},district_outcomes:{x:1010,y:360}
 };
 const W=174,H=62;
-const colors={electricity:"#4b83b8",heat:"#d65f3d",signal:"#87939b",control:"#8b6bb1"};
+const colors={electricity:"#2563eb",heat:"#ea580c",signal:"#a1a1aa",control:"#7c3aed"};
 const prov=(v:SystemComponent["provenance"])=>typeof v==="string"?v.replaceAll("_"," "):"measured / synthetic by building type";
 export function SystemFlowDiagram(){
  const file=useComponents("full"); const [selected,setSelected]=useState("grid");
@@ -24,14 +24,14 @@ export function SystemFlowDiagram(){
       return <path key={f.id} d={`M ${sx} ${sy} C ${sx+bend} ${sy}, ${ex-bend} ${ey}, ${ex} ${ey}`} stroke={colors[f.carrier]} strokeDasharray={f.carrier==="signal"||f.carrier==="control"?"5 5":undefined} markerEnd={`url(#arrow-${f.carrier})`}><title>{f.description}</title></path>;
     })}</g>
     {components.filter(c=>pos[c.id]).map(c=>{const p=pos[c.id],on=selected===c.id;return <g key={c.id} transform={`translate(${p.x} ${p.y})`} onClick={()=>setSelected(c.id)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")setSelected(c.id)}} tabIndex={0} role="button" aria-pressed={on} className="cursor-pointer">
-      <rect width={W} height={H} rx="10" fill={on?"#eaf1f5":"#fff"} stroke={on?"#426b82":"#cbd5d1"} strokeWidth={on?3:1.5}/>
-      <text x="12" y="24" fontSize="13" fontWeight="700" fill="#243a32">{c.label}</text>
-      <text x="12" y="43" fontSize="10.5" fill="#66756e">{c.status==="modeled"?"Modeled":"Not modeled"} · Phase {c.phase_available}</text>
-      <circle cx={W-14} cy="13" r="4" fill={c.status==="modeled"?"#4f8a68":"#a5a5a5"}/>
+      <rect width={W} height={H} rx="10" fill={on?"#eff6ff":"#fff"} stroke={on?"#18181b":"#d4d4d8"} strokeWidth={on?3:1.5}/>
+      <text x="12" y="24" fontSize="13" fontWeight="700" fill="#18181b">{c.label}</text>
+      <text x="12" y="43" fontSize="10.5" fill="#71717a">{c.status==="modeled"?"Modeled":"Not modeled"} · Phase {c.phase_available}</text>
+      <circle cx={W-14} cy="13" r="4" fill={c.status==="modeled"?"#0d9488":"#d4d4d8"}/>
     </g>})}
    </svg>
    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2 border-t pt-3 text-xs text-muted-foreground">
-    <span><i className="mr-1 inline-block h-0.5 w-4 bg-[#4b83b8]"/>Electricity</span><span><i className="mr-1 inline-block h-0.5 w-4 bg-[#d65f3d]"/>Thermal energy</span><span><i className="mr-1 inline-block h-0.5 w-4 border-t border-dashed border-[#87939b]"/>Input signal</span><span><i className="mr-1 inline-block h-0.5 w-4 border-t border-dashed border-[#8b6bb1]"/>Control signal</span><span>Click a component to inspect its contract details.</span>
+    <span><i className="mr-1 inline-block h-0.5 w-4 bg-[#2563eb]"/>Electricity</span><span><i className="mr-1 inline-block h-0.5 w-4 bg-[#ea580c]"/>Thermal energy</span><span><i className="mr-1 inline-block h-0.5 w-4 border-t border-dashed border-[#a1a1aa]"/>Input signal</span><span><i className="mr-1 inline-block h-0.5 w-4 border-t border-dashed border-[#7c3aed]"/>Control signal</span><span>Click a component to inspect its contract details.</span>
    </div>
   </div>
   {active&&<section className="rounded-xl border bg-card p-4" aria-live="polite">

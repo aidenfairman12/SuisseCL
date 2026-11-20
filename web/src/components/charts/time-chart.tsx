@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { EChartsOption } from "echarts";
 import { Chart, type EChartInstance } from "./echarts";
 import { FLAG_COLOURS, NEUTRAL, idxWhere, pairs, runs } from "./util";
+import { PALETTE } from "@/lib/palette";
 
 export type PSeries = { color?: string; name: string; values: (number | null)[]; cls: string; type?: "line" | "bar"; step?: boolean; stack?: string; area?: boolean; dash?: boolean };
 export type PFlag = { label: string; values: number[]; colour: string; onSeries: number };
@@ -20,7 +21,7 @@ function runsOf(idx: number[]): [number, number][] {
   return out;
 }
 
-export function flagColour(key: string) { return FLAG_COLOURS[key] ?? "#c53030"; }
+export function flagColour(key: string) { return FLAG_COLOURS[key] ?? PALETTE.alert; }
 
 export function TimeChart({ panels, ts, overlay, colours, onHour, highlight }: { panels: Panel[]; ts: number[]; overlay: boolean; colours: Record<string, string>; onHour?: (i: number) => void; highlight?: number[] }) {
   const cb = useRef(onHour);
@@ -38,9 +39,9 @@ export function TimeChart({ panels, ts, overlay, colours, onHour, highlight }: {
         const first = j === 0;
         const areas = first ? [
           ...(overlay ? (p.flags ?? []).flatMap((f) => runs(f.values).map(([a, b]) => [{ xAxis: ts[a], itemStyle: { color: f.colour, opacity: 0.2 } }, { xAxis: ts[b] + HOUR }])) : []),
-          ...(highlight?.length ? runsOf(highlight).map(([a, b]) => [{ xAxis: ts[a], itemStyle: { color: "#d69e2e", opacity: 0.5 } }, { xAxis: ts[b] + HOUR }]) : []),
+          ...(highlight?.length ? runsOf(highlight).map(([a, b]) => [{ xAxis: ts[a], itemStyle: { color: PALETTE.highlight, opacity: 0.5 } }, { xAxis: ts[b] + HOUR }]) : []),
         ] : [];
-        const hl = first && highlight?.length ? { markLine: { silent: true, symbol: "none", label: { show: false }, lineStyle: { color: "#d69e2e", width: 1.5, type: "solid", opacity: 0.85 }, data: highlight.map((i) => ({ xAxis: ts[i] })) } } : {};
+        const hl = first && highlight?.length ? { markLine: { silent: true, symbol: "none", label: { show: false }, lineStyle: { color: PALETTE.highlight, width: 1.5, type: "solid", opacity: 0.85 }, data: highlight.map((i) => ({ xAxis: ts[i] })) } } : {};
         const shade = areas.length ? { markArea: { silent: true, data: areas }, ...hl } : hl;
         series.push({
           type: s.type ?? "line", name: s.name, xAxisIndex: k, yAxisIndex: k, showSymbol: false, sampling: s.type === "bar" ? undefined : "lttb", step: s.step ? "end" : false,

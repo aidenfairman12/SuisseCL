@@ -26,8 +26,8 @@ export function CompareTable({ res, controller, onController }: { res: ResultsFu
             {res.rows.map((r) => {
               const alg = r.controller.split("_")[0], sel = r.controller === controller;
               return (
-                <tr key={r.controller} className={cn("cursor-pointer border-t hover:bg-muted/30", sel && "bg-sky-50")} onClick={() => onController(r.controller)}>
-                  <td className="p-2"><NodeLink id={alg} label={names.ctrl(r.controller)} className="font-sans text-sm font-medium" /> <span className="text-xs text-muted-foreground">{alg} · {r.controller.slice(alg.length + 1)}</span>{sel && <span className="ml-1 text-xs text-sky-700">selected</span>}</td>
+                <tr key={r.controller} className={cn("cursor-pointer border-t hover:bg-muted/30", sel && "bg-blue-50")} onClick={() => onController(r.controller)}>
+                  <td className="p-2"><NodeLink id={alg} label={names.ctrl(r.controller)} className="font-sans text-sm font-medium" /> <span className="text-xs text-muted-foreground">{alg} · {r.controller.slice(alg.length + 1)}</span>{sel && <span className="ml-1 text-xs text-blue-700">selected</span>}</td>
                   {HEADLINE.map((c) => {
                     const d = r.controller === REF ? null : pctVs(r, ref, c);
                     const good = d == null || d === 0 ? "" : (lowerBetter(c) ? d < 0 : d > 0) ? "text-emerald-700" : "text-red-600";
@@ -44,7 +44,7 @@ export function CompareTable({ res, controller, onController }: { res: ResultsFu
       {twins.map((t) => {
         const alg = t.split("_")[0];
         return (
-          <p key={t} className="rounded-md border-l-4 border-sky-500 bg-sky-50 p-2 text-sm">
+          <p key={t} className="rounded-r-lg border-l-2 border-zinc-400 bg-zinc-50 px-3 py-2 text-sm text-zinc-700">
             <b>{names.ctrl(t)}</b> gives results identical to <b>{names.ctrl(REF)}</b> in every column of the results file. Registry note for <NodeLink id={alg} />: <Linkified text={String(nodes[alg]?.fields.Limitations ?? "")} />
           </p>
         );

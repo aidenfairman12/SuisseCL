@@ -59,9 +59,9 @@ export function SpfCheck() {
     grid: { left: 40, right: 14, top: 20, bottom: 50 }, tooltip: { trigger: "axis", formatter: axisTip({ head: Object.fromEntries(roles.map((r) => [label(r), r])) }) }, legend: LEG,
     xAxis: { type: "category", data: roles.map(label), axisLabel: { fontSize: 9, interval: 0, width: 80, overflow: "break" } }, yAxis: { type: "value", name: "SPF", ...AX },
     series: [
-      { type: "bar", name: "target SPF (literature, D-014d)", itemStyle: { color: "#a0aec0" }, data: roles.map((r) => g(r, "spf_target")) },
-      { type: "bar", name: "implied SPF space heating", itemStyle: { color: "#2b6cb0" }, data: roles.map((r) => +g(r, "implied_spf_sh").toFixed(3)) },
-      { type: "bar", name: "implied SPF combined (SH + DHW)", itemStyle: { color: "#2f855a" }, data: roles.map((r) => +g(r, "implied_spf_combined").toFixed(3)) },
+      { type: "bar", name: "target SPF (literature, D-014d)", itemStyle: { color: "#a1a1aa" }, data: roles.map((r) => g(r, "spf_target")) },
+      { type: "bar", name: "implied SPF space heating", itemStyle: { color: "#2563eb" }, data: roles.map((r) => +g(r, "implied_spf_sh").toFixed(3)) },
+      { type: "bar", name: "implied SPF combined (SH + DHW)", itemStyle: { color: "#0d9488" }, data: roles.map((r) => +g(r, "implied_spf_combined").toFixed(3)) },
     ],
   };
   return <Chart option={option} height={290} />;
@@ -79,8 +79,8 @@ export function HpSplitMonthly() {
     xs.push({ type: "category", gridIndex: k, data: s.months, axisLabel: { show: k === roles.length - 1, fontSize: 9 } });
     ys.push({ type: "value", gridIndex: k, name: "kWh", ...AX });
     titles.push({ text: label(r), left: 56, top: top - 8, textStyle: { fontSize: 11 } });
-    series.push({ type: "bar", name: "baseline (modeled as DHW demand)", stack: r, xAxisIndex: k, yAxisIndex: k, itemStyle: { color: "#dd6b20" }, data: s.buildings[r].e_hp_baseline_kwh });
-    series.push({ type: "bar", name: "space heating", stack: r, xAxisIndex: k, yAxisIndex: k, itemStyle: { color: "#2b6cb0" }, data: s.buildings[r].e_hp_space_heating_kwh });
+    series.push({ type: "bar", name: "baseline (modeled as DHW demand)", stack: r, xAxisIndex: k, yAxisIndex: k, itemStyle: { color: "#ea580c" }, data: s.buildings[r].e_hp_baseline_kwh });
+    series.push({ type: "bar", name: "space heating", stack: r, xAxisIndex: k, yAxisIndex: k, itemStyle: { color: "#2563eb" }, data: s.buildings[r].e_hp_space_heating_kwh });
   });
   const option: EChartsOption = { title: titles, grid: grids, xAxis: xs, yAxis: ys, series, tooltip: { trigger: "axis" }, legend: { ...LEG, data: ["baseline (modeled as DHW demand)", "space heating"] } };
   return <Chart option={option} height={roles.length * (rowH + 22) + 50} />;
@@ -95,11 +95,11 @@ export function HpSizing() {
     grid: { left: 46, right: 14, top: 20, bottom: 90 }, tooltip: { trigger: "axis", formatter: axisTip({ head: Object.fromEntries(r.map((q) => [label(q.role), roleTip(q.role, q.building)])) }) }, legend: { bottom: 0, type: "scroll", textStyle: { fontSize: 10 } },
     xAxis: { type: "category", data: x, axisLabel: { fontSize: 9, rotate: 20 } }, yAxis: { type: "value", name: "kW (= kWh per hour)", ...AX },
     series: [
-      { type: "bar", name: "peak measured HP electricity (kWh/h)", itemStyle: { color: "#a0aec0" }, data: r.map((q) => q.peak_measured_hp_kwh) },
-      { type: "bar", name: "peak space-heating part", itemStyle: { color: "#90cdf4" }, data: r.map((q) => q.peak_sh_elec_kwh) },
-      { type: "bar", name: "nominal power, heating device (kW)", itemStyle: { color: "#2b6cb0" }, data: r.map((q) => q.nominal_sh_kw) },
+      { type: "bar", name: "peak measured HP electricity (kWh/h)", itemStyle: { color: "#a1a1aa" }, data: r.map((q) => q.peak_measured_hp_kwh) },
+      { type: "bar", name: "peak space-heating part", itemStyle: { color: "#93c5fd" }, data: r.map((q) => q.peak_sh_elec_kwh) },
+      { type: "bar", name: "nominal power, heating device (kW)", itemStyle: { color: "#2563eb" }, data: r.map((q) => q.nominal_sh_kw) },
       { type: "bar", name: "peak baseline part", itemStyle: { color: "#fbd38d" }, data: r.map((q) => q.peak_baseline_elec_kwh) },
-      { type: "bar", name: "nominal power, DHW device (kW)", itemStyle: { color: "#dd6b20" }, data: r.map((q) => q.nominal_dhw_kw) },
+      { type: "bar", name: "nominal power, DHW device (kW)", itemStyle: { color: "#ea580c" }, data: r.map((q) => q.nominal_dhw_kw) },
     ],
   };
   return <Chart option={option} height={340} />;
@@ -111,7 +111,7 @@ export function TankSizes() {
   if (!V) return <Loading />;
   const names = Object.keys(V), plain = V[names[0]].map((q) => label(q.role));
   const heads = Object.fromEntries(V[names[0]].map((q) => [label(q.role), q.role]));
-  const heat = ["#2b6cb0", "#90cdf4", "#1a365d", "#a0aec0", "#cbd5e0"], dhw = ["#c53030", "#feb2b2", "#742a2a", "#e2a0a0", "#fed7d7"];
+  const heat = ["#2563eb", "#93c5fd", "#1a365d", "#a1a1aa", "#d4d4d8"], dhw = ["#dc2626", "#feb2b2", "#742a2a", "#e2a0a0", "#fed7d7"];
   const series: EChartsOption["series"] = [];
   names.forEach((v, k) => {
     series.push({ type: "bar", name: `${v}: heating tank`, xAxisIndex: 0, yAxisIndex: 0, itemStyle: { color: heat[k % 5] }, data: V[v].map((q) => q.heating_tank_kwh_th) });
@@ -145,7 +145,7 @@ export function EnvInterface() {
 export function ActionMap() {
   const A = useFigs()?.action_maps;
   if (!A) return <Loading />;
-  const col = ["#90cdf4", "#2b6cb0", "#1a365d"];
+  const col = ["#93c5fd", "#2563eb", "#1a365d"];
   const option: EChartsOption = {
     grid: { left: 52, right: 14, top: 20, bottom: 56 }, tooltip: { trigger: "axis" }, legend: LEG,
     xAxis: { type: "category", data: Object.values(A)[0].local_hour.map(String), name: "local hour (CityLearn hour − 1)", nameLocation: "middle", nameGap: 24, ...AX },
@@ -168,7 +168,7 @@ export function RewardYear() {
   for (const t of ((nodes["R-001"]?.fields.terms as unknown as Record<string, string>[]) ?? [])) w[t.Term] = parseFloat(t["Default weight"]);
   const ts = timestamps(si), days = Math.floor(T.reward.length / 24);
   const dayLab = Array.from({ length: days }, (_, d) => new Date(ts[d * 24]).toISOString().slice(0, 10));
-  const colr: Record<string, string> = { cost: "#2b6cb0", peak: "#c53030", ramp: "#dd6b20", carbon: "#b7791f" };
+  const colr: Record<string, string> = { cost: "#2563eb", peak: "#dc2626", ramp: "#ea580c", carbon: "#ca8a04" };
   const series: EChartsOption["series"] = ["cost", "peak", "ramp", "carbon"].map((k) => ({
     type: "bar" as const, name: `${k} (weight ${w[k]})`, stack: "r", itemStyle: { color: colr[k] },
     data: dayLab.map((_, d) => { let s = 0; for (let h = 0; h < 24; h++) s += -(w[k] || 0) * ((T[`term_${k}`][d * 24 + h] as number) || 0) / res.reward_scales[k]; return +s.toFixed(4); }),
@@ -195,7 +195,7 @@ export function SensitivityBars() {
     xs.push({ type: "category", gridIndex: k, data: variants, axisLabel: { fontSize: 9, rotate: 25 } });
     ys.push({ type: "value", gridIndex: k, ...AX });
     titles.push({ text: `${lab} vs uncontrolled`, left: `${k % 2 ? 56 : 7}%`, top: top - 24, textStyle: { fontSize: 11 } });
-    ctrls.forEach((c, j) => series.push({ type: "bar", name: c, xAxisIndex: k, yAxisIndex: k, itemStyle: { color: ["#2b6cb0", "#dd6b20", "#2f855a"][j % 3] }, data: variants.map((v) => (rows.find((r) => r.variant === v && r.controller === c) ?? {})[col] as number) }));
+    ctrls.forEach((c, j) => series.push({ type: "bar", name: c, xAxisIndex: k, yAxisIndex: k, itemStyle: { color: ["#2563eb", "#ea580c", "#0d9488"][j % 3] }, data: variants.map((v) => (rows.find((r) => r.variant === v && r.controller === c) ?? {})[col] as number) }));
   });
   const option: EChartsOption = { title: titles, grid: grids, xAxis: xs, yAxis: ys, series, tooltip: { trigger: "axis" }, legend: { ...LEG, data: ctrls } };
   return <Chart option={option} height={510} />;
