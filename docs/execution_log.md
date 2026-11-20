@@ -488,3 +488,6 @@ No account created, no API key used, nothing downloaded for this step.
 ### EL-0079 — 2026-11-19 — Room-unit archetype merged into the registers
 - WP2b (commit e167f2c): archetype B implemented, replay equal on `hist_hw99_high_ru`, matrix of 20 cells in 42 minutes on 10 single-thread workers. Registers: A-058 to A-061, ISS-049 to ISS-052, D-054, D-055, M-007 (five parameter rows), EXP-025, EXP-026; ALG-012 and ALG-013 notes. Row counts in `test_dashboard.py` updated (decisions 63, assumptions 59, issues 95, models 7, parameters 79, experiments 26). The audit bundle needs the parent's rebuild on a clean tree; freshness tests fail until then.
 - Check made while merging: the overheating numbers quoted in the WP2b draft (46,168 and 41,220 district degree-hours, 8,246 uncooled zone) match `climate_summary.json` and `climate_summary_ru.json`.
+
+### EL-0080 — 2026-11-20 — Phase C approved
+- Owner instruction "approve C" recorded as D-056. Status text in README, docs/project_overview.md and the completion report header updated. The Phase B gate still has no recorded decision (asked the owner). The audit bundle is rebuilt on the commit of this change.

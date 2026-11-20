@@ -1,4 +1,4 @@
-# Phase C completion report — future climate, cooling adoption and control (draft for the phase approval gate)
+# Phase C completion report — future climate, cooling adoption and control (approved at the phase gate on 2026-11-20, D-056)
 
 Date: 2026-11-19 · Status: draft by the agent; the owner has not yet reviewed it. Interpretation is marked "agent's reading". Every number below is taken from a generated result file or report (file names in brackets); none is typed from memory. Phase C was executed on the owner's chat instruction of 2026-11-19 (D-048); nothing is pushed.
 
