@@ -174,6 +174,7 @@ scenarios** (`SCENARIOS` in `swiss/contract/export_scenarios.py`; the frontend r
 |---|---|---|
 | `phase_b_s3_2023` | B | scenario S3 in observed 2023 weather: assumed rooftop PV (M-003), battery (M-004, 1 kWh per kWp), export price (A-015), single-node RC room model (M-005); no cooling |
 | `phase_c_gwl2_hw99_medium` | C | the climate cell `gwl2.0_hw99_medium` (+2 C global warming level, inserted 99th-percentile heat-wave week, medium cooling adoption: one apartment building has a reversible heat pump, M-006) plus the S3 setup |
+| `phase_c_gwl2_hw99_high_alt` | C | the same climate with the cooling sensitivity variant `high_alt` (A-044): the three houses and the small and medium apartment buildings are cooled (22 of 46 dwellings) |
 Per scenario: `manifest.json`, `conditions.json` (shared hourly weather, irradiance, tariff) and `runs/thermostat.json`, `runs/optimum.json`, full simulated year, hourly
 (8,759 steps; inputs 8,760). Controllers: the thermostat reference (heat to 21 C, cool to 26 C where a cooling device exists; ALG-009) and the exact perfect-foresight optimum
 replayed in CityLearn (ALG-008 for Phase B with the pure-shifting band 21 to 24 C, ALG-012 for Phase C). MPC and the learned controllers are not exported (too slow for a full year).
@@ -190,10 +191,10 @@ Values are rounded to 4 decimals (3 for the battery level, 2 for temperatures), 
 `manifest.jump_targets` lists extra "jump to" entries (Phase C: the hottest day of the heat-wave week, week 29); per-hour tags are in `run.situations.district`.
 Size: about 3 MB per run, about 6 MB per scenario (Phase A full year: about 57 MB); compute: about 2 minutes per scenario (two CityLearn year rollouts and one linear program).
 ```bash
-cl/bin/python -I swiss/contract/export_scenarios.py          # both scenarios (about 4 minutes), rewrites web/public/bundle/sim_scenarios/
+cl/bin/python -I swiss/contract/export_scenarios.py          # all scenarios (about 6 minutes), rewrites web/public/bundle/sim_scenarios/
 cl/bin/python -I swiss/contract/export_scenarios.py --only phase_b_s3_2023
 ```
-Phase C needs the cell dataset `swiss/datasets/climate/gwl2.0_hw99_medium/` (docs/reproduction.md, section 4c).
+Phase C needs the cell datasets `swiss/datasets/climate/gwl2.0_hw99_medium/` and `gwl2.0_hw99_high_alt/` (docs/reproduction.md, section 4c; the second with `build_climate_datasets.py --scenario gwl2.0_hw99 --adoption high_alt`).
 
 ## 10. Mapping to the dashboard specification
 | Spec item | Contract source |

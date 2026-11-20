@@ -2,7 +2,7 @@
 
 Scenarios are listed in SCENARIOS (data, not code paths): Phase B = S3 in 2023 weather (assumed PV, battery, export price, RC room model, no cooling) and
 Phase C = the climate cell gwl2.0_hw99_medium (+2 C global warming level, inserted 99th-percentile heat-wave week, medium cooling adoption, central reversible heat pump,
-plus the S3 setup). Each scenario has two controllers on the full simulated year, hourly:
+plus the S3 setup), and the same cell with the cooling sensitivity variant high_alt (A-044: the three houses and two apartment buildings cooled). Each scenario has two controllers on the full simulated year, hourly:
   thermostat   heat to 21 C (cool to 26 C where a cooling device exists), tanks and battery idle                       (ALG-009)
   optimum      exact perfect-foresight bill optimum (linear program, comfort band) replayed in CityLearn (band 21-24 for Phase B)   (ALG-008 / ALG-012)
 Only the fields the district view draws are stored (variables_scenario.py). Every hour is checked: import - export + pv = household + heat pumps + battery charge - discharge.
@@ -48,6 +48,12 @@ SCENARIOS = [
      'climate': True, 'label': 'Phase C (+2 °C heat wave)', 'short_label': 'Phase C',
      'description': 'The district in a climate with two degrees of global warming and an inserted heat-wave week, with medium cooling adoption (one apartment building has a reversible heat pump), '
                     'rooftop solar, battery and the room temperature model.',
+     'algorithms': {'thermostat': 'ALG-009', 'optimum': 'ALG-012'}, 'heat_wave_steps': [4872, 5040],
+     'jump': [{'id': 'heat_wave', 'label': 'Heat-wave week', 'description': 'The hottest day of the inserted heat-wave week (week 29).'}]},
+    {'id': 'phase_c_gwl2_hw99_high_alt', 'phase': 'C', 'kind': 'climate_cell', 'cell': 'gwl2.0_hw99_high_alt', 'dataset': 'swiss/datasets/climate/gwl2.0_hw99_high_alt', 'cooling': True,
+     'climate': True, 'label': 'Phase C, wider cooling', 'short_label': 'Phase C wide',
+     'description': 'The same climate and heat-wave week with the cooling sensitivity variant (A-044): the three houses and two of the apartment buildings have a reversible heat pump '
+                    '(about half of the homes); the large apartment building is not cooled.',
      'algorithms': {'thermostat': 'ALG-009', 'optimum': 'ALG-012'}, 'heat_wave_steps': [4872, 5040],
      'jump': [{'id': 'heat_wave', 'label': 'Heat-wave week', 'description': 'The hottest day of the inserted heat-wave week (week 29).'}]},
 ]
