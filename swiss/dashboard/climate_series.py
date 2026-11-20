@@ -4,12 +4,12 @@ Rolls out week 29 (the week that holds the inserted heat wave, steps 4872 to 503
 the same controllers, datasets, forecasters (weather-conditioned, weather taken as known, A-028) and warm-up (96 steps from empty tanks, as rl.play) as the matrix of
 swiss/experiments/climate_matrix.py, and writes district hourly series (kWh per hour) to swiss/dashboard/data/climate_weeks.json. The thermostat and the exact optimum
 series of the same week come from the full-year replays already stored in swiss/experiments/climate_results/climate_summary.json (week29), so they are not repeated here.
-Cells: hist_hw99, gwl2.0_hw99, gwl3.0_hw99 x adoption none and high (central archetype). One thread per worker, at most six workers.
+Cells: every weather scenario x adoption none, low, medium, high, plus the two high_alt cells (central archetype); cells already in the output file are kept. One thread per worker, at most six workers.
 Note on comparability: the optimum series continues the year-long replay (carried-in storage state), the controllers here start the week from empty tanks after a 96 step
 warm-up, so the first hours of the week can differ a little between the two groups.
 
-Archetype B (room units, WP5c): `--arch ru` rolls out the heat-wave week of the cells hist_hw99, gwl2.0_hw99 and gwl3.0_hw99 with adoption high at the default cooled fraction
-(cell names `<scenario>_high_ru`; the adoption `none` cells are shared with archetype A) and writes swiss/dashboard/data/climate_weeks_ru.json; archetype A's file is not touched.
+Archetype B (room units, WP5c): `--arch ru` rolls out week 29 of every weather scenario with adoption low, medium and high at the default cooled fraction
+(cell names `<scenario>_<adoption>_ru`; the adoption `none` cells are shared with archetype A) and writes swiss/dashboard/data/climate_weeks_ru.json; archetype A's file is not touched.
 
 Run: cl/bin/python -I swiss/dashboard/climate_series.py [--workers 6] [--arch central|ru]
 """
@@ -31,8 +31,10 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.insert(0, ROOT)
 OUT = os.path.join(ROOT, 'swiss', 'dashboard', 'data', 'climate_weeks.json')
 OUT_RU = os.path.join(ROOT, 'swiss', 'dashboard', 'data', 'climate_weeks_ru.json')
-CELLS = [f'{s}_{a}' for s in ('hist_hw99', 'gwl2.0_hw99', 'gwl3.0_hw99') for a in ('none', 'high')]
-CELLS_RU = [f'{s}_high_ru' for s in ('hist_hw99', 'gwl2.0_hw99', 'gwl3.0_hw99')]
+SCENARIOS = ('hist', 'hist_hw99', 'gwl2.0', 'gwl2.0_hw99', 'gwl3.0', 'gwl3.0_hw99')
+# every cell of the matrix (the first runs held only the heat-wave cells with no and high cooling; existing results are kept and only missing cells are run)
+CELLS = [f'{s}_{a}' for s in SCENARIOS for a in ('none', 'low', 'medium', 'high')] + ['gwl3.0_high_alt', 'gwl3.0_hw99_high_alt']
+CELLS_RU = [f'{s}_{a}_ru' for s in SCENARIOS for a in ('low', 'medium', 'high')]
 CTRLS = ('pv_rule', 'mpc', 'mpc_peak0.1')
 WEEK = 29
 
@@ -86,14 +88,18 @@ def main():
     cells, out_path = (CELLS_RU, OUT_RU) if a.arch == 'ru' else (CELLS, OUT)
     for c in cells:
         if a.arch == 'ru':
-            sc, ad = c[:-len('_high_ru')], 'high'
+            sc, ad = c[:-len('_ru')].rsplit('_', 1)
             d, fr = bcd.cell_dir(sc, ad, bcd.RU_FRACTION), bcd.RU_FRACTION
         else:
-            sc, ad = c.rsplit('_', 1)
+            sc, ad = (c[:-len('_high_alt')], 'high_alt') if c.endswith('_high_alt') else c.rsplit('_', 1)
             d, fr = bcd.cell_dir(sc, ad), None
         if not os.path.exists(os.path.join(d, 'schema.json')):
             bcd.build_cell(sc, ad, fraction=fr)
     res = {}
+    if os.path.exists(out_path):                      # keep the cells already rolled out; run only the missing ones (or those that failed)
+        res = {k: v for k, v in json.load(open(out_path))['cells'].items() if 'error' not in v}
+    cells = [c for c in cells if c not in res]
+    print(f'{len(res)} cells kept, {len(cells)} to run', flush=True)
     ctx = mp.get_context('spawn')
     t0 = time.time()
     with ctx.Pool(min(a.workers, 6), maxtasksperchild=1) as pool:

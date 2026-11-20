@@ -41,9 +41,9 @@ export function HousesPage() {
       <Lead>{p.intro as string}</Lead>
       <div className="space-y-3">
         <ArchetypeSelector list={d.archetypes} current={arch.current} onChange={arch.setSel} />
-        <Pills value={scen} onChange={setScen} label="Weather scenario" options={d.scenarios.map((s) => ({ id: s, label: d.scenario_labels[s] }))} />
-        <Pills value={adopt} onChange={setAdopt} label="Cooling level" options={adoptions.map((a) => ({ id: a, label: d.adoption_labels[a].split(":")[0] }))} />
-        <Pills value={ctrl} onChange={setCtrl} label="Controller" options={[{ id: "thermostat", label: "Thermostat (reference)" }, { id: "optimum", label: "Exact optimum" }]} />
+        <Pills value={scen} onChange={setScen} label="Weather" hint="observed 2023 or a warmer climate" options={d.scenarios.map((s) => ({ id: s, label: d.scenario_labels[s] }))} />
+        <Pills value={adopt} onChange={setAdopt} label="Cooling adoption" hint="how many buildings have cooling" options={adoptions.map((a) => ({ id: a, label: d.adoption_labels[a].split(":")[0] }))} />
+        <Pills value={ctrl} onChange={setCtrl} label="Controller" hint="simulated for the whole year" options={[{ id: "thermostat", label: "Thermostat (reference)" }, { id: "optimum", label: "Exact optimum" }]} />
       </div>
 
       <Section title="Per building" classes={["modeled", "assumption"]}>

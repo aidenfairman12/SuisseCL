@@ -79,7 +79,7 @@ _pages:           # the question each Explore page answers
   controllers: How much of that ideal saving do real controllers reach, and what do forecasts, peaks and model errors change?
   climate: What weather does Phase C use for a warmer climate, how was it built from the Swiss climate scenarios, and how far can it be trusted?
   cooling: What do warming and cooling adoption change in the district's electricity use, in what solar covers, in the grid draw and in what controllers can save?
-  explorer: What does one climate, one cooling level and one controller do to the district's energy over the year and hour by hour in a heat wave?
+  explorer: What does one climate, one cooling level and one controller do to the district's energy over the year and hour by hour in a July week?
   houses: What does cooling add to each kind of house, how much of it does solar cover, and what reaches the grid?
   glossary: What do the technical terms on this site mean?
 
@@ -337,13 +337,13 @@ _phase_c:
     pending_title: Phase C assumptions not yet in the registers
   explorer:
     intro: >
-      Choose a weather scenario, a cooling level and a controller. The annual energy stack is available for the thermostat and the exact optimum (a full-year simulation); the
-      planner and the rule were simulated for the eight test weeks, so they appear in the heat-wave-week view and in the numbers of the test weeks.
+      Choose a cooling system, a weather scenario, a cooling level and a controller. Every controller has an hour-by-hour July week and the numbers of the eight test weeks.
+      The yearly chart exists only for the thermostat and the exact optimum, which were simulated for the whole year; the rule and the planners were simulated week by week.
     week_note: >
-      The heat-wave week is the July test week. The thermostat and optimum curves continue a year-long simulation; the rule and the planner start the week from empty tanks after a
+      The week shown is the July test week, which holds the inserted heat wave in the heat-wave scenarios. The thermostat and optimum curves continue a year-long simulation; the rule and the planner start the week from empty tanks after a
       warm-up, so the first hours can differ a little between the two groups. Values are district sums of the six buildings.
     missing_note: >
-      This controller was not simulated for this cell. The hourly week was simulated for the heat-wave scenarios with no cooling and with high cooling.
+      This controller was not simulated hour by hour for this case.
   houses:
     intro: >
       Per building: what cooling adds, what warming saves in heating, how much of the cooling electricity solar covers, and what reaches the grid. All differences compare a cell

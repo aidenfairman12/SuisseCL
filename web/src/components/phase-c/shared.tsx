@@ -1,6 +1,6 @@
 "use client";
 // Helpers shared by the Phase C pages: archetype selector (built from the archetypes present in the data), scenario labels and the colour scale of the heat maps.
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { PcArchetype } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -11,28 +11,43 @@ export function useArchetype(list: PcArchetype[]) {
   return { current, setSel };
 }
 
-export function ArchetypeSelector({ list, current, onChange }: { list: PcArchetype[]; current: string; onChange: (id: string) => void }) {
-  const label = list.find((a) => a.id === current)?.label ?? current;
-  if (list.length <= 1) return <p className="text-xs text-muted-foreground">Cooling system archetype: {label}.</p>;
+/** One labelled row of choices: the label (and an optional one-line hint) in a fixed column on wide screens, above the buttons on phones. */
+export function ChoiceRow({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
-    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Cooling system archetype">
-      <span className="text-xs text-muted-foreground">Cooling system archetype</span>
-      {list.map((a) => (
-        <button key={a.id} type="button" onClick={() => onChange(a.id)} aria-pressed={a.id === current}
-          className={cn("rounded-md border px-2.5 py-1 text-xs transition-colors hover:bg-muted", a.id === current && "bg-muted font-medium")}>{a.label}</button>
-      ))}
+    <div className="grid gap-1.5 sm:grid-cols-[10rem_1fr] sm:items-start" role="group" aria-label={label}>
+      <div className="pt-1 text-xs font-medium leading-tight">
+        {label}
+        {hint && <div className="mt-0.5 font-normal text-muted-foreground">{hint}</div>}
+      </div>
+      <div className="flex flex-wrap items-center gap-1.5">{children}</div>
     </div>
   );
 }
 
-export function Pills<T extends string>({ value, options, onChange, label }: { value: T; options: { id: T; label: string }[]; onChange: (v: T) => void; label: string }) {
+const pill = (active: boolean, disabled?: boolean) =>
+  cn("rounded-md border px-2.5 py-1 text-xs transition-colors", disabled ? "cursor-not-allowed border-dashed text-muted-foreground/60" : "hover:bg-muted", active && "bg-muted font-medium");
+
+export function ArchetypeSelector({ list, current, onChange }: { list: PcArchetype[]; current: string; onChange: (id: string) => void }) {
+  const label = list.find((a) => a.id === current)?.label ?? current;
+  if (list.length <= 1) return <p className="text-xs text-muted-foreground">Cooling system: {label}.</p>;
   return (
-    <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={label}>
-      {options.map((o) => (
-        <button key={o.id} type="button" onClick={() => onChange(o.id)} aria-pressed={o.id === value}
-          className={cn("rounded-md border px-2.5 py-1 text-xs transition-colors hover:bg-muted", o.id === value && "bg-muted font-medium")}>{o.label}</button>
+    <ChoiceRow label="Cooling system" hint="how the cooled buildings are cooled">
+      {list.map((a) => (
+        <button key={a.id} type="button" onClick={() => onChange(a.id)} aria-pressed={a.id === current} className={pill(a.id === current)}>{a.label}</button>
       ))}
-    </div>
+    </ChoiceRow>
+  );
+}
+
+export type PillOption<T extends string> = { id: T; label: string; disabled?: boolean; title?: string };
+
+export function Pills<T extends string>({ value, options, onChange, label, hint }: { value: T; options: PillOption<T>[]; onChange: (v: T) => void; label: string; hint?: string }) {
+  return (
+    <ChoiceRow label={label} hint={hint}>
+      {options.map((o) => (
+        <button key={o.id} type="button" disabled={o.disabled} title={o.title} onClick={() => onChange(o.id)} aria-pressed={o.id === value} className={pill(o.id === value, o.disabled)}>{o.label}</button>
+      ))}
+    </ChoiceRow>
   );
 }
 

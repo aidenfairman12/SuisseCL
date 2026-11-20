@@ -55,13 +55,18 @@ export function ExplorerPage() {
   const { data: hs } = useBundleFile<HousesData>("houses");
   const { data: cd } = useBundleFile<CoolingData>("cooling");
   const [scen, setScen] = useState("gwl3.0_hw99");
-  const [adopt, setAdopt] = useState("high");
+  const [adoptSel, setAdopt] = useState("high");
   const [ctrl, setCtrl] = useState("thermostat");
   const arch = useArchetype(d?.archetypes ?? []);
   if (error) return <p className="text-sm text-destructive">Could not load the explorer bundle: {error}</p>;
   if (!d || !hs || !cd) return <Loading what="scenario explorer" />;
   const p = d.prose;
-  const adoptions = d.adoption.filter((a) => d.scenarios.some((s) => cellKey(arch.current, s, a) in d.hourly));
+  const roomUnits = arch.current !== "central";
+  const hasAdoption = (a: string) => d.scenarios.some((s) => cellKey(arch.current, s, a) in d.hourly);
+  const hasCell = (s: string, a: string) => cellKey(arch.current, s, a) in d.hourly;
+  // keep the choice valid when the archetype or the weather changes ("high, other assignment" exists only at +3.0 C and not for room units); fall back to high cooling
+  const adopt = hasCell(scen, adoptSel) ? adoptSel : "high";
+  const adoptTitle = (a: string) => hasCell(scen, a) ? d.adoption_labels[a] : !hasAdoption(a) ? `not simulated${roomUnits ? " for room units" : ""}` : `simulated only for ${d.scenarios.filter((s) => hasCell(s, a)).map((s) => d.scenario_labels[s]).join(" and ")}`;
   const key = cellKey(arch.current, scen, adopt);
   const hours = (d.hourly[key]?.[ctrl] as HoursSeries | undefined) ?? null;
   const annualCell = hs.cells[key] as ({ archetype: string } & Record<string, { buildings: Record<string, HouseBlock>; district: { annual: Record<string, number>; summer_peak_kw: number; peak_kw: number } }>) | undefined;
@@ -69,14 +74,28 @@ export function ExplorerPage() {
   const cellArch = adopt === "none" ? "central" : arch.current;
   const cell: CoolingCell | undefined = cd.cells.find((c) => !c.sensitivity && c.archetype === cellArch && c.id === cellId(scen, adopt));
   const ctrlRow = cell && ctrl !== "optimum" ? cell.controllers[ctrl] : null;
+  const views: [string, boolean, string][] = [
+    ["Yearly chart", !!annual, "only the thermostat and the exact optimum were simulated for the whole year"],
+    ["Hour-by-hour week", !!hours, "this controller was not rolled out hour by hour for this case"],
+    ["Test-week numbers", !!cell && (ctrl === "optimum" || !!ctrlRow), "no result for this case"],
+  ];
   return (
     <div className="space-y-10">
       <Lead>{p.intro as string}</Lead>
-      <div className="space-y-3">
+      <div className="space-y-3 rounded-xl border p-4">
         <ArchetypeSelector list={d.archetypes} current={arch.current} onChange={arch.setSel} />
-        <Pills value={scen} onChange={setScen} label="Weather scenario" options={d.scenarios.map((s) => ({ id: s, label: d.scenario_labels[s] }))} />
-        <Pills value={adopt} onChange={setAdopt} label="Cooling level" options={adoptions.map((a) => ({ id: a, label: d.adoption_labels[a].split(":")[0] }))} />
-        <Pills value={ctrl} onChange={setCtrl} label="Controller" options={d.controllers.map((c) => ({ id: c, label: d.controller_labels[c] }))} />
+        <Pills value={scen} onChange={setScen} label="Weather" hint="observed 2023 or a warmer climate"
+          options={d.scenarios.map((s) => ({ id: s, label: d.scenario_labels[s], disabled: !hasCell(s, adopt), title: hasCell(s, adopt) ? undefined : "not simulated for this cooling level" }))} />
+        <Pills value={adopt} onChange={setAdopt} label="Cooling adoption" hint="how many buildings have cooling"
+          options={d.adoption.map((a) => ({ id: a, label: d.adoption_labels[a].split(":")[0], disabled: !hasCell(scen, a), title: adoptTitle(a) }))} />
+        <Pills value={ctrl} onChange={setCtrl} label="Controller" hint="who decides when to heat, cool and charge"
+          options={d.controllers.map((c) => ({ id: c, label: d.controller_labels[c] }))} />
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t pt-3 text-xs sm:pl-[10rem]">
+          <span className="text-muted-foreground">Available for this case:</span>
+          {views.map(([name, ok, why]) => (
+            <span key={name} title={ok ? undefined : why} className={ok ? "font-medium" : "text-muted-foreground line-through"}>{ok ? "✓" : "–"} {name}</span>
+          ))}
+        </div>
       </div>
 
       <Section title="Energy over the year, per building" classes={["modeled", "assumption"]}>
@@ -86,11 +105,11 @@ export function ExplorerPage() {
             <Note>Full-year simulation of the {d.controller_labels[ctrl].toLowerCase()}. The first stack is electricity use, the second is where it came from, the third is solar power exported. The solar-used and grid parts also cover battery losses, so they do not add up exactly to the use.</Note>
           </>
         ) : (
-          <Note>The yearly stack is only available for the thermostat and the exact optimum, which were simulated for the whole year. The {d.controller_labels[ctrl].toLowerCase()} was simulated for the eight test weeks; see the numbers below and the heat-wave week.</Note>
+          <Note>The yearly stack is only available for the thermostat and the exact optimum, which were simulated for the whole year. The {d.controller_labels[ctrl].toLowerCase()} was simulated week by week; see the hour-by-hour week and the numbers below.</Note>
         )}
       </Section>
 
-      <Section title="The heat-wave week, hour by hour" classes={["modeled", "synthetic"]}>
+      <Section title={scen.includes("_hw") ? "The heat-wave week, hour by hour" : "A July week, hour by hour"} classes={["modeled", "synthetic"]}>
         {hours ? <WeekChart h={hours} start={d.week.steps[0]} /> : <Note tone="warn">{p.missing_note as string}</Note>}
         <Note>{p.week_note as string}</Note>
       </Section>
@@ -118,7 +137,7 @@ export function ExplorerPage() {
           />
         ) : <Note>No data for this combination.</Note>}
       </Section>
-      <Note>Sources: {d.sources.join(", ")}. Every curve and number is read from committed result files at build time. Hours with the rule and the planner exist only for the cells of the heat-wave scenarios with no cooling and with high cooling.</Note>
+      <Note>Sources: {d.sources.join(", ")}. Every curve and number is read from committed result files at build time.</Note>
     </div>
   );
 }

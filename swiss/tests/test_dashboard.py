@@ -593,7 +593,7 @@ def test_phase_c_bundle_size_and_prose_filled(pcb):
     for n in PC_FILES:
         sz = os.path.getsize(os.path.join(BUNDLE, n))
         total += sz
-        assert sz < 800_000
+        assert sz < (1_500_000 if n == 'explorer.json' else 800_000)    # explorer holds 44 cells x 5 controllers x 168 h (about 1.3 MB raw, 0.13 MB gzipped)
     assert total < 2_500_000
     for name, b in pcb.items():
         texts = list(_flat_text(b['prose'])) + (list(_flat_text(b['pending_register'])) if name == 'cooling' else [])
@@ -642,7 +642,8 @@ def test_phase_c_robustness_rows_and_limitations(pcb):
 
 def test_phase_c_hourly_week_series(pcb):
     ex = pcb['explorer']
-    assert ex['week']['steps'] == [4872, 5039] and len(ex['hours_note_cells']) == 9
+    assert ex['week']['steps'] == [4872, 5039] and len(ex['hours_note_cells']) == 44    # every cell: 26 central + 18 room-unit
+    assert set(ex['hours_note_cells']) == set(ex['hourly'])                               # all five controllers rolled out hour by hour in every cell
     for cid, h in ex['hourly'].items():
         assert h['archetype'] == ('room_units' if cid.startswith('room_units__') else 'central')
         assert {'thermostat', 'optimum'} <= set(h)
