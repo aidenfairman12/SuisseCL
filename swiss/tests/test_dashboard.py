@@ -756,3 +756,31 @@ def test_phase_c_pages_are_wired_into_the_site():
         assert os.path.exists(os.path.join(ROOT, 'web', 'src', 'app', route, 'page.tsx'))
         assert os.path.exists(os.path.join(ROOT, 'web', 'src', 'components', 'phase-c', f'{route}-page.tsx'))
         assert story['pages'][route]
+
+
+# ---------------------------------------------------------------- system map (Overview diagram, all phases)
+
+def test_system_map_covers_the_contract_and_every_phase(prov):
+    sm = read_bundle_file(os.path.join(BUNDLE, 'system_map.json'))
+    assert [p['id'] for p in sm['phases']] == ['A', 'B', 'C']
+    views = sm['views']
+    for ph, v in views.items():
+        ids = {c['id'] for c in v['components']}
+        assert all(f['from'] in ids and f['to'] in ids for f in v['flows']), ph
+        for c in v['components']:
+            assert c['label'] and c['description'] and c['source_ids'], (ph, c['id'])
+            assert all(s in prov for s in c['source_ids']), (ph, c['id'], c['source_ids'])
+    # Phase A reproduces the contract: every modeled component (outcomes renamed) and every flow, with the grid's flows routed through the building connection
+    contract = read_bundle_file(os.path.join(BUNDLE, 'sim_full', 'components.json'))
+    rename = {'district_outcomes': 'outcomes'}
+    a_ids = {c['id'] for c in views['A']['components']}
+    assert {rename.get(c['id'], c['id']) for c in contract['components'] if c['status'] == 'modeled'} <= a_ids
+    a_edges = {(f['from'], f['to'], f['carrier']) for f in views['A']['flows']}
+    for f in contract['flows']:
+        src, dst = ('meter' if f['from'] == 'grid' else f['from']), rename.get(f['to'], f['to'])
+        assert (src, dst, f['carrier']) in a_edges, f['id']
+    assert ('grid', 'meter', 'electricity') in a_edges
+    # what the contract marks as future is modeled in the later phases
+    b_ids, c_ids = {c['id'] for c in views['B']['components']}, {c['id'] for c in views['C']['components']}
+    assert {'pv', 'battery', 'ev', 'leg'} <= b_ids and {'pv', 'battery'} <= c_ids and not ({'pv', 'battery', 'ev', 'leg'} & a_ids)
+    assert any(f['carrier'] == 'cooling' for f in views['C']['flows']) and not any(f['carrier'] == 'cooling' for f in views['B']['flows'])

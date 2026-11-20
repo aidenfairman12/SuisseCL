@@ -27,12 +27,12 @@ _settings:
   prose_allowed_tokens: ['2023', '2016', '2017', '2016-17', '3.3.0', 'CO2', 'CO2eq', 'kWh_th', 'kW²', 'ALG-001..004',
                          '24-hour', 'CH2025', 'AR5', 'A.III.2', 'Building_1', 'Building_6', 'SPF_SH', 'S0', 'S1', 'S2', 'S3']
   classification_colours:
-    measured: '#2b6cb0'
-    derived: '#2f855a'
-    modeled: '#b7791f'
-    synthetic: '#c53030'
-    assumption: '#6b46c1'
-    mixed: '#4a5568'
+    measured: '#2563eb'
+    derived: '#0d9488'
+    modeled: '#ca8a04'
+    synthetic: '#dc2626'
+    assumption: '#7c3aed'
+    mixed: '#52525b'
 
 # ---------------------------------------------------------------- plain-language layer (story page, names, glossary)
 # All prose of the story page lives here. Numbers only through {placeholders} (namespaces as above plus `derived`, `names`,
@@ -423,7 +423,16 @@ _glossary:
   - {id: kw_kwh, term: kW and kWh, definition: "Power (kW) is how fast energy flows at one moment, like speed. Energy (kWh) is the total that has flowed, like distance. A bill is charged for energy; a grid is sized for power."}
   - {id: peak, term: Highest grid draw (peak), definition: "The largest power the district takes from the grid in any hour of the year. Grids and fuses are sized for it.", node: kpi:district_peak_kw}
   - {id: rule_based_control, term: Rule-based control, definition: "A controller that follows fixed rules, such as charging the tanks at night. The rules are written by hand and do not learn.", node: card:controllers}
-  - {id: rl, term: Reinforcement learning, definition: "A way of letting software learn good control by trial and error against a score. It is planned for later phases and is not used yet."}
+  - {id: rl, term: Reinforcement learning, definition: "A way of letting software learn good control by trial and error against a score. Learning controllers were trained on the Phase A district and on the solar and battery scenarios; none beat its reference."}
+  - {id: rooftop_solar, term: Rooftop solar (PV), definition: "Solar panels on the roof that turn sunshine into electricity. The panels in Phases B and C are assumed, sized from each building's own yearly use; the real buildings' panels are not modeled.", node: M-003}
+  - {id: home_battery, term: Home battery, definition: "An electrical battery in the building that stores solar surplus or cheap grid electricity for later. Its size here is assumed in proportion to the solar panels.", node: M-004}
+  - {id: export_price, term: Export price (feed-in), definition: "What the utility pays for solar electricity sent to the grid. Here it is an assumed constant price, and the results are shown for several values.", node: A-015}
+  - {id: self_consumption, term: Self-consumption, definition: "The share of a building's solar output that it uses on site, directly or through its battery, instead of exporting it."}
+  - {id: building_model, term: Building thermal model, definition: "A simple model of how a building gains and loses heat through its walls and windows and from the sun. With it, indoor temperature can move within a comfort band, so the building itself stores heat. Used from scenario S3 on.", node: M-005}
+  - {id: comfort_band, term: Comfort band, definition: "The range of indoor temperatures a controller must keep. A wider band gives more freedom to heat or cool early, using the building as storage.", node: A-020}
+  - {id: cooling_archetype, term: Cooling system (central or room units), definition: "Two ways a building is cooled in Phase C: a central system, where the reversible heat pump cools the whole building, or room units that cool only part of the floor area.", node: M-007}
+  - {id: ev_charging, term: EV charging scenario, definition: "A labelled what-if in which two houses charge an electric car whose charging can move within an evening-to-morning window. It was solved in the optimiser only.", node: A-026}
+  - {id: energy_community, term: Local energy community, definition: "A group of buildings that shares solar surplus among its members at a reduced grid fee. Tested as a labelled what-if in the optimiser only; the six buildings are not real neighbours.", node: A-027}
   - {id: carbon_intensity, term: Carbon intensity, definition: "How much CO2 is emitted per unit of electricity at a given hour. It is lower when hydro and nuclear dominate and higher when imports from fossil-heavy neighbours are needed.", node: series:carbon_intensity}
   - {id: measured, term: Measured, definition: "Recorded by a real sensor or meter, such as a smart meter or a weather station."}
   - {id: derived, term: Calculated (derived), definition: "Worked out from measured data with a stated formula, such as heat demand from heat-pump electricity."}
@@ -746,6 +755,8 @@ card:environment:
     Stock CityLearn 3.3.0 classes only. No thermal dynamics: indoor temperature is a constant placeholder, so comfort
     cannot be assessed (D-018). Closure check V1: simulated building electricity equals the inputs to within
     {fig.env_interface.v1_max_abs_err_kwh:.1e} kWh per step (largest error over {fig.env_interface.v1_cases} controller-building cases).
+  caveats:
+    - "This describes the Phase A environment. From scenario S3 on, Phase B and Phase C use a building thermal model with indoor temperature and a comfort band; see the Building model tab."
   code: [swiss/citylearn_build/build_dataset.py::main]
   docs: [swiss/datasets/swiss_district_2023/schema.json]
 
@@ -765,6 +776,8 @@ card:reward:
     - {label: Peak scale, value: '{reward_scales.peak:.1f}', unit: kW²}
     - {label: Ramp scale, value: '{reward_scales.ramp:.4f}', unit: kW}
     - {label: Carbon scale, value: '{reward_scales.carbon:.4f}', unit: '-'}
+  caveats:
+    - "This is the Phase A score of the learning runs. In Phase B the learning controllers are scored on the bill with a comfort penalty in S3, and the planners and the exact optimum minimise the bill directly."
   code: [swiss/experiments/rewards.py::SwissDistrictReward.terms]
 
 card:controller_tariff_map:
@@ -778,6 +791,82 @@ card:controller_tariff_map:
     HourRBC with an hour-of-day action map: charge in low-tariff hours, discharge in high-tariff hours. The map keys on
     the hour only, so weekends are treated like weekdays.
   code: [swiss/experiments/run_baselines.py::tariff_map]
+
+# ---------------------------------------------------------------- Phase B and C models (Model page tabs)
+
+card:pv:
+  label: Assumed rooftop solar (Phase B and C)
+  display_name: Rooftop solar (assumed)
+  classification: modeled
+  primary: M-003
+  nodes: [M-003, A-011, A-012, A-013, DER-012, DER-024, D-033]
+  lineage_end: D-033
+  summary: >
+    Scenario S1 adds solar panels to every building. Hourly output per kilowatt of panels comes from a standard solar
+    model fed with the measured sunshine at Zurich/Kloten (south facing, tilted). Each building's panels are sized so a
+    year's output matches its own electricity use, capped by a rooftop estimate; the cap binds for
+    {models_bc.pv_cap_binding} of the six buildings. Phase C keeps the same panels and recomputes their output from each
+    climate scenario's sunshine. No real panels of these buildings are modeled.
+  caveats:
+    - "Assumed scenario values. Surplus is exported at an assumed constant price; the results are also shown for other export prices."
+  numbers:
+    - {label: Panels in the district, value: '{models_bc.pv_kwp_district:.1f}', unit: kWp}
+    - {label: Yearly output per kWp, value: '{models_bc.pv_specific_yield:.0f}', unit: kWh/kWp}
+    - {label: Panel tilt, value: '{models_bc.pv_tilt:.0f}', unit: degrees}
+  code: [swiss/models/pv.py]
+
+card:battery:
+  label: Assumed home battery (Phase B and C)
+  display_name: Home battery (assumed)
+  classification: synthetic
+  primary: M-004
+  nodes: [M-004, A-016, A-017, D-035]
+  lineage_end: D-035
+  summary: >
+    Scenario S2 adds a battery to every building, sized in proportion to its solar panels, with a constant round-trip
+    efficiency, a usable depth of discharge and a power limit. It is the stock simulator battery without ageing. The
+    battery adds the largest single step of the savings ladder; its size was also halved and doubled.
+  numbers:
+    - {label: Battery in the district, value: '{models_bc.battery_kwh_district:.1f}', unit: kWh}
+    - {label: Battery per kW of solar, value: '{models_bc.battery_kwh_per_kwp:.1f}', unit: kWh/kWp}
+  code: [swiss/citylearn_build/build_dataset.py]
+
+card:rc_building:
+  label: Building thermal model (Phase B S3 and Phase C)
+  display_name: Building thermal model
+  classification: synthetic
+  primary: M-005
+  nodes: [M-005, DER-015, DER-016, A-020, D-038, D-039]
+  lineage_end: D-038
+  summary: >
+    Scenario S3 replaces the fixed heat demand with a one-node model of each building: heat leaks out in proportion to
+    the indoor-outdoor difference, the sun adds gains, and the walls and floors store heat. Indoor temperature may move
+    within a comfort band around the setpoint, so heating early lets the building itself act as storage. Parameters are
+    pooled literature values; each building's effective area is set so the model reproduces its derived yearly heat.
+  caveats:
+    - "No indoor temperature is measured in these buildings, so the model is calibrated on yearly heat only: daily heat follows the derived series closely, single hours much less so."
+  numbers:
+    - {label: Setpoint, value: '{models_bc.rc_setpoint:.0f}', unit: °C}
+    - {label: Comfort band low, value: '{models_bc.rc_lower:.0f}', unit: °C}
+    - {label: Comfort band high, value: '{models_bc.rc_upper:.0f}', unit: °C}
+    - {label: Time constant, value: '{models_bc.rc_time_constant_h:.1f}', unit: hours}
+  code: [swiss/models/rc_building.py]
+
+card:cooling:
+  label: Cooling in a warmer climate (Phase C)
+  display_name: Cooling (Phase C)
+  classification: modeled
+  primary: M-006
+  nodes: [M-006, M-007, A-040, A-041, A-042, A-043, A-044, A-058, D-050, D-054]
+  lineage_end: D-050
+  summary: >
+    Phase C adds cooling to the building thermal model. Central system: the building's heat pump is reversible and cools
+    the whole building, with an efficiency that falls as it gets hotter outside. Room units: only part of the floor area
+    is cooled and the rest floats. Cooling is installed by whole building at three adoption levels; uncooled buildings
+    warm up in summer, counted as degree-hours above the comfort limit.
+  caveats:
+    - "No measured cooling exists for these buildings; cooling efficiency, capacity, set points and adoption are assumptions."
+  code: [swiss/models/rc_building.py]
 
 panel:sensitivity:
   label: Sensitivity variants

@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useBundle } from "@/lib/bundle";
 import { DEEP_DIVE } from "@/lib/nav";
@@ -23,5 +24,15 @@ export function PageHeader({ title, page }: { title: string; page: string }) {
         <span>· missing values are never shown as zero</span>
       </p>
     </header>
+  );
+}
+
+/** Says which project phase a page shows, and where the other phases live. */
+export function PhaseNote({ children, links }: { children: React.ReactNode; links: { href: string; label: string }[] }) {
+  return (
+    <div className="-mt-4 mb-6 flex max-w-4xl flex-wrap items-baseline gap-x-3 gap-y-1 rounded-r-lg border-l-2 border-zinc-400 bg-zinc-50 px-3 py-2 text-xs text-zinc-700">
+      <span>{children}</span>
+      {links.map((l) => <Link key={l.href} href={l.href} className="text-blue-700 hover:underline">{l.label} →</Link>)}
+    </div>
   );
 }

@@ -1,15 +1,45 @@
 "use client";
-// WP5a: the scope wording below is the agent's draft for the project owner's review (Phase B pages added; Phase A wording kept for this page).
 import Link from "next/link";
 import { SystemFlowDiagram } from "@/components/overview/system-flow-diagram";
 import { useManifest } from "@/lib/contract";
-export function OverviewPage(){
- const file=useManifest("full"),m=file.data;
- return <div className="space-y-8">
-  <header className="max-w-4xl space-y-3"><p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Deep dive · Explore</p><h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">A district energy system, made inspectable.</h1><p className="max-w-3xl text-base leading-relaxed text-muted-foreground">Explore how weather, electricity prices, heat pumps, thermal storage and household demand combine in a six-building CityLearn simulation. Every modeled connection below is read from the simulation data contract.</p></header>
-  <div className="grid gap-3 sm:grid-cols-3"><div className="rounded-xl border bg-card p-4"><p className="text-xs text-muted-foreground">Simulation period</p><p className="mt-1 text-xl font-semibold">{m?.year??"—"}</p><p className="text-xs text-muted-foreground">Hourly Phase A model</p></div><div className="rounded-xl border bg-card p-4"><p className="text-xs text-muted-foreground">Representative buildings</p><p className="mt-1 text-xl font-semibold">{m?.buildings.length??"—"}</p><p className="text-xs text-muted-foreground">Three SFH and three MFH archetypes</p></div><div className="rounded-xl border bg-card p-4"><p className="text-xs text-muted-foreground">Data classes</p><p className="mt-1 text-xl font-semibold">5 classes</p><p className="text-xs text-muted-foreground">Measured · derived · modeled · synthetic · assumed</p></div></div>
-  <section className="space-y-3"><div><h2 className="text-xl font-semibold tracking-tight">How the modeled system fits together</h2><p className="text-sm text-muted-foreground">Arrows are generated from the component and flow definitions in the v1 contract. Select a component to inspect its scope, description and provenance.</p></div><SystemFlowDiagram/></section>
-  <div className="rounded-r-lg border-l-2 border-zinc-400 bg-zinc-50 p-4 text-sm text-zinc-700"><p className="font-semibold">Important scope boundary</p><p className="mt-1">The six buildings form a representative composite, not a physically adjacent neighborhood. They do not share a grid connection or exchange energy. Phase A models grid electricity, heat pumps, thermal buffers and demand; PV, batteries, EV charging, local energy communities and cooling are not modeled in the simulation shown on this page. Phase B adds PV, a battery, a building thermal model, other price structures, EV charging and a local energy community as labelled scenarios: see <Link href="/scenarios/" className="underline">Scenarios</Link> and <Link href="/controllers/" className="underline">Controllers</Link>. Phase C adds warmer weather scenarios, cooling and a heat-wave week, again as labelled scenarios: see <Link href="/climate/" className="underline">Climate</Link>, <Link href="/cooling/" className="underline">Cooling</Link>, <Link href="/explorer/" className="underline">Explorer</Link> and <Link href="/houses/" className="underline">Houses</Link> (draft wording by the agent, for the owner&apos;s review).</p></div>
-  <p className="text-xs text-muted-foreground">Measured values are not interchangeable with derived, modeled, synthetic or assumed values. Unavailable attributes remain unavailable, not zero.</p>
- </div>;
+
+const PHASES = [
+  { id: "Phase A", title: "Today's district", body: "Grid electricity only: heat pumps, hot-water and space-heating tanks, household loads. Hourly CityLearn simulation.", links: [{ href: "/district/", label: "District" }, { href: "/results/", label: "Results" }] },
+  { id: "Phase B", title: "Solar, battery, building mass", body: "Adds assumed rooftop solar with an export price, a home battery, a building thermal model, other tariffs, EV charging and an energy community.", links: [{ href: "/scenarios/", label: "Scenarios" }, { href: "/controllers/", label: "Controllers" }] },
+  { id: "Phase C", title: "Warmer climate and cooling", body: "Keeps solar, battery and the building model; adds warmer weather years, a heat-wave week and cooling by reversible heat pumps or room units.", links: [{ href: "/climate/", label: "Climate" }, { href: "/cooling/", label: "Cooling" }, { href: "/explorer/", label: "Explorer" }] },
+];
+
+export function OverviewPage() {
+  const m = useManifest("full").data;
+  return (
+    <div className="space-y-8">
+      <header className="max-w-4xl space-y-3">
+        <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Deep dive · Explore</p>
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">A district energy system, made inspectable.</h1>
+        <p className="max-w-3xl text-base leading-relaxed text-muted-foreground">How weather, prices, heat pumps, thermal storage, rooftop solar, a battery, building mass and cooling combine across six representative Swiss buildings. The project grows in three phases; the map below shows each one.</p>
+      </header>
+      <div className="grid gap-3 md:grid-cols-3">
+        {PHASES.map((p) => (
+          <div key={p.id} className="rounded-xl border bg-card p-4">
+            <p className="text-xs font-medium text-zinc-500">{p.id}</p>
+            <p className="mt-1 font-semibold">{p.title}</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{p.body}</p>
+            <p className="mt-2 flex flex-wrap gap-x-3 text-xs">{p.links.map((l) => <Link key={l.href} href={l.href} className="text-blue-700 hover:underline">{l.label} →</Link>)}</p>
+          </div>
+        ))}
+      </div>
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">How the modeled system fits together</h2>
+          <p className="text-sm text-muted-foreground">Pick a phase to see which devices and connections it adds. Select a component for its description, provenance and audit cards. {m && <>Weather and prices are for {m.year}; the district has {m.buildings.length} buildings.</>}</p>
+        </div>
+        <SystemFlowDiagram />
+      </section>
+      <div className="rounded-r-lg border-l-2 border-zinc-400 bg-zinc-50 p-4 text-sm text-zinc-700">
+        <p className="font-semibold">Important scope boundary</p>
+        <p className="mt-1">The six buildings form a representative composite, not a physically adjacent neighbourhood; outside the energy-community scenario they do not share a connection or exchange energy. Solar, battery and EV charging are assumptions, not measured installations, and cooling is modeled. The hourly CityLearn simulation behind the <Link href="/district/" className="underline">District</Link> and <Link href="/results/" className="underline">Results</Link> pages is the Phase A setup; Phase B and C results come from the scenario runs on their own pages.</p>
+      </div>
+      <p className="text-xs text-muted-foreground">Measured values are not interchangeable with derived, modeled, synthetic or assumed values. Unavailable attributes remain unavailable, not zero.</p>
+    </div>
+  );
 }

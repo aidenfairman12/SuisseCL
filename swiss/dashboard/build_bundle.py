@@ -53,6 +53,9 @@ P = {  # every input file the build reads (paths relative to ROOT)
     'manifest': 'data/canonical/MANIFEST.sha256',
     'ui_map': 'swiss/dashboard/ui_map.yaml',
     'master_plan': 'docs/master_plan.md',
+    'pv_capacity': 'data/canonical/pv/pv_capacity_2023.json',
+    'rc_params': 'data/canonical/rc/rc_params_2023.json',
+    'pvbat_manifest': 'swiss/datasets/swiss_pvbat_2023/build_manifest.json',
 }
 QC_DIR = 'docs/data/data_quality_reports'
 QC_REPORTS = {  # placeholder namespace -> (json file, markdown twin or None, title)
@@ -67,7 +70,7 @@ QC_REPORTS = {  # placeholder namespace -> (json file, markdown twin or None, ti
 # Builder code is an input too: a changed builder means a stale bundle.
 BUILDER_FILES = ['swiss/dashboard/build_bundle.py', 'swiss/dashboard/parse_registries.py', 'swiss/dashboard/bundle_io.py',
                  'swiss/dashboard/figures.py', 'swiss/dashboard/story.py', 'swiss/pipeline/select_buildings.py', 'swiss/experiments/run_baselines.py',
-                 'swiss/experiments/run_sensitivity.py', 'swiss/datasets/swiss_district_2023/pricing.csv', 'swiss/dashboard/phase_b.py', 'swiss/dashboard/phase_c.py', 'swiss/dashboard/climate_series.py', 'swiss/dashboard/insights.py']
+                 'swiss/experiments/run_sensitivity.py', 'swiss/datasets/swiss_district_2023/pricing.csv', 'swiss/dashboard/phase_b.py', 'swiss/dashboard/phase_c.py', 'swiss/dashboard/climate_series.py', 'swiss/dashboard/insights.py', 'swiss/dashboard/system_map.py']
 
 _read_files = set()
 
@@ -200,6 +203,16 @@ def load_data():
     d['results'] = {r['controller']: {k: num(v) for k, v in r.items()} for r in read_csv_dicts(P['baselines'])}
     d['sensitivity'] = {f"{r['variant']}|{r['controller']}": {k: num(v) for k, v in r.items()}
                         for r in read_csv_dicts(P['sensitivity'])}
+    # Phase B models shown on the Model page (solar, battery, building thermal model)
+    pv, rc, bat = read_json(P['pv_capacity']), read_json(P['rc_params']), read_json(P['pvbat_manifest'])
+    kwp = sum(b['ratios']['1.0']['kwp'] for b in pv['buildings'].values())
+    d['models_bc'] = {
+        'pv_kwp_district': kwp, 'pv_specific_yield': pv['annual_specific_yield_kwh_per_kwp'],
+        'pv_tilt': pv['model_params']['tilt_deg'], 'pv_cap_binding': sum(1 for b in pv['buildings'].values() if b['ratios']['1.0']['cap_binding']),
+        'battery_kwh_district': sum(b['battery_kwh'] for b in bat.values()), 'battery_kwh_per_kwp': sum(b['battery_kwh'] for b in bat.values()) / kwp,
+        'rc_time_constant_h': rc['time_constant_h'], 'rc_setpoint': rc['priors']['setpoint_c'],
+        'rc_lower': rc['priors']['comfort_lower_c'], 'rc_upper': rc['priors']['comfort_upper_c'],
+    }
     return d
 
 
@@ -661,6 +674,8 @@ def main():
     emit('houses', clean(houses_obj))
     emit('heat_peaks', clean(heat_peaks_obj))
     emit('pipeline', clean(pipeline_obj))
+    from swiss.dashboard import system_map
+    emit('system_map', clean(system_map.build()))
     for f in os.listdir(BUNDLE):
         if f.startswith('trace_'):
             os.remove(os.path.join(BUNDLE, f))
